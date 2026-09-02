@@ -1,0 +1,17 @@
+import Link from "next/link";
+
+import AppShell from "@/components/layout/AppShell";
+import PrototypeField from "@/components/forms/PrototypeField";
+import PrototypeNotice from "@/components/prototype/PrototypeNotice";
+
+export default function DocumentationNewPage() {
+  return (
+    <AppShell activeHref="/documentation" eyebrow="Documentation · Authoring" title="Create a document" description="Capture one useful piece of knowledge with enough context for someone else to trust it." actions={<Link className="button-secondary" href="/documentation">Cancel</Link>}>
+      <PrototypeNotice />
+      <div className="editor-layout">
+        <section className="surface-card editor-card" aria-labelledby="editor-title"><div className="card-heading"><div><span className="panel-kicker">New draft</span><h2 id="editor-title">Start with the reader.</h2></div><span className="badge">Autosave on</span></div><form className="prototype-form"><PrototypeField id="document-title" label="Document title" hint="Use the phrase a member would search for." placeholder="e.g. How we run a project kickoff" required /><div className="form-grid-two"><div className="field-group"><label className="field-label" htmlFor="document-topic">Topic<span aria-hidden="true">*</span></label><select id="document-topic" defaultValue="web"><option value="web">Web Development SIG</option><option value="ops">Club operations</option><option value="shared">Shared practice</option></select><span className="field-hint">This controls where the document appears.</span></div><div className="field-group"><label className="field-label" htmlFor="document-audience">Audience</label><select id="document-audience" defaultValue="members"><option value="members">All members</option><option value="sig">SIG members</option><option value="leads">SIG leads</option></select><span className="field-hint">Keep the first version broadly useful.</span></div></div><div className="field-group"><label className="field-label" htmlFor="document-summary">Summary<span aria-hidden="true">*</span></label><textarea id="document-summary" rows={3} placeholder="What will this help someone do?" required /><span className="field-hint">Shown in search results and related links.</span></div><div className="field-group"><label className="field-label" htmlFor="document-body">Document body<span aria-hidden="true">*</span></label><textarea id="document-body" rows={10} placeholder="Start writing the useful version..." required /><span className="field-hint">Markdown support can be added when the content contract is ready.</span></div><div className="form-actions"><button className="button" type="button">Save draft</button><button className="button-secondary" type="button">Save and submit for review</button></div></form></section>
+        <aside className="surface-card editor-aside"><span className="panel-kicker">Before you publish</span><h2>Make it easy to trust.</h2><ul className="simple-list"><li><strong>Name the owner</strong><span>Readers should know who keeps this current.</span></li><li><strong>Show the last review</strong><span>Freshness is part of the content experience.</span></li><li><strong>Link the next action</strong><span>A document should help someone do something.</span></li></ul><div className="success-state"><strong>Draft saved</strong><span>Just now · visible only to you</span></div></aside>
+      </div>
+    </AppShell>
+  );
+}

@@ -161,3 +161,101 @@ export const demoMembers: DemoMember[] = [
 ];
 
 export const primaryMember = demoMembers[0];
+
+export interface DemoLearningPath {
+  slug: string;
+  title: string;
+  category: string;
+  description: string;
+  lessons: number;
+  completedLessons: number;
+  nextLesson: string;
+  level: string;
+}
+
+export const demoLearningPaths: DemoLearningPath[] = [
+  {
+    slug: "frontend-foundations",
+    title: "Frontend foundations",
+    category: "Web Development",
+    description: "Build a sturdy mental model for accessible, responsive interfaces.",
+    lessons: 8,
+    completedLessons: 5,
+    nextLesson: "Designing for real content",
+    level: "Beginner → intermediate",
+  },
+  {
+    slug: "research-to-brief",
+    title: "Research to brief",
+    category: "Design & Media",
+    description: "Turn a loose idea into a project brief a team can actually use.",
+    lessons: 6,
+    completedLessons: 2,
+    nextLesson: "Writing the problem statement",
+    level: "All levels",
+  },
+  {
+    slug: "open-source-first-steps",
+    title: "Open source first steps",
+    category: "Open Source",
+    description: "Find a project, make a small contribution, and learn the rhythm of review.",
+    lessons: 5,
+    completedLessons: 0,
+    nextLesson: "Finding a welcoming issue",
+    level: "Beginner",
+  },
+];
+
+export interface DemoDocument {
+  slug: string;
+  title: string;
+  topic: string;
+  owner: string;
+  updated: string;
+  readTime: string;
+  summary: string;
+  body: string[];
+}
+
+export const demoDocuments: DemoDocument[] = [
+  {
+    slug: "getting-started",
+    title: "How we review project briefs",
+    topic: "Web Development SIG",
+    owner: "Aanya Sharma",
+    updated: "Updated 2 days ago",
+    readTime: "6 min read",
+    summary: "A lightweight review rhythm for turning a promising idea into a brief a team can start with confidence.",
+    body: [
+      "A good brief gives a team enough context to make a useful first decision. It does not need every answer, but it should make the problem, audience, and next step visible.",
+      "Before review, the author shares the smallest useful version: the problem they are exploring, who feels it, what success could look like, and what is intentionally out of scope.",
+      "Reviewers respond with questions and risks first. Approval means the team has a clear direction to learn from, not that every implementation detail is already settled.",
+    ],
+  },
+  {
+    slug: "member-onboarding",
+    title: "Member onboarding checklist",
+    topic: "Club operations",
+    owner: "Operations team",
+    updated: "Updated 1 week ago",
+    readTime: "4 min read",
+    summary: "The practical first-week checklist for helping a new member find people, context, and a first contribution.",
+    body: [
+      "Start with a profile that tells other members what the new person wants to learn and where they can help.",
+      "Invite them to one relevant SIG and one low-pressure event. A small, specific first contribution is more useful than a long list of links.",
+    ],
+  },
+  {
+    slug: "accessible-ui-basics",
+    title: "Accessible UI basics",
+    topic: "Shared practice",
+    owner: "Design & Media SIG",
+    updated: "Updated 3 weeks ago",
+    readTime: "8 min read",
+    summary: "A practical reference for labels, focus states, contrast, and content structure in club projects.",
+    body: [
+      "Accessibility is easiest to maintain when it is part of the first sketch and the first component, rather than a final audit.",
+      "Use native controls where they fit, give every input a visible label, and make keyboard focus as clear as hover feedback.",
+    ],
+  },
+];
