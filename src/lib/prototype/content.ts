@@ -259,3 +259,77 @@ export const demoDocuments: DemoDocument[] = [
     ],
   },
 ];
+
+export interface DemoProject {
+  slug: string;
+  title: string;
+  sig: string;
+  stage: "Exploring" | "In progress" | "Shipped";
+  description: string;
+  lead: string;
+  contributors: number;
+  updated: string;
+}
+
+export const demoProjects: DemoProject[] = [
+  {
+    slug: "website-refresh",
+    title: "Website refresh",
+    sig: "Web Development",
+    stage: "In progress",
+    description: "A calmer, more accessible home for the club’s next chapter.",
+    lead: "Aanya Sharma",
+    contributors: 6,
+    updated: "Updated today",
+  },
+  {
+    slug: "welcome-kit",
+    title: "New member welcome kit",
+    sig: "Club operations",
+    stage: "Exploring",
+    description: "A simple first-week guide that helps new members find context and people.",
+    lead: "Meera Iyer",
+    contributors: 4,
+    updated: "Updated yesterday",
+  },
+  {
+    slug: "issue-finder",
+    title: "Good first issue finder",
+    sig: "Open Source",
+    stage: "Shipped",
+    description: "A curated way for members to find welcoming contribution opportunities.",
+    lead: "Rohan Das",
+    contributors: 3,
+    updated: "Shipped Mar 04",
+  },
+];
+
+export interface DemoAnnouncement {
+  title: string;
+  audience: string;
+  date: string;
+  status: "Published" | "Draft";
+  description: string;
+}
+
+export const demoAnnouncements: DemoAnnouncement[] = [
+  { title: "Spring SIG kickoff week", audience: "All members", date: "Today", status: "Published", description: "Meet the leads, choose a direction, and find one small way to participate this month." },
+  { title: "March project demos", audience: "All members", date: "Mar 18", status: "Published", description: "Three teams will share what they learned, what shipped, and what they would change next." },
+  { title: "Volunteer hosts needed", audience: "SIG leads", date: "Mar 21", status: "Draft", description: "Help make the next community session welcoming, clear, and easy to join." },
+];
+
+export interface DemoEvent {
+  title: string;
+  kind: string;
+  date: string;
+  time: string;
+  location: string;
+  attendees: string;
+  description: string;
+}
+
+export const demoEvents: DemoEvent[] = [
+  { title: "Spring SIG kickoff", kind: "Community", date: "Mar 14", time: "18:00–19:30", location: "Main hall + online", attendees: "24 going", description: "Meet the people behind each SIG and choose a practical first contribution." },
+  { title: "Project brief clinic", kind: "Workshop", date: "Mar 18", time: "17:30–18:30", location: "Design studio", attendees: "12 going", description: "Bring a rough idea and leave with a clearer problem, audience, and next step." },
+  { title: "March project demos", kind: "Showcase", date: "Mar 28", time: "18:00–20:00", location: "Auditorium", attendees: "58 going", description: "See what teams built and the lessons they want to pass on." },
+];
