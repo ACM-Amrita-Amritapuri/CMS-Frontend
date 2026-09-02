@@ -5,10 +5,16 @@ describe("application shell", () => {
   it("shows the CMS title and primary navigation", () => {
     render(<HomePage />);
 
-    expect(screen.getByRole("heading", { name: "ACM CMS" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+    expect(
+      screen.getByRole("heading", { name: "A calmer way to build together." }),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open workspace" })).toHaveAttribute(
       "href",
-      "/login",
+      "/dashboard",
+    );
+    expect(screen.getByRole("link", { name: /Learning/ })).toHaveAttribute(
+      "href",
+      "/learning",
     );
   });
 });

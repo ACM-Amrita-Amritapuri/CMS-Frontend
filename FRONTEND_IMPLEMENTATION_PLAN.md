@@ -222,6 +222,12 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 
 ## Phase 3 — Application shell and member area
 
+> Progress note (2026-09-02): a dark, static preview slice now exposes the
+> shared workspace shell plus `/dashboard`, `/learning`, `/documentation`,
+> `/projects`, and `/operations`. This is intentionally not marked complete:
+> authentication, live data, capability-derived navigation, and member
+> profiles still belong to the implementation steps below.
+
 ### Task 4: Build the application shell, dashboard, profiles, and portfolios
 
 **Files:**
