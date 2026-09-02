@@ -28,6 +28,9 @@ export default function HomePage() {
             <Link className="button" href="/dashboard">
               Open workspace
             </Link>
+            <Link className="button-secondary" href="/prototype">
+              View all screens
+            </Link>
             <a className="text-link" href="#workspace-areas">
               Explore the platform <span aria-hidden="true">↓</span>
             </a>

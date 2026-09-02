@@ -6,6 +6,7 @@ const navigation = [
   { href: "/documentation", label: "Documentation", index: "03" },
   { href: "/projects", label: "Projects", index: "04" },
   { href: "/operations", label: "Operations", index: "05" },
+  { href: "/admin", label: "Admin", index: "06" },
 ];
 
 function Brand() {
