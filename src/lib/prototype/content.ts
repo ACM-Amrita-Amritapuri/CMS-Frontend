@@ -85,3 +85,79 @@ export const prototypeSections: PrototypeSection[] = [
 ];
 
 export const prototypeRoutes = prototypeSections.flatMap((section) => section.screens);
+
+export interface DemoMember {
+  id: number;
+  rollNumber: string;
+  name: string;
+  initials: string;
+  role: string;
+  sig: string;
+  location: string;
+  availability: "Available" | "In a project" | "Learning";
+  bio: string;
+  skills: string[];
+  email: string;
+  website: string;
+}
+
+export const demoMembers: DemoMember[] = [
+  {
+    id: 42,
+    rollNumber: "ACM-024",
+    name: "Aanya Sharma",
+    initials: "AS",
+    role: "Web lead",
+    sig: "Web Development",
+    location: "New Delhi, IN",
+    availability: "Available",
+    bio: "I like turning complicated ideas into interfaces that feel obvious to use. Currently exploring design systems and accessible frontends.",
+    skills: ["React", "TypeScript", "Design systems", "Accessibility"],
+    email: "aanya@example.com",
+    website: "aanya.example.com",
+  },
+  {
+    id: 57,
+    rollNumber: "ACM-039",
+    name: "Kabir Mehta",
+    initials: "KM",
+    role: "SIG core",
+    sig: "Artificial Intelligence",
+    location: "Bengaluru, IN",
+    availability: "In a project",
+    bio: "Building small, useful experiments around language models and developer tooling.",
+    skills: ["Python", "ML tooling", "Research", "APIs"],
+    email: "kabir@example.com",
+    website: "kabir.example.com",
+  },
+  {
+    id: 64,
+    rollNumber: "ACM-046",
+    name: "Meera Iyer",
+    initials: "MI",
+    role: "Design contributor",
+    sig: "Design & Media",
+    location: "Chennai, IN",
+    availability: "Learning",
+    bio: "Learning in public through visual storytelling, research, and community projects.",
+    skills: ["Figma", "Research", "Content", "Motion"],
+    email: "meera@example.com",
+    website: "meera.example.com",
+  },
+  {
+    id: 71,
+    rollNumber: "ACM-053",
+    name: "Rohan Das",
+    initials: "RD",
+    role: "Member",
+    sig: "Open Source",
+    location: "Kolkata, IN",
+    availability: "Available",
+    bio: "Interested in the craft behind reliable software and welcoming contributor experiences.",
+    skills: ["Go", "Git", "Testing", "Docs"],
+    email: "rohan@example.com",
+    website: "rohan.example.com",
+  },
+];
+
+export const primaryMember = demoMembers[0];

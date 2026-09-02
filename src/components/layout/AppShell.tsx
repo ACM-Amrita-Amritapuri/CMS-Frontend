@@ -82,7 +82,7 @@ export default function AppShell({
               <span className="status-dot" aria-hidden="true" />
               Preview mode
             </span>
-            <span className="user-chip">Guest workspace</span>
+            <Link className="user-chip" href="/profile">Guest workspace</Link>
           </div>
         </header>
 

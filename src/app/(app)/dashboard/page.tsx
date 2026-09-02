@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import AppShell from "@/components/layout/AppShell";
 import EmptyState from "@/components/ui/EmptyState";
+import PrototypeNotice from "@/components/prototype/PrototypeNotice";
 
 const quickStarts = [
   { href: "/learning", label: "Start learning", detail: "Find your next path" },
@@ -37,6 +38,8 @@ export default function DashboardPage() {
         </span>
       </section>
 
+      <PrototypeNotice />
+
       <div className="dashboard-grid">
         <section className="surface-card" aria-labelledby="quick-start-title">
           <div className="card-topline">
@@ -57,10 +60,21 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <EmptyState
-          title="Your activity will show up here"
-          description="Once you sign in and connect your workspace, recent work and useful next steps will appear in this space."
-        />
+        <section className="surface-card activity-card" aria-labelledby="activity-title">
+          <div className="card-heading">
+            <div>
+              <span className="panel-kicker">Recent activity</span>
+              <h2 id="activity-title">Your activity</h2>
+              <p>Continue where you left off</p>
+            </div>
+            <span className="badge">This week</span>
+          </div>
+          <div className="activity-list">
+            <div className="activity-item"><span className="activity-icon">↗</span><div><strong>Frontend foundations</strong><span>Lesson 3 of 8 · Continue learning</span></div><span className="activity-time">Today</span></div>
+            <div className="activity-item"><span className="activity-icon">✦</span><div><strong>Project brief saved</strong><span>Website refresh · Draft</span></div><span className="activity-time">Yesterday</span></div>
+            <EmptyState title="More activity will appear here" description="Join a path or project to make this timeline useful." />
+          </div>
+        </section>
       </div>
     </AppShell>
   );
