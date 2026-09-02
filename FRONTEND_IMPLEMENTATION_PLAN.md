@@ -2,13 +2,30 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the CMS frontend as a responsive Next.js application that consumes the backend REST contract at commit `eec9ff3`, covering authentication, profiles, administration, learning, documentation, projects, portfolios, and club operations.
+**Goal:** Build the CMS frontend as a responsive Next.js application that consumes the backend REST contract at commit `eec9ff33e7487c5bec71ce671214d243e5f01e3b`, covering authentication, profiles, administration, learning, documentation, projects, portfolios, and club operations.
 
 **Architecture:** Use the Next.js App Router with TypeScript. Protected pages run through a client-side session provider because the short-lived access token must remain in memory; the browser sends the HTTP-only refresh cookie through `credentials: "include"`. Use a typed API boundary and TanStack Query for request caching/invalidation, with route guards and capability helpers controlling navigation visibility while the backend remains the final authorization authority.
 
 **Tech Stack:** Next.js App Router, React, TypeScript, CSS Modules and global CSS design tokens, TanStack Query, React Hook Form, Zod, Vitest, Testing Library, MSW, and Playwright.
 
-**Spec:** `../CMS-backend/BACKEND_FRONTEND_INTEGRATION_PLAN.md`, validated against backend commit `eec9ff3` on `origin/dev`.
+**Spec:** `../CMS-backend/BACKEND_FRONTEND_INTEGRATION_PLAN.md`, validated against backend commit `eec9ff33e7487c5bec71ce671214d243e5f01e3b` on `origin/dev`.
+
+## Phase 0 — Contract and deployment lock
+
+This phase is complete when the frontend implementation uses the following decisions as its contract:
+
+- Backend reference: `eec9ff33e7487c5bec71ce671214d243e5f01e3b` on `origin/dev`. The older backend integration document is supporting context; route source at that commit is authoritative when they differ.
+- App Router root: `src/app/`. Route groups are under `src/app`, not a second root-level `app` tree.
+- Deployment topology: same-origin frontend/backend through a reverse proxy is the default. The backend has no CORS configuration, and its refresh cookie is `Secure`, `HttpOnly`, `SameSite=Lax`, and scoped to `/auth`; a cross-origin deployment therefore requires an explicit HTTPS CORS/cookie configuration change in the backend.
+- Local development: use the same-origin proxy or HTTPS backend configuration before testing refresh-cookie behavior. A plain `http://localhost:3000` → `http://localhost:5000` setup is not treated as a valid auth smoke environment.
+- Onboarding: newly created accounts have a blank initialized profile, so `/members/me` GET/PUT is the normal setup path. `POST /members` is reserved for privileged repair of a genuinely missing legacy profile.
+- Time: backend timestamps without an offset are UTC and must be parsed as UTC before local rendering; outbound date-times are ISO-8601.
+- Authorization: UI capabilities are derived from `{ role_code, sig_id }`, with SIG roles evaluated against the selected SIG. The server remains authoritative for every protected request.
+- Phase 1 scope: only the runnable shell, API error/client boundary, in-memory access-token session store, and their tests. Query caching, forms, validation, mocks, and browser journeys enter with the first feature that needs them.
+
+- [x] Contract and deployment assumptions recorded.
+- [x] Backend reference and route authority recorded.
+- [x] Phase 1 scope reduced to the minimum runnable foundation.
 
 ## Global Constraints
 
@@ -95,7 +112,7 @@ Use these backend enums in shared TypeScript types: `MEMBER`, `SIG_CORE`, `SIG_L
 ## Planned Route Structure
 
 ```text
-app/
+  src/app/
   (public)/login
   (account)/change-password
   (account)/profile/setup
@@ -123,23 +140,25 @@ Protected route layouts must not depend on a token in server middleware because 
 
 ---
 
+## Phase 1 — Foundation and API runtime
+
 ### Task 1: Scaffold the frontend foundation
 
 **Files:**
 - Create: `package.json`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`
-- Create: `app/layout.tsx`, `app/page.tsx`, `app/globals.css`
+- Create: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`
 - Create: `src/styles/tokens.css`, `src/components/ui/VisuallyHidden.tsx`
 - Create: `vitest.config.ts`, `tests/setup.ts`
 - Test: `tests/smoke/app-shell.test.tsx`
 
 **Interfaces:**
-- Produces a runnable Next.js App Router project with TypeScript path alias `@/*`, a global font/color/spacing token layer, and test commands `npm run lint`, `npm run test`, `npm run test:e2e`, and `npm run build`.
+- Produces a runnable Next.js App Router project with TypeScript path alias `@/*`, a global font/color/spacing token layer, and Bun commands `bun run lint`, `bun run test`, `bun run test:e2e`, and `bun run build`.
 
-- [ ] **Step 1: Add the project dependencies and scripts.** Install Next.js, React, TypeScript types, TanStack Query, React Hook Form, Zod, `@hookform/resolvers`, Vitest, Testing Library, MSW, and Playwright. Define scripts that run `vitest run`, `next build`, and the Playwright suite without hiding failures.
-- [ ] **Step 2: Add the root layout and design tokens.** Set document metadata, responsive viewport behavior, base background/text colors, focus-ring styles, semantic status colors, form controls, buttons, cards, tables, and mobile breakpoints. Keep reusable primitives style-agnostic and accessible.
-- [ ] **Step 3: Add the first smoke test.** Render the root page and assert that the application title and primary navigation placeholder are present without requiring a backend session.
-- [ ] **Step 4: Run the foundation checks.** Run `npm run lint`, `npm run test -- --run tests/smoke/app-shell.test.tsx`, and `npm run build`; all three must pass.
-- [ ] **Step 5: Commit the foundation.** Run `git add package.json package-lock.json tsconfig.json next.config.ts eslint.config.mjs app src tests vitest.config.ts` and commit with `feat: scaffold cms frontend`.
+- [x] **Step 1: Add the project dependencies and scripts.** Use Bun (`bun install`) with only Next.js, React, TypeScript types, ESLint, Vitest, and Testing Library needed by the foundation. Add workflow dependencies (TanStack Query, React Hook Form, Zod, MSW, and Playwright) in the phase that first uses each one. Define scripts that run through Bun without hiding failures.
+- [x] **Step 2: Add the root layout and design tokens.** Set document metadata, responsive viewport behavior, base background/text colors, focus-ring styles, semantic status colors, form controls, buttons, cards, tables, and mobile breakpoints. Keep reusable primitives style-agnostic and accessible.
+- [x] **Step 3: Add the first smoke test.** Render the root page and assert that the application title and primary navigation placeholder are present without requiring a backend session.
+- [x] **Step 4: Run the foundation checks.** Run `bun run lint`, `bun run test --run tests/smoke/app-shell.test.tsx`, and `bun run build`; all three must pass.
+- [x] **Step 5: Commit the foundation.** Run `git add package.json bun.lock tsconfig.json next.config.ts eslint.config.mjs src tests vitest.config.ts` and commit with `feat: scaffold cms frontend`.
 
 ### Task 2: Build the typed API client and session runtime
 
@@ -155,9 +174,9 @@ Protected route layouts must not depend on a token in server middleware because 
 - `SessionStore` exposes `getSnapshot(): SessionState`, `setSession(user, accessToken)`, `clearSession()`, `subscribe(listener)`, and `hasCapability(capability)`.
 - `roleAssignments` are typed as `{ role_code: RoleCode; sig_id: number | null }[]`; capabilities are derived from role assignments but never used as server authorization.
 
-- [ ] **Step 1: Write client tests for the contract.** Cover JSON success, empty-body success, `401` refresh then original retry, concurrent `401`s sharing one `/auth/refresh` promise, failed refresh clearing the store, and preserving `409`/`422` field details without retrying.
-- [ ] **Step 2: Implement `ApiError` and response parsing.** Read the standard `{ error: { code, message, details } }` envelope, use `INTERNAL_ERROR` for malformed/unknown server responses, and never expose raw response text in UI-facing messages.
-- [ ] **Step 3: Implement the single-flight request wrapper.** Use `credentials: "include"`, set `Content-Type` only for JSON bodies, attach the in-memory bearer token, skip refresh retry for `/auth/login`, `/auth/refresh`, `/auth/logout`, and `/auth/logout-all`, and retry the original request at most once.
+- [x] **Step 1: Write client tests for the contract.** Cover JSON success, empty-body success, `401` refresh then original retry, concurrent `401`s sharing one `/auth/refresh` promise, failed refresh clearing the store, and preserving `409`/`422` field details without retrying.
+- [x] **Step 2: Implement `ApiError` and response parsing.** Read the standard `{ error: { code, message, details } }` envelope, use `INTERNAL_ERROR` for malformed/unknown server responses, and never expose raw response text in UI-facing messages.
+- [x] **Step 3: Implement the single-flight request wrapper.** Use `credentials: "include"`, set `Content-Type` only for JSON bodies, attach the in-memory bearer token, skip refresh retry for `/auth/login`, `/auth/refresh`, `/auth/logout`, and `/auth/logout-all`, and retry the original request at most once.
 
 ```ts
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
@@ -170,10 +189,12 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 }
 ```
 
-- [ ] **Step 4: Implement session state and capability helpers.** Store only the access token and current user in memory; expose helpers for `canManageContent`, `canAdminister`, `canReviewDocumentation`, and `canManageOperations` based on role assignments.
-- [ ] **Step 5: Mount QueryClient and session context in `src/app/providers.tsx`.** Clear the query cache whenever the session clears, and keep browser-only session access behind a client component.
-- [ ] **Step 6: Run unit tests and lint.** Run `npm run test -- --run tests/api/client.test.ts tests/auth/session-store.test.ts` and `npm run lint`.
-- [ ] **Step 7: Commit the API foundation.** Run `git add src/lib src/app/providers.tsx tests/api tests/auth` and commit with `feat: add typed api and session runtime`.
+- [x] **Step 4: Implement session state and capability helpers.** Store only the access token and current user in memory; expose helpers for `canManageContent`, `canAdminister`, `canReviewDocumentation`, and `canManageOperations` based on role assignments.
+- [x] **Step 5: Mount session context in `src/app/providers.tsx`.** Keep browser-only session access behind a client component. Add the TanStack Query provider only when the first query-driven feature is implemented, so Phase 1 does not ship an unused cache dependency.
+- [x] **Step 6: Run unit tests and lint.** Run `bun run test --run tests/api/client.test.ts tests/auth/session-store.test.ts` and `bun run lint`.
+- [x] **Step 7: Commit the API foundation.** Run `git add src/lib src/app/providers.tsx tests/api tests/auth` and commit with `feat: add typed api and session runtime`.
+
+## Phase 2 — Authentication and onboarding
 
 ### Task 3: Implement login, onboarding gates, and logout
 
@@ -196,8 +217,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 4: Implement profile setup.** Load `/members/me` through the no-profile-gate route, edit only the allowed profile fields, render server `422` details beside fields, submit `PUT /members/me`, and redirect to `/dashboard` only when the returned profile reports `is_complete`.
 - [ ] **Step 5: Implement `AuthBoundary`.** Bootstrap `/auth/me`; map `PASSWORD_CHANGE_REQUIRED` to `/change-password`, `PROFILE_INCOMPLETE` to `/profile/setup`, `401` to `/login`, and other errors to a retryable session error page. Do not use middleware to inspect the in-memory token.
 - [ ] **Step 6: Implement logout and logout-all.** Call the corresponding endpoint, clear session/query cache regardless of logout response, and navigate to `/login`.
-- [ ] **Step 7: Run tests and build.** Run `npm run test -- --run tests/auth` and `npm run build`.
+- [ ] **Step 7: Run tests and build.** Run `bun run test --run tests/auth` and `bun run build`.
 - [ ] **Step 8: Commit the auth flow.** Run `git add app src tests/auth` and commit with `feat: implement auth and onboarding flow`.
+
+## Phase 3 — Application shell and member area
 
 ### Task 4: Build the application shell, dashboard, profiles, and portfolios
 
@@ -219,8 +242,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 3: Build dashboard states.** Render member dashboard cards from profile/progress/activity data; render admin aggregate cards only when `/admin/dashboard` is allowed. Add explicit empty/error states rather than fabricating metrics.
 - [ ] **Step 4: Build profile edit/view.** Use a shared profile form for setup and normal editing, render all social links safely, and show server timestamps in local time.
 - [ ] **Step 5: Build member lookup and portfolio.** Use roll-number lookup, profile not-found state, portfolio learning completions, published project contributions, and published showcases from the backend response.
-- [ ] **Step 6: Run tests and lint.** Run `npm run test -- --run tests/layout tests/members` and `npm run lint`.
+- [ ] **Step 6: Run tests and lint.** Run `bun run test --run tests/layout tests/members` and `bun run lint`.
 - [ ] **Step 7: Commit the shell and member area.** Run `git add src app tests/layout tests/members` and commit with `feat: add app shell and member area`.
+
+## Phase 4 — Administration and SIG management
 
 ### Task 5: Build administration and SIG management
 
@@ -239,8 +264,10 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 2: Implement dashboard and SIG screens.** Support list/create/update, display duplicate SIG conflicts as form messages, and invalidate the relevant queries after mutations.
 - [ ] **Step 3: Implement member administration.** Add `is_active=true|false` filter, activate/deactivate confirmation, and server conflict/permission handling.
 - [ ] **Step 4: Implement account creation/reset/roles.** Use a copy-once temporary password dialog; provide role and optional SIG selectors; use `action: "assign"|"revoke"`, `role_code`, and nullable `sig_id` exactly as the backend expects.
-- [ ] **Step 5: Run tests and build.** Run `npm run test -- --run tests/admin` and `npm run build`.
+- [ ] **Step 5: Run tests and build.** Run `bun run test --run tests/admin` and `bun run build`.
 - [ ] **Step 6: Commit administration.** Run `git add src/app/'(app)'/admin src/components/admin src/lib/api/admin.ts src/lib/api/auth.ts tests/admin` and commit with `feat: add administration workflows`.
+
+## Phase 5 — Learning paths and content
 
 ### Task 6: Build learning paths, content management, assignments, and quizzes
 
@@ -261,7 +288,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 4: Implement assignments.** Support `DRAFT` and `FINAL`, `TEXT` and `LINK`, ISO deadlines, member submission, reviewer feedback/score, and server `409`/`422` messages.
 - [ ] **Step 5: Implement quizzes.** Render choices from the server, submit answers keyed by question ID, show the returned attempt/score, and keep answer keys out of member views; answer-authoring controls are restricted to content managers.
 - [ ] **Step 6: Implement manager editing.** Use separate forms for each hierarchy level, exact allowed payload keys, explicit publish controls, and query invalidation after every successful mutation.
-- [ ] **Step 7: Run tests and commit.** Run `npm run test -- --run tests/learning`, `npm run lint`, then commit with `feat: add learning workflows`.
+- [ ] **Step 7: Run tests and commit.** Run `bun run test --run tests/learning`, `bun run lint`, then commit with `feat: add learning workflows`.
+
+## Phase 6 — Documentation and editorial workflow
 
 ### Task 7: Build documentation search and editorial workflow
 
@@ -279,7 +308,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 2: Implement search/list/detail.** Debounce query changes, keep `q`, `tag`, `category`, and `limit` in the URL, render summary cards without assuming body content exists, and render a not-found state for `404`.
 - [ ] **Step 3: Implement the Markdown reader/editor.** Sanitize rendered Markdown, support title/summary/body/category/tags/SIG fields, preserve draft form values after `409`/`422`, and keep revision history read-only.
 - [ ] **Step 4: Implement workflow actions/review.** Use `decision: "APPROVE"|"REJECT"` and `comment`, require confirmation for archive/restore, and invalidate document/list/search/revision queries after success.
-- [ ] **Step 5: Run tests and commit.** Run `npm run test -- --run tests/documentation` and commit with `feat: add documentation workflows`.
+- [ ] **Step 5: Run tests and commit.** Run `bun run test --run tests/documentation` and commit with `feat: add documentation workflows`.
+
+## Phase 7 — Projects and portfolio showcases
 
 ### Task 8: Build projects, proposals, teams, tracking, and portfolio showcases
 
@@ -300,7 +331,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 3: Implement roles, applications, invitations, and membership.** Require confirmation for leave/delete, show invitation expiry using local time, and render accept/decline controls only while the invitation is actionable.
 - [ ] **Step 4: Implement task/milestone tracking.** Use the exact task enum, show blockers and weekly updates, and prevent client-side transitions that the current state disallows while still displaying server conflicts.
 - [ ] **Step 5: Implement showcase publishing and portfolio refresh.** Validate URLs locally, submit only the supported showcase fields, and invalidate the affected project and portfolio queries after publication.
-- [ ] **Step 6: Run tests and commit.** Run `npm run test -- --run tests/projects` and commit with `feat: add project workflows`.
+- [ ] **Step 6: Run tests and commit.** Run `bun run test --run tests/projects` and commit with `feat: add project workflows`.
+
+## Phase 8 — Operations and calendar
 
 ### Task 9: Build operations: announcements, events, attendance, recruitment, meetings, and calendar
 
@@ -321,7 +354,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 3: Implement registration, attendance, and feedback.** Reflect the returned registration/attendance records, support `MANUAL` and `QR` method values without adding a QR subsystem, and invalidate event detail queries after mutations.
 - [ ] **Step 4: Implement calendar.** Send local date-range selections as ISO-8601 `start`/`end` query values, render returned events/meetings without client-side timezone mutation, and provide empty/error states.
 - [ ] **Step 5: Implement recruitment and meetings.** Add cycle open/close controls, application/evaluation views, meeting editing, and document-link navigation for `minutes_document_id`.
-- [ ] **Step 6: Run tests and commit.** Run `npm run test -- --run tests/operations` and commit with `feat: add operations workflows`.
+- [ ] **Step 6: Run tests and commit.** Run `bun run test --run tests/operations` and commit with `feat: add operations workflows`.
+
+## Phase 9 — Hardening and release
 
 ### Task 10: Add end-to-end verification, accessibility, and release configuration
 
@@ -339,7 +374,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - [ ] **Step 2: Add Playwright journeys.** Cover login → password change → login again → profile setup → dashboard; member learning/document/project/event flow; and administrator account/SIG/content/operations flows.
 - [ ] **Step 3: Audit accessibility.** Verify labels, keyboard submission, focus restoration after dialogs, visible focus states, semantic headings, table headers, color-independent status indicators, and screen-reader error announcements.
 - [ ] **Step 4: Audit responsive behavior.** Test 320px, tablet, and desktop widths for shell navigation, dashboards, editors, tables, task boards, calendar, and detail pages.
-- [ ] **Step 5: Run the release gate.** Run `npm run lint`, `npm run test`, `npm run build`, and `npm run test:e2e`; all must pass against mocked tests and a configured backend smoke environment.
+- [ ] **Step 5: Run the release gate.** Run `bun run lint`, `bun run test`, `bun run build`, and `bun run test:e2e`; all must pass against mocked tests and a configured backend smoke environment.
 - [ ] **Step 6: Commit release readiness.** Run `git add .env.example README.md playwright.config.ts tests/e2e tests/api src next.config.ts` and commit with `chore: verify frontend release readiness`.
 
 ## Release Sequence
@@ -357,4 +392,4 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
 - All listed server error classes render controlled UI states; no stack traces or raw database errors reach the UI.
 - Members never receive draft/private records through normal list/detail views.
 - No implementation depends on deferred backend features.
-- `npm run lint`, `npm run test`, `npm run build`, and `npm run test:e2e` pass, and one smoke run uses the deployed MySQL-backed backend rather than only SQLite fixtures.
+- `bun run lint`, `bun run test`, `bun run build`, and `bun run test:e2e` pass, and one smoke run uses the deployed MySQL-backed backend rather than only SQLite fixtures.

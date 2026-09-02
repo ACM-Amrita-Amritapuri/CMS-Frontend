@@ -1,0 +1,18 @@
+:root {
+  --color-surface: #f5f7fb;
+  --color-panel: #ffffff;
+  --color-text: #172033;
+  --color-muted: #536078;
+  --color-border: #d9dfeb;
+  --color-accent: #155eef;
+  --color-accent-hover: #124fca;
+  --color-focus: #f79009;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --shadow-card: 0 1rem 2.5rem rgb(23 32 51 / 8%);
+  --space-2: 0.5rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
