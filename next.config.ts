@@ -2,27 +2,32 @@ import type { NextConfig } from "next";
 
 // Same-origin proxy for the Flask backend. The refresh cookie is
 // Secure/HttpOnly/SameSite=Lax and scoped to /auth, so the browser must talk
-// to the backend through this origin. In production a reverse proxy (or
-// NEXT_PUBLIC_API_BASE_URL with matching CORS/cookie config) serves the same
-// purpose.
+// to the backend through this origin.
+//
+// API requests are recognized by the X-CMS-API header set in the fetch client
+// and rewritten before filesystem routes; without it, matching paths such as
+// /admin/sigs or /members/<roll_number> are served as app pages.
 const backendOrigin = process.env.BACKEND_ORIGIN ?? "http://127.0.0.1:5000";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   async rewrites() {
-    return [
-      "auth",
-      "members",
-      "admin",
-      "learning",
-      "documentation",
-      "projects",
-      "operations",
-      "health",
-    ].map((prefix) => ({
-      source: `/${prefix}/:path*`,
-      destination: `${backendOrigin}/${prefix}/:path*`,
-    }));
+    return {
+      beforeFiles: [
+        "auth",
+        "members",
+        "admin",
+        "learning",
+        "documentation",
+        "projects",
+        "operations",
+        "health",
+      ].map((prefix) => ({
+        source: `/${prefix}/:path*`,
+        has: [{ type: "header" as const, key: "x-cms-api" }],
+        destination: `${backendOrigin}/${prefix}/:path*`,
+      })),
+    };
   },
 };
 

@@ -83,6 +83,9 @@ async function send(path: string, options: ApiRequestOptions) {
   if (accessToken && !isAuthPath(path)) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
+  // Marks this as an API request for the same-origin rewrite proxy (see
+  // next.config.ts); page navigations to identical paths stay as pages.
+  headers.set("X-CMS-API", "1");
 
   init.credentials = "include";
   init.headers = headers;
