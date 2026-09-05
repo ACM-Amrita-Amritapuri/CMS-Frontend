@@ -1,13 +1,238 @@
 "use client";
 
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BookOpenIcon,
+  CalendarClockIcon,
+  FolderKanbanIcon,
+  GraduationCapIcon,
+  MegaphoneIcon,
+} from "lucide-react";
+
+import { getMyProfile } from "@/lib/api/members";
+import { listAnnouncements, listEvents } from "@/lib/api/operations";
+import { formatDate, formatRelative, formatDateTime } from "@/lib/formatters/date";
+import { useSession } from "@/app/providers";
+import { AsyncBoundary } from "@/components/ui/async";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/table";
+
+const quickLinks = [
+  { href: "/learning", label: "Learning", description: "Paths, lessons, and quizzes", icon: GraduationCapIcon },
+  { href: "/documentation", label: "Documentation", description: "Club knowledge base", icon: BookOpenIcon },
+  { href: "/projects", label: "Projects", description: "Build with a team", icon: FolderKanbanIcon },
+  { href: "/operations", label: "Operations", description: "Events and announcements", icon: MegaphoneIcon },
+];
+
 export default function DashboardPage() {
+  const { user } = useSession();
+
   return (
-    <div className="bg-card rounded-xl border p-6">
-      <h1 className="text-lg font-semibold">Dashboard</h1>
-      <p className="text-muted-foreground mt-1 text-sm">
-        Session verified — you&apos;re in. The full dashboard arrives with the
-        dashboard module.
-      </p>
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Welcome back, <span className="text-gradient">{user?.username ?? "member"}</span>
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Here&apos;s what&apos;s happening across the club.
+        </p>
+      </header>
+
+      <section aria-label="Quick links" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {quickLinks.map(({ href, label, description, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="bg-card hover:border-primary/50 hover:shadow-md group rounded-xl border p-4 transition-all"
+          >
+            <div className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-9 items-center justify-center rounded-lg transition-colors">
+              <Icon className="size-4" />
+            </div>
+            <p className="mt-3 text-sm font-semibold">{label}</p>
+            <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
+          </Link>
+        ))}
+      </section>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
+        <ProfilePanel />
+        <div className="flex flex-col gap-6">
+          <AnnouncementsPanel />
+          <UpcomingEventsPanel />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function ProfilePanel() {
+  const query = useQuery({ queryKey: ["profile", "me"], queryFn: getMyProfile });
+
+  return (
+    <AsyncBoundary
+      query={query}
+      empty={{ title: "No profile yet", description: "Complete your profile to personalize this space." }}
+    >
+      {(profile) => (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Your profile</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <span className="bg-primary/15 text-primary flex size-11 items-center justify-center rounded-full text-base font-bold">
+                {(profile.real_name || profile.username).slice(0, 1).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{profile.real_name || profile.username}</p>
+                <p className="text-muted-foreground truncate text-xs">
+                  {profile.year ? `Year ${profile.year} · ` : ""}
+                  {profile.branch || profile.roll_number}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {profile.skills.slice(0, 4).map((skill) => (
+                <Badge key={skill} variant="secondary" className="text-[10px]">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+            <Button asChild variant="outline" size="sm" className="self-start">
+              <Link href="/profile">View profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </AsyncBoundary>
+  );
+}
+
+function AnnouncementsPanel() {
+  const query = useQuery({
+    queryKey: ["announcements", "recent"],
+    queryFn: () => listAnnouncements({ limit: 5 }),
+  });
+
+  return (
+    <AsyncBoundary
+      query={query}
+      isEmpty={(items) => items.length === 0}
+      empty={{
+        title: "No announcements",
+        description: "Club announcements will appear here once published.",
+      }}
+      skeleton={<AnnouncementsSkeleton />}
+    >
+      {(items) => (
+        <Card>
+          <CardHeader className="flex-row items-center">
+            <CardTitle className="text-base">Announcements</CardTitle>
+            <Button asChild variant="ghost" size="sm" className="ml-auto">
+              <Link href="/operations">
+                All <CalendarClockIcon className="size-3.5" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="flex flex-col divide-y">
+            {items.map((item) => (
+              <AnnouncementRow key={item.id} item={item} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </AsyncBoundary>
+  );
+}
+
+function AnnouncementRow({ item }: { item: Awaited<ReturnType<typeof listAnnouncements>>[number] }) {
+  return (
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-medium">{item.title}</p>
+        <time className="text-muted-foreground shrink-0 text-xs">
+          {formatRelative(item.published_at)}
+        </time>
+      </div>
+      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">{item.body}</p>
+    </div>
+  );
+}
+
+function UpcomingEventsPanel() {
+  const query = useQuery({
+    queryKey: ["events", "recent"],
+    queryFn: () => listEvents({ limit: 10 }),
+  });
+
+  return (
+    <AsyncBoundary
+      query={query}
+      isEmpty={(events) => events.filter((event) => new Date(`${event.ends_at}Z`).getTime() > Date.now()).length === 0}
+      empty={{ title: "No upcoming events", description: "Upcoming club events will appear here." }}
+    >
+      {(events) => {
+        const upcoming = events
+          .filter((event) => new Date(`${event.ends_at}Z`).getTime() > Date.now())
+          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+          .slice(0, 4);
+        return (
+          <Card>
+            <CardHeader className="flex-row items-center">
+              <CardTitle className="text-base">Upcoming events</CardTitle>
+              <Button asChild variant="ghost" size="sm" className="ml-auto">
+                <Link href="/operations/events">All events</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {upcoming.map((event) => (
+                <Link
+                  key={event.id}
+                  href={`/operations/events/${event.id}`}
+                  className="hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 transition-colors"
+                >
+                  <div className="bg-primary/10 text-primary flex size-10 shrink-0 flex-col items-center justify-center rounded-lg text-[10px] font-bold leading-none">
+                    <span className="text-sm">{formatDate(event.starts_at).split(" ")[0]}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{event.title}</p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {formatDateTime(event.starts_at)}
+                      {event.location ? ` · ${event.location}` : ""}
+                    </p>
+                  </div>
+                  {event.capacity > 0 ? (
+                    <Badge variant="outline" className="ml-auto shrink-0">
+                      {event.registered_count}/{event.capacity}
+                    </Badge>
+                  ) : null}
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      }}
+    </AsyncBoundary>
+  );
+}
+
+function AnnouncementsSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Announcements</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex flex-col gap-1.5">
+            <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
+            <div className="bg-muted h-3 w-full animate-pulse rounded" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
