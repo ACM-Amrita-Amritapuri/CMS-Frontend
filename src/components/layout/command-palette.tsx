@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { useTheme } from "next-themes";
 import {
   BookOpenIcon,
   FolderKanbanIcon,
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { useSession } from "@/app/providers";
+import { useTheme } from "@/components/theme";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const destinations = [

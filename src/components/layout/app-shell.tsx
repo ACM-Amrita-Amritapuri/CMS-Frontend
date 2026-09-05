@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "@/components/theme";
 import {
   BookOpenIcon,
   ChartPieIcon,

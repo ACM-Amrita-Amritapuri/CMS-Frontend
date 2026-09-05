@@ -46,6 +46,19 @@ export async function getMyProfile() {
   return profile;
 }
 
+/**
+ * Initialize a missing profile. Normally accounts are created with a blank
+ * profile; this covers genuinely missing ones (e.g. the bootstrapped super
+ * admin), targeting self by username.
+ */
+export async function initializeMyProfile(username: string) {
+  const { profile } = await apiRequest<{ profile: ProfileView }>("/members", {
+    method: "POST",
+    body: { username },
+  });
+  return profile;
+}
+
 export async function updateMyProfile(input: ProfileInput) {
   const { profile } = await apiRequest<{ profile: ProfileView }>("/members/me", {
     method: "PUT",

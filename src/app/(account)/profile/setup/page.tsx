@@ -9,10 +9,16 @@ import { IdCardIcon, Loader2Icon } from "lucide-react";
 import { z } from "zod";
 
 import { getMe } from "@/lib/api/auth";
-import { getMyProfile, updateMyProfile, type ProfileInput } from "@/lib/api/members";
+import {
+  getMyProfile,
+  initializeMyProfile,
+  updateMyProfile,
+  type ProfileInput,
+} from "@/lib/api/members";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
 import { sessionStore } from "@/lib/auth/session-store";
+import { useSession } from "@/app/providers";
 import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
@@ -108,6 +114,25 @@ export default function ProfileSetupPage() {
     enabled: status === "ready" || status === "profile-incomplete",
   });
 
+  const { user } = useSession();
+  const initMutation = useMutation({
+    mutationFn: (username: string) => initializeMyProfile(username),
+    onSuccess: () => profileQuery.refetch(),
+  });
+
+  // A genuinely missing profile (no record at all) passes every gate but
+  // 404s here; create it once so the member can onboard.
+  useEffect(() => {
+    if (
+      profileQuery.error instanceof ApiError &&
+      profileQuery.error.status === 404 &&
+      user &&
+      !initMutation.isPending
+    ) {
+      initMutation.mutate(user.username);
+    }
+  }, [profileQuery.error, user, initMutation]);
+
   const isComplete = profileQuery.data?.is_complete === true;
 
   useEffect(() => {
@@ -155,7 +180,7 @@ export default function ProfileSetupPage() {
     saveMutation.mutate(formToProfileInput(data));
   });
 
-  if (status === "loading" || profileQuery.isPending) {
+  if (status === "loading" || profileQuery.isPending || initMutation.isPending) {
     return <div className="min-h-svh" />;
   }
   if (status === "error" || profileQuery.isError) {
