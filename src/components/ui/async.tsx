@@ -13,7 +13,11 @@ import { RefreshCwIcon } from "lucide-react";
 interface AsyncBoundaryProps<T> {
   query: ReturnType<typeof useQuery<T>>;
   children: (data: T) => React.ReactNode;
-  empty?: { title: string; description?: string };
+  empty?: {
+    title: string;
+    description?: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  };
   /** Normalize a non-empty check (e.g. lists return `{ items: [] }`). */
   isEmpty?: (data: T) => boolean;
   skeleton?: React.ReactNode;
@@ -39,6 +43,7 @@ export function AsyncBoundary<T>({
   if (isEmpty?.(query.data)) {
     return (
       <EmptyState
+        icon={empty?.icon}
         title={empty?.title ?? "Nothing here yet"}
         description={empty?.description}
       />

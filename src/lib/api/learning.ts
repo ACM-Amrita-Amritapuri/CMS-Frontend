@@ -1,0 +1,287 @@
+import { apiRequest } from "@/lib/api/client";
+
+export type PublicationState = "DRAFT" | "PUBLISHED";
+
+export interface LearningPath {
+  id: number;
+  title: string;
+  slug: string;
+  description: string | null;
+  sig_id: number | null;
+  publication_state: PublicationState;
+  modules?: LearningModule[];
+}
+
+export interface LearningModule {
+  id: number;
+  title: string;
+  slug: string;
+  position: number;
+  publication_state: PublicationState;
+  lessons: LearningLesson[];
+  assignments: LearningAssignment[];
+  quizzes: LearningQuiz[];
+}
+
+export interface LearningLesson {
+  id: number;
+  title: string;
+  slug: string;
+  position: number;
+  publication_state: PublicationState;
+  resources: LearningResource[];
+}
+
+export interface LearningResource {
+  id: number;
+  title: string;
+  resource_type: "MARKDOWN" | "EXTERNAL_LINK";
+  content: string | null;
+  external_url: string | null;
+  position: number;
+  publication_state: PublicationState;
+}
+
+export interface LearningAssignment {
+  id: number;
+  title: string;
+  instructions: string;
+  assignment_type: "TEXT" | "LINK";
+  position: number;
+  deadline_at: string | null;
+  publication_state: PublicationState;
+  /** Only present in submission responses. */
+  submission_state?: string;
+  content?: string | null;
+  external_url?: string | null;
+  submitted_at?: string | null;
+  feedback?: string | null;
+  score?: number | null;
+  reviewed_at?: string | null;
+}
+
+export interface LearningQuiz {
+  id: number;
+  title: string;
+  instructions: string;
+  position: number;
+  publication_state: PublicationState;
+  questions: QuizQuestion[];
+}
+
+export interface QuizQuestion {
+  id: number;
+  prompt: string;
+  choices: string[];
+  position: number;
+  correct_choice?: number;
+}
+
+export interface PathProgress {
+  path_id: number;
+  completed_items: number;
+  total_items: number;
+  percent_complete: number;
+  modules: {
+    module_id: number;
+    completed_items: number;
+    total_items: number;
+    percent_complete: number;
+  }[];
+}
+
+const limit = (value: number) => `?limit=${value}`;
+
+export async function listPaths() {
+  const { paths } = await apiRequest<{ paths: LearningPath[] }>(
+    `/learning/paths${limit(100)}`,
+  );
+  return paths;
+}
+
+export async function getPath(pathId: number) {
+  const { path } = await apiRequest<{ path: LearningPath }>(
+    `/learning/paths/${pathId}`,
+  );
+  return path;
+}
+
+export async function createPath(input: {
+  title: string;
+  slug: string;
+  description?: string | null;
+  sig_id?: number | null;
+}) {
+  const { path } = await apiRequest<{ path: LearningPath }>("/learning/paths", {
+    method: "POST",
+    body: input,
+  });
+  return path;
+}
+
+export async function setPathState(pathId: number, publication_state: PublicationState) {
+  const { path } = await apiRequest<{ path: LearningPath }>(
+    `/learning/paths/${pathId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return path;
+}
+
+export async function createModule(pathId: number, input: { title: string; slug: string; position: number }) {
+  const { module } = await apiRequest<{ module: LearningModule }>(
+    `/learning/paths/${pathId}/modules`,
+    { method: "POST", body: input },
+  );
+  return module;
+}
+
+export async function setModuleState(moduleId: number, publication_state: PublicationState) {
+  const { module } = await apiRequest<{ module: LearningModule }>(
+    `/learning/modules/${moduleId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return module;
+}
+
+export async function createLesson(moduleId: number, input: { title: string; slug: string; position: number }) {
+  const { lesson } = await apiRequest<{ lesson: LearningLesson }>(
+    `/learning/modules/${moduleId}/lessons`,
+    { method: "POST", body: input },
+  );
+  return lesson;
+}
+
+export async function setLessonState(lessonId: number, publication_state: PublicationState) {
+  const { lesson } = await apiRequest<{ lesson: LearningLesson }>(
+    `/learning/lessons/${lessonId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return lesson;
+}
+
+export async function createResource(
+  lessonId: number,
+  input: {
+    title: string;
+    resource_type: "MARKDOWN" | "EXTERNAL_LINK";
+    position: number;
+    content?: string;
+    external_url?: string;
+  },
+) {
+  const { resource } = await apiRequest<{ resource: LearningResource }>(
+    `/learning/lessons/${lessonId}/resources`,
+    { method: "POST", body: input },
+  );
+  return resource;
+}
+
+export async function setResourceState(resourceId: number, publication_state: PublicationState) {
+  const { resource } = await apiRequest<{ resource: LearningResource }>(
+    `/learning/resources/${resourceId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return resource;
+}
+
+export async function createAssignment(
+  moduleId: number,
+  input: {
+    title: string;
+    instructions: string;
+    assignment_type: "TEXT" | "LINK";
+    position: number;
+    deadline_at: string | null;
+  },
+) {
+  const { assignment } = await apiRequest<{ assignment: LearningAssignment }>(
+    `/learning/modules/${moduleId}/assignments`,
+    { method: "POST", body: input },
+  );
+  return assignment;
+}
+
+export async function setAssignmentState(assignmentId: number, publication_state: PublicationState) {
+  const { assignment } = await apiRequest<{ assignment: LearningAssignment }>(
+    `/learning/assignments/${assignmentId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return assignment;
+}
+
+export async function submitAssignment(
+  assignmentId: number,
+  input: { submission_state: "DRAFT" | "FINAL"; content?: string; external_url?: string },
+) {
+  const { submission } = await apiRequest<{ submission: LearningAssignment }>(
+    `/learning/assignments/${assignmentId}/submissions`,
+    { method: "POST", body: input },
+  );
+  return submission;
+}
+
+export async function reviewSubmission(
+  submissionId: number,
+  input: { feedback?: string; score?: number },
+) {
+  const { submission } = await apiRequest<{ submission: LearningAssignment }>(
+    `/learning/submissions/${submissionId}/review`,
+    { method: "PATCH", body: input },
+  );
+  return submission;
+}
+
+export async function createQuiz(
+  moduleId: number,
+  input: { title: string; instructions: string; position: number },
+) {
+  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(
+    `/learning/modules/${moduleId}/quizzes`,
+    { method: "POST", body: input },
+  );
+  return quiz;
+}
+
+export async function setQuizState(quizId: number, publication_state: PublicationState) {
+  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(
+    `/learning/quizzes/${quizId}`,
+    { method: "PATCH", body: { publication_state } },
+  );
+  return quiz;
+}
+
+export async function getQuiz(quizId: number) {
+  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(`/learning/quizzes/${quizId}`);
+  return quiz;
+}
+
+export async function createQuestion(
+  quizId: number,
+  input: { prompt: string; choices: string[]; correct_choice: number; position: number },
+) {
+  const { question } = await apiRequest<{ question: QuizQuestion }>(
+    `/learning/quizzes/${quizId}/questions`,
+    { method: "POST", body: input },
+  );
+  return question;
+}
+
+export async function attemptQuiz(quizId: number, answers: Record<string, number>) {
+  const { attempt } = await apiRequest<{
+    attempt: { quiz_id: number; score: number; total_questions: number };
+  }>(`/learning/quizzes/${quizId}/attempts`, { method: "POST", body: { answers } });
+  return attempt;
+}
+
+export async function completeLesson(lessonId: number) {
+  return apiRequest<{ message: string }>(`/learning/lessons/${lessonId}/complete`, {
+    method: "POST",
+  });
+}
+
+export async function getPathProgress(pathId: number) {
+  const { progress } = await apiRequest<{ progress: PathProgress }>(
+    `/learning/paths/${pathId}/progress`,
+  );
+  return progress;
+}
