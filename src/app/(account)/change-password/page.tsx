@@ -1,61 +1,146 @@
-import Link from "next/link";
+"use client";
 
-import PrototypeField from "@/components/forms/PrototypeField";
-import PrototypeNotice from "@/components/prototype/PrototypeNotice";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Loader2Icon, LockIcon } from "lucide-react";
+import { z } from "zod";
+
+import { changePassword } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/errors";
+import { parseForm } from "@/lib/form-validation";
+import { sessionStore } from "@/lib/auth/session-store";
+import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/input";
+
+const passwordSchema = z
+  .object({
+    current_password: z.string().min(1, "Enter your current password."),
+    new_password: z.string().min(8, "Use at least 8 characters."),
+    confirm_password: z.string(),
+  })
+  .refine((values) => values.new_password === values.confirm_password, {
+    message: "Passwords do not match.",
+    path: ["confirm_password"],
+  });
+
+type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function ChangePasswordPage() {
+  const router = useRouter();
+  const { status } = useSessionBootstrap();
+  const form = useForm<PasswordForm>({
+    defaultValues: { current_password: "", new_password: "", confirm_password: "" },
+  });
+
+  useEffect(() => {
+    if (status === "signed-out") router.replace("/login");
+    if (status === "profile-incomplete") router.replace("/profile/setup");
+  }, [status, router]);
+
+  const onSubmit = form.handleSubmit((values) => {
+    const data = parseForm(passwordSchema, values, (field, message) =>
+      form.setError(field as keyof PasswordForm, { message }),
+    );
+    if (!data) return;
+
+    return changePassword({
+      current_password: data.current_password,
+      new_password: data.new_password,
+    }).then(
+      () => {
+        // The backend invalidates every session after a password change,
+        // so the in-memory access token is dropped and re-login is required.
+        sessionStore.clearSession();
+        toast.success("Password updated. Please sign in with your new password.");
+        router.replace("/login");
+      },
+      (error: unknown) => {
+        if (error instanceof ApiError && error.status === 401) {
+          form.setError("current_password", { message: error.message });
+        } else if (error instanceof ApiError && error.status === 422) {
+          form.setError("new_password", { message: error.message });
+        } else {
+          toast.error(
+            error instanceof ApiError ? error.message : "Could not update the password.",
+          );
+        }
+      },
+    );
+  });
+
+  if (status !== "ready" && status !== "password-change-required") {
+    return <OnboardingSplash />;
+  }
+
+  const mustChange = status === "password-change-required";
+
   return (
-    <main className="auth-page">
-      <header className="auth-header">
-        <Link className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">A</span>
-          <span>ACM CMS</span>
-        </Link>
-        <Link className="text-link" href="/prototype">Screen map <span aria-hidden="true">↗</span></Link>
-      </header>
+    <div className="flex min-h-svh items-center justify-center px-4">
+      <div className="bg-card w-full max-w-md rounded-2xl border p-6 shadow-lg sm:p-8">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-xl">
+          <LockIcon className="size-5" />
+        </div>
+        <h1 className="text-xl font-semibold">
+          {mustChange ? "Set a new password" : "Change your password"}
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {mustChange
+            ? "Your account has a temporary password. Choose a new one to continue."
+            : "After changing your password you'll be signed out and need to log in again."}
+        </p>
 
-      <div className="auth-layout">
-        <section className="auth-card" aria-labelledby="change-password-title">
-          <div className="auth-card-heading">
-            <p className="eyebrow">Account setup · 01</p>
-            <h1 id="change-password-title">Set a new password</h1>
-            <p>This one-time step protects your account before you enter the workspace.</p>
-          </div>
-
-          <div className="auth-callout auth-callout-warning">
-            <span className="callout-icon" aria-hidden="true">!</span>
-            <div>
-              <strong>Temporary password</strong>
-              <p>Your administrator’s temporary password expires after this first change.</p>
-            </div>
-          </div>
-
-          <form className="prototype-form">
-            <PrototypeField hint="The temporary password from your administrator." id="current-password" label="Current password" type="password" required />
-            <PrototypeField hint="Use something only you know." id="new-password" label="New password" type="password" required />
-            <PrototypeField hint="Enter the same password again." id="confirm-password" label="Confirm new password" type="password" required />
-            <button className="button button-wide" type="button">Change password</button>
-          </form>
-        </section>
-
-        <aside className="auth-side" aria-label="Password requirements">
-          <PrototypeNotice />
-          <div className="auth-side-content">
-            <span className="panel-kicker">Password checklist</span>
-            <h2>Strong enough to forget about.</h2>
-            <ul className="check-list check-list-status">
-              <li><span aria-hidden="true">✓</span>At least 8 characters</li>
-              <li><span aria-hidden="true">✓</span>One uppercase letter</li>
-              <li><span aria-hidden="true">✓</span>One number or symbol</li>
-              <li><span aria-hidden="true">✓</span>Does not match your username</li>
-            </ul>
-          </div>
-          <div className="auth-success">
-            <span className="status-dot" aria-hidden="true" />
-            <div><strong>Password changed successfully</strong><span>You can continue to profile setup.</span></div>
-          </div>
-        </aside>
+        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+          <Field
+            label="Current password"
+            htmlFor="current_password"
+            error={form.formState.errors.current_password?.message}
+          >
+            <Input
+              id="current_password"
+              type="password"
+              autoComplete="current-password"
+              autoFocus
+              {...form.register("current_password")}
+            />
+          </Field>
+          <Field
+            label="New password"
+            htmlFor="new_password"
+            hint="At least 8 characters."
+            error={form.formState.errors.new_password?.message}
+          >
+            <Input
+              id="new_password"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("new_password")}
+            />
+          </Field>
+          <Field
+            label="Confirm new password"
+            htmlFor="confirm_password"
+            error={form.formState.errors.confirm_password?.message}
+          >
+            <Input
+              id="confirm_password"
+              type="password"
+              autoComplete="new-password"
+              {...form.register("confirm_password")}
+            />
+          </Field>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
+            Update password
+          </Button>
+        </form>
       </div>
-    </main>
+    </div>
   );
+}
+
+function OnboardingSplash() {
+  return <div className="min-h-svh" />;
 }

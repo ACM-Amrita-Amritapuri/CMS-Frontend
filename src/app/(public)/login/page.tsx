@@ -1,74 +1,159 @@
-import Link from "next/link";
+"use client";
 
-import PrototypeField from "@/components/forms/PrototypeField";
-import PrototypeNotice from "@/components/prototype/PrototypeNotice";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { motion } from "motion/react";
+import { GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
+import { z } from "zod";
+
+import { login } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/errors";
+import { parseForm } from "@/lib/form-validation";
+import { sessionStore } from "@/lib/auth/session-store";
+import { Button } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/input";
+
+const loginSchema = z.object({
+  login: z.string().min(1, "Enter your username or roll number."),
+  password: z.string().min(1, "Enter your password."),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
+
+const highlights = [
+  { icon: GraduationCapIcon, text: "Structured learning paths for every SIG" },
+  { icon: SparklesIcon, text: "Showcase projects and grow your portfolio" },
+  { icon: ShieldCheckIcon, text: "One workspace for the whole club" },
+];
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<LoginForm>({ defaultValues: { login: "", password: "" } });
+
+  const onSubmit = form.handleSubmit((values) => {
+    setFormError(null);
+    const data = parseForm(loginSchema, values, (field, message) =>
+      form.setError(field as keyof LoginForm, { message }),
+    );
+    if (!data) return;
+
+    return login(data).then(
+      (response) => {
+        sessionStore.setSession(response.user, response.access_token);
+        router.replace(
+          response.user.must_change_password ? "/change-password" : "/dashboard",
+        );
+      },
+      (error: unknown) => {
+        setFormError(
+          error instanceof ApiError
+            ? error.message
+            : "Could not sign in. Please try again.",
+        );
+      },
+    );
+  });
+
   return (
-    <main className="auth-page">
-      <header className="auth-header">
-        <Link className="brand" href="/">
-          <span className="brand-mark" aria-hidden="true">A</span>
-          <span>ACM CMS</span>
-        </Link>
-        <Link className="text-link" href="/prototype">Screen map <span aria-hidden="true">↗</span></Link>
-      </header>
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden px-4">
+      <BackgroundGlow />
+      <div className="relative grid w-full max-w-4xl gap-10 lg:grid-cols-[1fr_400px] lg:items-center">
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="hidden flex-col gap-6 lg:flex"
+        >
+          <Brand />
+          <h1 className="text-4xl font-semibold tracking-tight text-balance">
+            The club workspace for{" "}
+            <span className="text-gradient">learning, building, and running</span> ACM.
+          </h1>
+          <ul className="flex flex-col gap-3">
+            {highlights.map(({ icon: Icon, text }) => (
+              <li key={text} className="text-muted-foreground flex items-center gap-3 text-sm">
+                <span className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-lg">
+                  <Icon className="size-4" />
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
+        </motion.section>
 
-      <div className="auth-layout">
-        <section className="auth-card" aria-labelledby="login-title">
-          <div className="auth-card-heading">
-            <p className="eyebrow">Member access</p>
-            <h1 id="login-title">Welcome back</h1>
-            <p>Sign in to continue learning, building, and contributing with your club.</p>
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-card rounded-2xl border p-6 shadow-lg sm:p-8"
+        >
+          <div className="mb-6 lg:hidden">
+            <Brand />
           </div>
+          <h2 className="text-xl font-semibold">Sign in</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Accounts are created by club administrators.
+          </p>
 
-          <div className="auth-alert" role="alert">
-            <strong>Invalid credentials</strong>
-            <span>Check your roll number or username and try again.</span>
-          </div>
-
-          <form className="prototype-form">
-            <PrototypeField
-              hint="Use the identifier from your club account."
-              id="login"
-              label="Roll number or username"
-              placeholder="e.g. ACM-024"
-              required
-            />
-            <PrototypeField
-              hint="Your password is never shown in the URL or browser storage."
-              id="password"
+          <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+            <Field
+              label="Username or roll number"
+              htmlFor="login"
+              error={form.formState.errors.login?.message}
+            >
+              <Input id="login" autoComplete="username" autoFocus {...form.register("login")} />
+            </Field>
+            <Field
               label="Password"
-              type="password"
-              placeholder="Enter your password"
-              required
-            />
-            <div className="form-row form-row-between">
-              <label className="checkbox-label">
-                <input type="checkbox" />
-                <span>Remember this device</span>
-              </label>
-              <button className="text-button" type="button">Forgot password?</button>
-            </div>
-            <button className="button button-wide" type="button">Sign in</button>
+              htmlFor="password"
+              error={form.formState.errors.password?.message}
+            >
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                {...form.register("password")}
+              />
+            </Field>
+            {formError ? (
+              <p role="alert" className="text-destructive text-sm font-medium">
+                {formError}
+              </p>
+            ) : null}
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 w-full">
+              {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
+              Sign in
+            </Button>
           </form>
-          <p className="auth-footer-copy">New to the club? Your administrator can create an account for you.</p>
-        </section>
 
-        <aside className="auth-side" aria-label="Login screen notes">
-          <PrototypeNotice />
-          <div className="auth-side-content">
-            <span className="panel-kicker">What this screen needs</span>
-            <h2>Make the first step feel light.</h2>
-            <ul className="check-list">
-              <li>Clear account identifier guidance</li>
-              <li>Readable invalid-credentials recovery</li>
-              <li>Visible path to password help</li>
-              <li>Keyboard-first form flow</li>
-            </ul>
-          </div>
-        </aside>
+          <p className="text-muted-foreground mt-6 text-center text-xs">
+            Trouble signing in? Ask an administrator to reset your password.
+          </p>
+        </motion.section>
       </div>
-    </main>
+    </div>
+  );
+}
+
+function Brand() {
+  return (
+    <Link href="/login" className="flex items-center gap-2.5 font-semibold">
+      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-base font-bold shadow-md">
+        A
+      </span>
+      <span className="text-lg">ACM CMS</span>
+    </Link>
+  );
+}
+
+function BackgroundGlow() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+      <div className="absolute top-[-20%] left-[10%] size-[500px] rounded-full bg-primary/15 blur-[120px]" />
+      <div className="absolute right-[5%] bottom-[-10%] size-[400px] rounded-full bg-info/10 blur-[100px]" />
+    </div>
   );
 }

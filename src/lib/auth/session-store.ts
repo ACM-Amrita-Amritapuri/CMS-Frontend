@@ -27,11 +27,11 @@ export class SessionStore {
     this.notify();
   }
 
+  /**
+   * Store a token without a user yet (e.g. cookie refresh during onboarding,
+   * where /auth/me is still gated by password/profile states).
+   */
   setAccessToken(accessToken: string) {
-    if (!this.state.user) {
-      return;
-    }
-
     this.state = { ...this.state, accessToken };
     this.notify();
   }
