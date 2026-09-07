@@ -20,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/input";
 
+const urlField = z
+  .string()
+  .trim()
+  .refine((value) => value === "" || /^https?:\/\/.+$/.test(value), "Enter a valid URL (including https://).")
+  .transform((value) => (value === "" ? null : value));
+
 const editableSchema = z.object({
   real_name: z.string().min(1, "Enter your full name."),
   year: z.coerce.number().int().min(1, "Year must be 1–4.").max(4, "Year must be 1–4."),
@@ -28,7 +34,22 @@ const editableSchema = z.object({
   skills: z.string().min(1, "List at least one skill."),
   interests: z.string(),
   hobbies: z.string(),
+  github_url: urlField,
+  linkedin_url: urlField,
+  leetcode_url: urlField,
+  codechef_url: urlField,
+  codeforces_url: urlField,
+  hackerrank_url: urlField,
 });
+
+const socialFields = [
+  ["github_url", "GitHub URL"],
+  ["linkedin_url", "LinkedIn URL"],
+  ["leetcode_url", "LeetCode URL"],
+  ["codechef_url", "CodeChef URL"],
+  ["codeforces_url", "Codeforces URL"],
+  ["hackerrank_url", "HackerRank URL"],
+] as const;
 
 type EditableForm = z.input<typeof editableSchema>;
 
@@ -97,6 +118,12 @@ function ProfileEditForm({
       skills: data.skills.split(",").map((s) => s.trim()).filter(Boolean),
       interests: data.interests.trim(),
       hobbies: data.hobbies.trim(),
+      github_url: data.github_url,
+      linkedin_url: data.linkedin_url,
+      leetcode_url: data.leetcode_url,
+      codechef_url: data.codechef_url,
+      codeforces_url: data.codeforces_url,
+      hackerrank_url: data.hackerrank_url,
     });
   });
 
@@ -139,9 +166,18 @@ function ProfileEditForm({
               <Input id="hobbies" {...form.register("hobbies")} />
             </Field>
           </div>
-          <p className="text-muted-foreground text-xs">
-            Social links are managed through the onboarding profile setup.
-          </p>
+          <div className="border-t pt-4">
+            <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+              Social & competitive profiles (optional)
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {socialFields.map(([key, label]) => (
+                <Field key={key} label={label} htmlFor={key} error={errors[key]?.message}>
+                  <Input id={key} type="url" placeholder="https://" {...form.register(key)} />
+                </Field>
+              ))}
+            </div>
+          </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={save.isPending}>
               Save changes
@@ -166,6 +202,12 @@ function useFormState(profile: Awaited<ReturnType<typeof getMyProfile>>) {
       skills: profile.skills?.join(", ") ?? "",
       interests: profile.interests ?? "",
       hobbies: profile.hobbies ?? "",
+      github_url: profile.github_url ?? "",
+      linkedin_url: profile.linkedin_url ?? "",
+      leetcode_url: profile.leetcode_url ?? "",
+      codechef_url: profile.codechef_url ?? "",
+      codeforces_url: profile.codeforces_url ?? "",
+      hackerrank_url: profile.hackerrank_url ?? "",
     },
   });
 }

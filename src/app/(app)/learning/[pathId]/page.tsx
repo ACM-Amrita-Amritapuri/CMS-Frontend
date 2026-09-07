@@ -138,6 +138,7 @@ function firstSelection(modules: LearningModule[]): Selection | null {
 }
 
 function PublishPathButton({ pathId, state }: { pathId: number; state: string }) {
+  const { hasCapability } = useSession();
   const queryClient = useQueryClient();
   const publish = useMutation({
     mutationFn: () => setPathState(pathId, "PUBLISHED"),
@@ -149,7 +150,7 @@ function PublishPathButton({ pathId, state }: { pathId: number; state: string })
       toast.error(error instanceof ApiError ? error.message : "Could not publish."),
   });
 
-  if (state === "PUBLISHED") return null;
+  if (state === "PUBLISHED" || !hasCapability("manage_content")) return null;
   return (
     <Button onClick={() => publish.mutate()} disabled={publish.isPending}>
       Publish path
