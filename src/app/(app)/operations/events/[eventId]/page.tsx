@@ -8,12 +8,14 @@ import { ArrowLeftIcon, CalendarX2Icon, MapPinIcon, SendIcon, TicketIcon } from 
 
 import {
   cancelEvent,
+  cancelRegistration,
   getEvent,
   listAttendance,
   publishEvent,
   recordAttendance,
   registerForEvent,
   submitEventFeedback,
+  type Registration,
 } from "@/lib/api/club-operations";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
@@ -52,7 +54,7 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
 }
 
 function EventDetail({ eventId }: { eventId: number }) {
-  const { user, hasCapability } = useSession();
+  const { hasCapability } = useSession();
   // Subscribe to a once-per-minute tick so "has ended" stays current without
   // calling the impure Date.now during render.
   const now = useSyncExternalStore(
@@ -77,22 +79,35 @@ function EventDetail({ eventId }: { eventId: number }) {
   const attendanceQuery = useQuery({
     queryKey: ["operations", "attendance", eventId],
     queryFn: () => listAttendance(eventId),
+    enabled: manage,
   });
   const attendance = attendanceQuery.data ?? [];
-  const myAttendance = attendance.find((record) => record.member_user_id === user?.id);
 
+  const [registration, setRegistration] = useState<Registration | null>(null);
   const [memberId, setMemberId] = useState("");
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
 
   const register = useMutation({
     mutationFn: () => registerForEvent(eventId),
-    onSuccess: () => {
+    onSuccess: (created) => {
+      setRegistration(created);
       refresh();
       toast.success("You're registered.");
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Could not register."),
+  });
+
+  const unregister = useMutation({
+    mutationFn: () => cancelRegistration(registration!.id),
+    onSuccess: () => {
+      setRegistration(null);
+      refresh();
+      toast.success("Registration cancelled.");
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Could not cancel registration."),
   });
 
   const publish = useMutation({
@@ -183,10 +198,20 @@ function EventDetail({ eventId }: { eventId: number }) {
       {/* Member actions */}
       {event.state === "PUBLISHED" && !hasEnded ? (
         <div className="border-t pt-4">
-          {myAttendance ? (
-            <p className="text-success flex items-center gap-2 text-sm font-medium">
-              <TicketIcon className="size-4" /> Attendance recorded — see you there!
-            </p>
+          {registration ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-success flex items-center gap-2 text-sm font-medium">
+                <TicketIcon className="size-4" /> You&apos;re registered.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => unregister.mutate()}
+                disabled={unregister.isPending}
+              >
+                Cancel registration
+              </Button>
+            </div>
           ) : (
             <Button onClick={() => register.mutate()} disabled={register.isPending || isFull}>
               <TicketIcon /> {isFull ? "Event full" : "Register"}

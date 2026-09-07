@@ -10,7 +10,9 @@ import {
   applyToCycle,
   createCycle,
   listCycles,
+  listCycleApplications,
   transitionCycle,
+  updateRecruitmentApplication,
   type RecruitmentCycle,
 } from "@/lib/api/club-operations";
 import { listSigs } from "@/lib/api/admin";
@@ -79,7 +81,16 @@ function CycleCard({ cycle }: { cycle: RecruitmentCycle }) {
   const [statement, setStatement] = useState("");
   const [preferredSig, setPreferredSig] = useState("none");
 
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs() });
+  const sigs = useQuery({
+    queryKey: ["sigs"],
+    queryFn: () => listSigs(),
+    enabled: applying || manage,
+  });
+  const applications = useQuery({
+    queryKey: ["recruitment", "applications", cycle.id],
+    queryFn: () => listCycleApplications(cycle.id),
+    enabled: manage,
+  });
 
   const transition = useMutation({
     mutationFn: () => transitionCycle(cycle.id, cycle.state === "DRAFT" ? "open" : "close"),
@@ -104,6 +115,22 @@ function CycleCard({ cycle }: { cycle: RecruitmentCycle }) {
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Could not apply."),
+  });
+
+  const review = useMutation({
+    mutationFn: ({
+      applicationId,
+      decision,
+    }: {
+      applicationId: number;
+      decision: "REVIEW" | "INTERVIEW" | "SELECT" | "REJECT";
+    }) => updateRecruitmentApplication(applicationId, { decision }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recruitment"] });
+      toast.success("Application updated.");
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Could not update the application."),
   });
 
   const isOpen = cycle.state === "OPEN";
@@ -184,6 +211,70 @@ function CycleCard({ cycle }: { cycle: RecruitmentCycle }) {
           </Button>
         ) : null}
       </div>
+
+      {manage ? (
+        <section className="mt-4 border-t pt-4">
+          <h3 className="text-sm font-semibold">Applications</h3>
+          {applications.isPending ? (
+            <p className="text-muted-foreground mt-2 text-sm">Loading applications…</p>
+          ) : applications.data?.length ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {applications.data.map((application) => (
+                <li key={application.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">Applicant #{application.applicant_user_id}</p>
+                    <p className="text-muted-foreground text-xs">{application.statement}</p>
+                  </div>
+                  <Badge variant="secondary">
+                    {application.state.toLowerCase().replace("_", " ")}
+                  </Badge>
+                  {application.state === "SUBMITTED" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => review.mutate({ applicationId: application.id, decision: "REVIEW" })}
+                      disabled={review.isPending}
+                    >
+                      Review
+                    </Button>
+                  ) : null}
+                  {application.state === "UNDER_REVIEW" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => review.mutate({ applicationId: application.id, decision: "INTERVIEW" })}
+                      disabled={review.isPending}
+                    >
+                      Interview
+                    </Button>
+                  ) : null}
+                  {application.state === "INTERVIEW" ? (
+                    <Button
+                      size="sm"
+                      onClick={() => review.mutate({ applicationId: application.id, decision: "SELECT" })}
+                      disabled={review.isPending}
+                    >
+                      Select
+                    </Button>
+                  ) : null}
+                  {application.state === "UNDER_REVIEW" || application.state === "INTERVIEW" ? (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => review.mutate({ applicationId: application.id, decision: "REJECT" })}
+                      disabled={review.isPending}
+                    >
+                      Reject
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground mt-2 text-sm">No applications yet.</p>
+          )}
+        </section>
+      ) : null}
     </li>
   );
 }

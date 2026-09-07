@@ -87,10 +87,11 @@ export function QueryErrorState({
 
   const message =
     error instanceof Error ? error.message : "Something went wrong. Please try again.";
+  const forbidden = error instanceof ApiError && error.status === 403;
   return (
     <EmptyState
-      title="Couldn't load this content"
-      description={message}
+      title={forbidden ? "Access denied" : "Couldn't load this content"}
+      description={forbidden ? "You do not have permission to view this content." : message}
       action={
         <Button variant="outline" size="sm" onClick={retry}>
           <RefreshCwIcon /> Retry

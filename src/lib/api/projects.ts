@@ -92,15 +92,6 @@ export interface Project {
   applications: ProjectApplication[];
 }
 
-export interface ProjectInvitation {
-  id: number;
-  project_id: number;
-  role_id: number;
-  member_user_id: number;
-  state: "PENDING" | "ACCEPTED" | "DECLINED";
-  expires_at: string;
-}
-
 export async function listProjects(limit = 100) {
   const { projects } = await apiRequest<{ projects: Project[] }>(`/projects?limit=${limit}`);
   return projects;
@@ -128,23 +119,6 @@ export async function createProposal(input: {
   const { proposal } = await apiRequest<{ proposal: ProjectProposal }>(
     "/projects/proposals",
     { method: "POST", body: input },
-  );
-  return proposal;
-}
-
-export async function updateProposal(
-  proposalId: number,
-  input: Partial<{
-    title: string;
-    summary: string;
-    description: string;
-    sig_id: number | null;
-    team_capacity: number;
-  }>,
-) {
-  const { proposal } = await apiRequest<{ proposal: ProjectProposal }>(
-    `/projects/proposals/${proposalId}`,
-    { method: "PATCH", body: input },
   );
   return proposal;
 }
@@ -241,40 +215,10 @@ export async function createMilestone(
   return milestone;
 }
 
-export async function inviteMember(
-  projectId: number,
-  input: { role_id: number; member_user_id: number; expires_at?: string },
-) {
-  const { invitation } = await apiRequest<{ invitation: ProjectInvitation }>(
-    `/projects/${projectId}/invitations`,
-    { method: "POST", body: input },
-  );
-  return invitation;
-}
-
-export async function respondToInvitation(
-  invitationId: number,
-  decision: "ACCEPT" | "DECLINE",
-) {
-  const { invitation } = await apiRequest<{ invitation: ProjectInvitation }>(
-    `/projects/invitations/${invitationId}/respond`,
-    { method: "POST", body: { decision } },
-  );
-  return invitation;
-}
-
 export async function leaveProject(projectId: number) {
   const { membership } = await apiRequest<{ membership: ProjectMembership }>(
     `/projects/${projectId}/leave`,
     { method: "POST" },
-  );
-  return membership;
-}
-
-export async function removeMembership(membershipId: number) {
-  const { membership } = await apiRequest<{ membership: ProjectMembership }>(
-    `/projects/memberships/${membershipId}`,
-    { method: "DELETE" },
   );
   return membership;
 }
@@ -295,13 +239,6 @@ export async function upsertShowcase(
   const { showcase } = await apiRequest<{ showcase: ProjectShowcase }>(
     `/projects/${projectId}/showcase`,
     { method: "POST", body: input },
-  );
-  return showcase;
-}
-
-export async function getShowcase(showcaseId: number) {
-  const { showcase } = await apiRequest<{ showcase: ProjectShowcase }>(
-    `/projects/showcases/${showcaseId}`,
   );
   return showcase;
 }

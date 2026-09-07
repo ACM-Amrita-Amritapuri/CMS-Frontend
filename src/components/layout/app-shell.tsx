@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,14 +59,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
     <div className="flex min-h-svh">
       <Sidebar className="hidden lg:flex" />
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          <button
+            type="button"
+            aria-label="Close navigation"
+            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
           <Sidebar className="animate-slide-up fixed inset-y-0 left-0 z-50 w-64" onNavigate={() => setMobileOpen(false)} />
