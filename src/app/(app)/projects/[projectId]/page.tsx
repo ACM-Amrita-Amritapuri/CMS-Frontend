@@ -12,7 +12,6 @@ import {
   UserPlusIcon,
   UsersIcon,
 } from "lucide-react";
-import { z } from "zod";
 
 import {
   applyToRole,
@@ -33,7 +32,7 @@ import {
 } from "@/lib/api/projects";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
-import { AsyncBoundary, QueryErrorState } from "@/components/ui/async";
+import { QueryErrorState } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";

@@ -7,13 +7,11 @@ import {
   CircleUserIcon,
   LayersIcon,
   ShieldCheckIcon,
-  UserMinusIcon,
   UsersIcon,
 } from "lucide-react";
 
 import { getDashboardSummary } from "@/lib/api/admin";
-import { AsyncBoundary, QueryErrorState } from "@/components/ui/async";
-import { Button } from "@/components/ui/button";
+import { QueryErrorState } from "@/components/ui/async";
 import { Skeleton } from "@/components/ui/primitives";
 
 const tiles = [

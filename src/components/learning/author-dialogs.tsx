@@ -31,7 +31,7 @@ import {
  * Author dialogs for every hierarchy level. Each dialog posts to the matching
  * endpoint and refreshes the whole path tree on success.
  */
-export function useAuthorActions(pathId: number, onDone: () => void) {
+export function useAuthorActions(onDone: () => void) {
   const queryClient = useQueryClient();
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["learning"] });

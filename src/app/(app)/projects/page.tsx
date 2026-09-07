@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2Icon, FolderKanbanIcon, PlusIcon, XCircleIcon } from "lucide-react";
@@ -32,7 +31,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/primitives";
-import { EmptyState } from "@/components/ui/table";
 
 const proposalSchema = z.object({
   title: z.string().min(1, "Enter a title."),

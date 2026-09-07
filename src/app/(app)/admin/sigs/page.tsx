@@ -23,7 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { EmptyState } from "@/components/ui/table";
 
 const sigSchema = z.object({
   name: z.string().min(1, "Enter a SIG name."),

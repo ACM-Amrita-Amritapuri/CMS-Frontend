@@ -30,7 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { EmptyState } from "@/components/ui/table";
 
 const stateVariants: Record<DocumentState, "success" | "info" | "warning" | "destructive" | "secondary"> = {
   PUBLISHED: "success",
@@ -70,7 +69,6 @@ function DocumentationContent() {
     enabled: q === "",
   });
 
-  const documents = q !== "" ? searchQuery.data : listQuery.data;
   const query = q !== "" ? searchQuery : listQuery;
 
   return (

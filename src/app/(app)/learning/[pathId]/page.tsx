@@ -28,7 +28,7 @@ import {
 } from "@/lib/api/learning";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
-import { AsyncBoundary, QueryErrorState } from "@/components/ui/async";
+import { QueryErrorState } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
@@ -451,7 +451,7 @@ function CompleteButton({
 function AuthorTools({ pathId, modules }: { pathId: number; modules: LearningModule[] }) {
   const { hasCapability } = useSession();
   const [dialog, setDialog] = useState<DialogKind>(null);
-  const author = useAuthorActions(pathId, () => setDialog(null));
+  const author = useAuthorActions(() => setDialog(null));
 
   if (!hasCapability("manage_content")) return null;
 

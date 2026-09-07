@@ -26,7 +26,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/primitives";
-import { EmptyState } from "@/components/ui/table";
 
 const pathSchema = z.object({
   title: z.string().min(1, "Enter a title."),
