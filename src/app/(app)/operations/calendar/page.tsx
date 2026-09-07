@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
 
 import { getCalendarRange } from "@/lib/api/club-operations";
-import { formatDateTime } from "@/lib/formatters/date";
+import { formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,8 +88,8 @@ export default function CalendarPage() {
                     className="hover:border-primary/50 flex items-center gap-4 rounded-xl border p-4 transition-colors"
                   >
                     <div className="bg-primary/10 text-primary flex size-12 shrink-0 flex-col items-center justify-center rounded-lg text-xs font-bold">
-                      <span>{new Date(`${event.starts_at}Z`).toLocaleDateString(undefined, { month: "short" })}</span>
-                      <span className="text-base leading-none">{new Date(`${event.starts_at}Z`).getDate()}</span>
+                      <span>{parseUtc(event.starts_at)?.toLocaleDateString(undefined, { month: "short" }) ?? "—"}</span>
+                      <span className="text-base leading-none">{parseUtc(event.starts_at)?.getDate() ?? "—"}</span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{event.title}</p>

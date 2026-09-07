@@ -4,9 +4,9 @@
  * Outbound form values must be ISO-8601 with an explicit offset.
  */
 
-function parseUtc(value: string | null | undefined): Date | null {
+export function parseUtc(value: string | null | undefined): Date | null {
   if (!value) return null;
-  const normalized = value.endsWith("Z") ? value : `${value}Z`;
+  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(value) ? value : `${value}Z`;
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date;
 }

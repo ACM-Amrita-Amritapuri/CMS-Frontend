@@ -17,7 +17,7 @@ import {
 } from "@/lib/api/club-operations";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
-import { formatDateTime } from "@/lib/formatters/date";
+import { formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { QueryErrorState } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,8 +146,8 @@ function EventDetail({ eventId }: { eventId: number }) {
 
   if (!event) return null;
 
-  const endsAt = new Date(`${event.ends_at}Z`).getTime();
-  const hasEnded = now > 0 && endsAt < now;
+  const endsAt = parseUtc(event.ends_at)?.getTime();
+  const hasEnded = now > 0 && endsAt !== undefined && endsAt < now;
   const isFull = event.registered_count >= event.capacity;
 
   return (

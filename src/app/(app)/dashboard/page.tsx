@@ -11,14 +11,13 @@ import {
 } from "lucide-react";
 
 import { getMyProfile } from "@/lib/api/members";
-import { listAnnouncements, listEvents } from "@/lib/api/operations";
-import { formatDate, formatRelative, formatDateTime } from "@/lib/formatters/date";
+import { listAnnouncements, listEvents } from "@/lib/api/club-operations";
+import { formatDate, formatRelative, formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { useSession } from "@/app/providers";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/table";
 
 const quickLinks = [
   { href: "/learning", label: "Learning", description: "Paths, lessons, and quizzes", icon: GraduationCapIcon },
@@ -171,12 +170,12 @@ function UpcomingEventsPanel() {
   return (
     <AsyncBoundary
       query={query}
-      isEmpty={(events) => events.filter((event) => new Date(`${event.ends_at}Z`).getTime() > Date.now()).length === 0}
+      isEmpty={(events) => events.filter((event) => (parseUtc(event.ends_at)?.getTime() ?? 0) > Date.now()).length === 0}
       empty={{ title: "No upcoming events", description: "Upcoming club events will appear here." }}
     >
       {(events) => {
         const upcoming = events
-          .filter((event) => new Date(`${event.ends_at}Z`).getTime() > Date.now())
+          .filter((event) => (parseUtc(event.ends_at)?.getTime() ?? 0) > Date.now())
           .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
           .slice(0, 4);
         return (
@@ -184,7 +183,7 @@ function UpcomingEventsPanel() {
             <CardHeader className="flex-row items-center">
               <CardTitle className="text-base">Upcoming events</CardTitle>
               <Button asChild variant="ghost" size="sm" className="ml-auto">
-                <Link href="/operations/events">All events</Link>
+                <Link href="/operations">All operations</Link>
               </Button>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
