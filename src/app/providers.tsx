@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { useSyncExternalStore, createContext, useContext } from "react";
-import { TooltipProvider } from "@/components/ui/primitives";
 import { ThemeProvider } from "@/components/theme";
 import { sessionStore, type SessionStore } from "@/lib/auth/session-store";
 
@@ -39,10 +38,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionStoreContext.Provider value={sessionStore}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster position="top-center" richColors closeButton />
-          </TooltipProvider>
+          {children}
+          <Toaster position="top-center" richColors closeButton />
         </ThemeProvider>
       </QueryClientProvider>
     </SessionStoreContext.Provider>

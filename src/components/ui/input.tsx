@@ -90,4 +90,4 @@ function Field({
   );
 }
 
-export { Input, Textarea, Label, Field, FieldError };
+export { Input, Textarea, Field };

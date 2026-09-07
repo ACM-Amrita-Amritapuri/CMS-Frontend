@@ -2,8 +2,6 @@
 
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
-import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 
 import { cn } from "@/lib/utils";
@@ -56,59 +54,6 @@ function TabsContent({
   );
 }
 
-function TooltipProvider(props: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
-  return <TooltipPrimitive.Provider delayDuration={200} {...props} />;
-}
-
-function Tooltip(props: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-  return <TooltipPrimitive.Root {...props} />;
-}
-
-function TooltipTrigger(props: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger {...props} />;
-}
-
-function TooltipContent({
-  className,
-  sideOffset = 6,
-  children,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
-  return (
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content
-        sideOffset={sideOffset}
-        className={cn(
-          "bg-foreground text-background z-50 w-fit rounded-md px-2.5 py-1 text-xs font-medium data-[state=delayed-open]:animate-fade-in",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </TooltipPrimitive.Content>
-    </TooltipPrimitive.Portal>
-  );
-}
-
-function Separator({
-  className,
-  orientation = "horizontal",
-  decorative = true,
-  ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
-  return (
-    <SeparatorPrimitive.Root
-      decorative={decorative}
-      orientation={orientation}
-      className={cn(
-        "bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function Progress({
   className,
   value,
@@ -141,11 +86,6 @@ export {
   TabsList,
   TabsTrigger,
   TabsContent,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  Separator,
   Progress,
   Skeleton,
 };
