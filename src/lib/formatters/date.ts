@@ -26,12 +26,6 @@ export function formatDate(value: string | null | undefined): string {
   return date.toLocaleDateString(undefined, { dateStyle: "medium" });
 }
 
-export function formatTime(value: string | null | undefined): string {
-  const date = parseUtc(value);
-  if (!date) return "—";
-  return date.toLocaleTimeString(undefined, { timeStyle: "short" });
-}
-
 export function formatRelative(value: string | null | undefined): string {
   const date = parseUtc(value);
   if (!date) return "—";
@@ -57,12 +51,4 @@ export function localInputToIso(value: string): string | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
-/** UTC backend value → value usable in a datetime-local input. */
-export function isoToLocalInput(value: string | null | undefined): string {
-  const date = parseUtc(value);
-  if (!date) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

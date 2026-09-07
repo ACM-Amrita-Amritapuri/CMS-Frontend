@@ -92,15 +92,6 @@ function Avatar({
   );
 }
 
-function AvatarImage({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
-  return (
-    <AvatarPrimitive.Image className={cn("aspect-square", className)} {...props} />
-  );
-}
-
 function AvatarFallback({
   className,
   ...props
@@ -142,8 +133,5 @@ export {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
   UserAvatar,
 };
