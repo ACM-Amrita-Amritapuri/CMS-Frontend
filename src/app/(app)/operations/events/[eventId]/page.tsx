@@ -64,7 +64,7 @@ function EventDetail({ eventId }: { eventId: number }) {
     () => 0,
   );
 
-  const manage = hasCapability("manage_content");
+  const manage = hasCapability("manage_operations");
   const queryClient = useQueryClient();
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["operations"] });
 
@@ -222,7 +222,15 @@ function EventDetail({ eventId }: { eventId: number }) {
             </Button>
           ) : null}
           {event.state !== "CANCELLED" ? (
-            <Button variant="outline" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (window.confirm("Cancel this event? Members will no longer be able to register.")) {
+                  cancel.mutate();
+                }
+              }}
+              disabled={cancel.isPending}
+            >
               <CalendarX2Icon /> Cancel event
             </Button>
           ) : null}
