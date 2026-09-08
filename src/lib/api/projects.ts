@@ -1,17 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
 
-export interface ProjectProposal {
-  id: number;
-  title: string;
-  summary: string;
-  description: string;
-  sig_id: number | null;
-  team_capacity: number;
-  state: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED";
-  project_id: number | null;
-  reviewed_by_user_id: number | null;
-}
-
 export interface ProjectRole {
   id: number;
   title: string;
@@ -100,43 +88,6 @@ export async function listProjects(limit = 100) {
 export async function getProject(projectId: number) {
   const { project } = await apiRequest<{ project: Project }>(`/projects/${projectId}`);
   return project;
-}
-
-export async function listProposals(limit = 100) {
-  const { proposals } = await apiRequest<{ proposals: ProjectProposal[] }>(
-    `/projects/proposals?limit=${limit}`,
-  );
-  return proposals;
-}
-
-export async function createProposal(input: {
-  title: string;
-  summary: string;
-  description: string;
-  sig_id: number | null;
-  team_capacity: number;
-}) {
-  const { proposal } = await apiRequest<{ proposal: ProjectProposal }>(
-    "/projects/proposals",
-    { method: "POST", body: input },
-  );
-  return proposal;
-}
-
-export async function submitProposal(proposalId: number) {
-  const { proposal } = await apiRequest<{ proposal: ProjectProposal }>(
-    `/projects/proposals/${proposalId}/submit`,
-    { method: "POST" },
-  );
-  return proposal;
-}
-
-export async function reviewProposal(proposalId: number, decision: "APPROVE" | "REJECT") {
-  const { proposal } = await apiRequest<{ proposal: ProjectProposal }>(
-    `/projects/proposals/${proposalId}/review`,
-    { method: "POST", body: { decision } },
-  );
-  return proposal;
 }
 
 export async function createRole(

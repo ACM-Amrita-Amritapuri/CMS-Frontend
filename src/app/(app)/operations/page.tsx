@@ -80,7 +80,7 @@ export default function OperationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Operations</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Events, announcements, meetings, and recruitment for the club.
+            Plan events, announcements, and meetings for the club.
           </p>
         </div>
         {manage ? (
@@ -129,7 +129,7 @@ export default function OperationsPage() {
                       </p>
                       <div className="mt-auto flex items-center gap-2 text-xs">
                         <Badge variant="outline">
-                          <UsersIcon className="size-3" /> {event.registered_count}/{event.capacity}
+                          <UsersIcon className="size-3" /> {event.capacity} capacity
                         </Badge>
                       </div>
                     </Link>
