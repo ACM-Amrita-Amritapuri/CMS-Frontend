@@ -7,7 +7,11 @@ import type { NextConfig } from "next";
 // API requests are recognized by the X-CMS-API header set in the fetch client
 // and rewritten before filesystem routes; without it, matching paths such as
 // /admin/sigs or /members/<roll_number> are served as app pages.
-const backendOrigin = process.env.BACKEND_ORIGIN ?? "http://127.0.0.1:5000";
+const backendOrigin = process.env.BACKEND_ORIGIN?.trim();
+
+if (!backendOrigin) {
+  throw new Error("BACKEND_ORIGIN must be set to the backend origin.");
+}
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

@@ -4,9 +4,9 @@
   "private": true,
   "packageManager": "bun@1.4.0",
   "scripts": {
-    "dev": "bun --bun next dev --port 33001",
+    "dev": "bun --bun next dev",
     "build": "bun --bun next build",
-    "start": "bun --bun next start --port 33001",
+    "start": "bun --bun next start",
     "lint": "bun --bun eslint .",
     "test": "bun --bun vitest run",
     "test:watch": "bun --bun vitest",

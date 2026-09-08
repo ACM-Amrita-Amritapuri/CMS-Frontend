@@ -205,7 +205,7 @@ function UpcomingEventsPanel() {
                   </div>
                   {event.capacity > 0 ? (
                     <Badge variant="outline" className="ml-auto shrink-0">
-                      {event.registered_count}/{event.capacity}
+                      {event.capacity} capacity
                     </Badge>
                   ) : null}
                 </Link>
