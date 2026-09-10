@@ -10,7 +10,7 @@ export interface ClubEvent {
   location: string;
   external_url: string | null;
   capacity: number;
-  kind: "EVENT" | "MEETING";
+  kind: "EVENT" | "MEETING" | "HACKATHON" | "CTF";
   state: "DRAFT" | "PUBLISHED" | "CANCELLED";
   published_at: string | null;
   cancelled_at: string | null;

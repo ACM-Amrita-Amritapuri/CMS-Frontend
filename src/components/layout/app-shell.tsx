@@ -9,12 +9,12 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   LogOutIcon,
-  MegaphoneIcon,
   MenuIcon,
   MoonIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
+  TrophyIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
@@ -35,10 +35,10 @@ import { CommandPalette } from "@/components/layout/command-palette";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
   { href: "/learning", label: "Learning", icon: GraduationCapIcon },
   { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
-  { href: "/operations", label: "Operations", icon: MegaphoneIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
   { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
 ];

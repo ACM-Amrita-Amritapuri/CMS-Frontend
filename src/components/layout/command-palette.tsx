@@ -5,10 +5,10 @@ import {
   FolderKanbanIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
-  MegaphoneIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
+  TrophyIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -18,10 +18,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const destinations = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
   { href: "/learning", label: "Learning", icon: GraduationCapIcon },
   { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
-  { href: "/operations", label: "Operations", icon: MegaphoneIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
   { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
 ];
