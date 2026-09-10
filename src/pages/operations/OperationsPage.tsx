@@ -14,6 +14,7 @@ import {
   createMeeting,
   listEvents,
   listMeetings,
+  type PublicEventKind,
 } from "@/lib/api/club-operations";
 import { listSigs } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/errors";
@@ -178,6 +179,8 @@ function EventDialog({
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [location, setLocation] = useState("");
+  const [kind, setKind] = useState<PublicEventKind>("EVENT");
+  const [externalUrl, setExternalUrl] = useState("");
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -205,6 +208,8 @@ function EventDialog({
         starts_at: startsAt,
         ends_at: endsAt,
         location: location.trim() || undefined,
+        external_url: externalUrl.trim() || undefined,
+        kind,
         sig_id: sigId === "none" ? null : Number(sigId),
       });
     },
@@ -245,6 +250,29 @@ function EventDialog({
             </Field>
             <Field label="Ends" htmlFor="ev-end">
               <Input id="ev-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Type" htmlFor="ev-kind">
+              <select
+                id="ev-kind"
+                value={kind}
+                onChange={(event) => setKind(event.target.value as PublicEventKind)}
+                className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
+              >
+                <option value="EVENT">Event</option>
+                <option value="HACKATHON">Hackathon</option>
+                <option value="CTF">CTF</option>
+              </select>
+            </Field>
+            <Field label="Registration URL" htmlFor="ev-url">
+              <Input
+                id="ev-url"
+                type="url"
+                value={externalUrl}
+                onChange={(event) => setExternalUrl(event.target.value)}
+                placeholder="https://..."
+              />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-4">

@@ -1,16 +1,19 @@
 import { apiRequest } from "@/lib/api/client";
+
+export type PublicEventKind = "EVENT" | "HACKATHON" | "CTF";
+
 export interface ClubEvent {
   id: number;
   title: string;
-  description: string;
+  description: string | null;
   sig_id: number | null;
   owner_user_id: number;
   starts_at: string;
   ends_at: string;
-  location: string;
+  location: string | null;
   external_url: string | null;
   capacity: number;
-  kind: "EVENT" | "MEETING" | "HACKATHON" | "CTF";
+  kind: PublicEventKind | "MEETING";
   state: "DRAFT" | "PUBLISHED" | "CANCELLED";
   published_at: string | null;
   cancelled_at: string | null;
@@ -33,6 +36,7 @@ type EventInput = {
   location?: string;
   external_url?: string | null;
   capacity: number;
+  kind?: PublicEventKind;
 };
 
 function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {

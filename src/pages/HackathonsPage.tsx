@@ -19,7 +19,7 @@ export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
 export default function HackathonsPage() {
   useDocumentTitle("Hackathons & events");
   const eventsQuery = useQuery({
-    queryKey: ["hackathons", "upcoming"],
+    queryKey: ["operations", "events", "upcoming"],
     queryFn: () => listEvents({ limit: 100 }),
     select: selectUpcomingEvents,
   });

@@ -110,7 +110,7 @@ function ProfilePanel() {
 
 function UpcomingEventsPanel() {
   const query = useQuery({
-    queryKey: ["events", "recent"],
+    queryKey: ["operations", "events", "recent"],
     queryFn: () => listEvents({ limit: 10 }),
   });
 
