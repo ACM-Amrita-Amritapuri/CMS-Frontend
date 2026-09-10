@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { GraduationCapIcon, PlusIcon } from "lucide-react";
 import { z } from "zod";
 
-import { createPath, getPathProgress, listPaths } from "@/lib/api/learning";
+import { createPath, listPaths } from "@/lib/api/learning";
 import { listSigs } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
@@ -24,7 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/primitives";
 
 const pathSchema = z.object({
   title: z.string().min(1, "Enter a title."),
@@ -83,7 +82,6 @@ export default function LearningListPage() {
                   ) : null}
                   <div className="text-muted-foreground mt-auto flex items-center gap-3 text-xs">
                     <span>{path.modules?.length ?? 0} modules</span>
-                    <PathProgressInline pathId={path.id} />
                   </div>
                 </Link>
               </li>
@@ -94,20 +92,6 @@ export default function LearningListPage() {
 
       <CreatePathDialog open={creating} onOpenChange={setCreating} />
     </div>
-  );
-}
-
-function PathProgressInline({ pathId }: { pathId: number }) {
-  const query = useQuery({
-    queryKey: ["learning", "progress", pathId],
-    queryFn: () => getPathProgress(pathId),
-  });
-  if (!query.data) return null;
-  return (
-    <span className="flex items-center gap-2">
-      <Progress value={query.data.percent_complete} className="h-1.5 w-20" />
-      {query.data.percent_complete}%
-    </span>
   );
 }
 

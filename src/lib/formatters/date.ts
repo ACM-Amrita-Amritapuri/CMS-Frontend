@@ -11,15 +11,6 @@ export function parseUtc(value: string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-const relativeUnits: readonly [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 31536e6],
-  ["month", 2592e6],
-  ["week", 6048e5],
-  ["day", 864e5],
-  ["hour", 36e5],
-  ["minute", 6e4],
-];
-
 export function formatDateTime(value: string | null | undefined): string {
   const date = parseUtc(value);
   if (!date) return "—";
@@ -33,18 +24,6 @@ export function formatDate(value: string | null | undefined): string {
   const date = parseUtc(value);
   if (!date) return "—";
   return date.toLocaleDateString(undefined, { dateStyle: "medium" });
-}
-
-export function formatRelative(value: string | null | undefined): string {
-  const date = parseUtc(value);
-  if (!date) return "—";
-  const diffMs = date.getTime() - Date.now();
-  const abs = Math.abs(diffMs);
-  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-  for (const [unit, ms] of relativeUnits) {
-    if (abs >= ms) return rtf.format(Math.round(diffMs / ms), unit);
-  }
-  return "just now";
 }
 
 /** Local datetime-local input value → ISO-8601 with offset. */

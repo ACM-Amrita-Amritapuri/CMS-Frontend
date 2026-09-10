@@ -308,34 +308,3 @@ function LessonSelect({
     </Field>
   );
 }
-
-/** Publish control shared by every learning entity. */
-export function PublishButton({
-  label,
-  publish,
-}: {
-  label: string;
-  publish: () => Promise<unknown>;
-}) {
-  const [pending, setPending] = useState(false);
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={pending}
-      onClick={async () => {
-        setPending(true);
-        try {
-          await publish();
-          toast.success(`${label} published.`);
-        } catch (error) {
-          toast.error(error instanceof ApiError ? error.message : "Could not publish.");
-        } finally {
-          setPending(false);
-        }
-      }}
-    >
-      Publish {label}
-    </Button>
-  );
-}
