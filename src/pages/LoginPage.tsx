@@ -69,8 +69,7 @@ export default function LoginPage() {
         >
           <Brand />
           <h1 className="text-4xl font-semibold tracking-tight text-balance">
-            The club workspace for{" "}
-            <span className="text-gradient">learning, building, and running</span> ACM.
+            The club workspace for learning, building, and running ACM.
           </h1>
           <ul className="flex flex-col gap-3">
             {highlights.map(({ icon: Icon, text }) => (

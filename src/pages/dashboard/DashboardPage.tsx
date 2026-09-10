@@ -32,7 +32,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome back, <span className="text-gradient">{user?.username ?? "member"}</span>
+          Welcome back, <span className="text-primary">{user?.username ?? "member"}</span>
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Here&apos;s what&apos;s happening across the club.
@@ -44,7 +44,7 @@ export default function DashboardPage() {
           <Link
             key={to}
             to={to}
-            className="bg-card hover:border-primary/50 hover:shadow-md group rounded-xl border p-4 transition-all"
+            className="bg-card hover:border-primary/50 group rounded-lg border p-4 transition-colors"
           >
             <div className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-9 items-center justify-center rounded-lg transition-colors">
               <Icon className="size-4" />

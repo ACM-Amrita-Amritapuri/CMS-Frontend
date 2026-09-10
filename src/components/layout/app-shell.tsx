@@ -76,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             aria-label="Close navigation"
-            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
           <Sidebar className="animate-slide-up fixed inset-y-0 left-0 z-50 w-64" onNavigate={() => setMobileOpen(false)} />
@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4">
+        <header className="bg-background sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4">
           <Button
             variant="ghost"
             size="icon"
