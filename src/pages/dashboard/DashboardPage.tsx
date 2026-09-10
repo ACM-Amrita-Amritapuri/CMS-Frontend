@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const quickLinks = [
-  { to: "/learning", label: "Learning", description: "Paths, lessons, and quizzes", icon: GraduationCapIcon },
+  { to: "/learning", label: "Learning", description: "Paths, lessons, and assignments", icon: GraduationCapIcon },
   { to: "/documentation", label: "Documentation", description: "Club knowledge base", icon: BookOpenIcon },
   { to: "/projects", label: "Projects", description: "Build with a team", icon: FolderKanbanIcon },
   { to: "/operations", label: "Operations", description: "Events and announcements", icon: MegaphoneIcon },

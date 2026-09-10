@@ -21,7 +21,6 @@ import { Skeleton } from "@/components/ui/primitives";
 const contentTypeLabels = {
   LESSON: "Lesson",
   ASSIGNMENT: "Assignment",
-  QUIZ: "Quiz",
 } as const;
 
 export default function PortfolioPage() {

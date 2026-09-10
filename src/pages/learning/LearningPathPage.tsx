@@ -34,7 +34,6 @@ import { Markdown } from "@/components/ui/markdown";
 import { Progress } from "@/components/ui/primitives";
 import { EmptyState } from "@/components/ui/table";
 import { AssignmentPanel } from "@/components/learning/assignment-panel";
-import { QuizRunner } from "@/components/learning/quiz-runner";
 import { AuthorDialog, useAuthorActions, type DialogKind } from "@/components/learning/author-dialogs";
 
 export default function LearningPathPage() {
@@ -128,14 +127,12 @@ export default function LearningPathPage() {
 
 type Selection =
   | { kind: "lesson"; moduleId: number; lessonId: number }
-  | { kind: "assignment"; moduleId: number; assignmentId: number }
-  | { kind: "quiz"; moduleId: number; quizId: number };
+  | { kind: "assignment"; moduleId: number; assignmentId: number };
 
 function firstSelection(modules: LearningModule[]): Selection | null {
   for (const mod of modules) {
     if (mod.lessons[0]) return { kind: "lesson", moduleId: mod.id, lessonId: mod.lessons[0].id };
     if (mod.assignments[0]) return { kind: "assignment", moduleId: mod.id, assignmentId: mod.assignments[0].id };
-    if (mod.quizzes[0]) return { kind: "quiz", moduleId: mod.id, quizId: mod.quizzes[0].id };
   }
   return null;
 }
@@ -195,8 +192,7 @@ function ModuleCard({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{module.title}</p>
           <p className="text-muted-foreground text-xs">
-            {module.lessons.length} lessons · {module.assignments.length} assignments ·{" "}
-            {module.quizzes.length} quizzes
+            {module.lessons.length} lessons · {module.assignments.length} assignments
           </p>
         </div>
         {module.publication_state === "DRAFT" ? (
@@ -250,16 +246,6 @@ function ModuleCard({
               onClick={() =>
                 onSelect({ kind: "assignment", moduleId: module.id, assignmentId: assignment.id })
               }
-            />
-          ))}
-          {module.quizzes.map((quiz) => (
-            <TreeItem
-              key={quiz.id}
-              active={selected?.kind === "quiz" && selected.quizId === quiz.id}
-              draft={quiz.publication_state === "DRAFT"}
-              icon={ListChecksIcon}
-              label={quiz.title}
-              onClick={() => onSelect({ kind: "quiz", moduleId: module.id, quizId: quiz.id })}
             />
           ))}
         </ul>
@@ -332,7 +318,7 @@ function ContentPanel({
   selection: Selection | null;
 }) {
   if (!selection) {
-    return <EmptyState title="Select a lesson, assignment, or quiz" className="h-fit" />;
+    return <EmptyState title="Select a lesson or assignment" className="h-fit" />;
   }
   const mod = pathModules.find((item) => item.id === selection.moduleId);
   if (!mod) return null;
@@ -346,8 +332,6 @@ function ContentPanel({
     const assignment = mod.assignments.find((item) => item.id === selection.assignmentId);
     return assignment ? <AssignmentPanel key={assignment.id} assignment={assignment} /> : null;
   }
-  const quiz = mod.quizzes.find((item) => item.id === selection.quizId);
-  return quiz ? <QuizRunner key={quiz.id} quiz={quiz} /> : null;
 }
 
 function LessonPanel({
@@ -464,8 +448,6 @@ function AuthorTools({ pathId, modules }: { pathId: number; modules: LearningMod
     { id: "lesson", label: "Add lesson", disabled: modules.length === 0 },
     { id: "resource", label: "Add resource", disabled: modules.length === 0 },
     { id: "assignment", label: "Add assignment", disabled: modules.length === 0 },
-    { id: "quiz", label: "Add quiz", disabled: modules.length === 0 },
-    { id: "question", label: "Add question", disabled: modules.length === 0 },
   ];
 
   return (

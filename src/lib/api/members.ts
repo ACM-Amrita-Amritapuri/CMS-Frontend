@@ -87,7 +87,7 @@ export interface PortfolioView {
     id: number;
     path_id: number;
     module_id: number;
-    content_type: "LESSON" | "ASSIGNMENT" | "QUIZ";
+    content_type: "LESSON" | "ASSIGNMENT";
     content_id: number;
     completed_at: string | null;
   }[];
