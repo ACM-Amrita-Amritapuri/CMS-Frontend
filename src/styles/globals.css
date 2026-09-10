@@ -114,7 +114,7 @@
   }
   html {
     background: var(--background);
-    color-scheme: light dark;
+    color-scheme: light;
   }
   .dark {
     color-scheme: dark;
@@ -124,7 +124,6 @@
     color: var(--foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
   ::selection {
     background: color-mix(in oklch, var(--primary) 30%, transparent);

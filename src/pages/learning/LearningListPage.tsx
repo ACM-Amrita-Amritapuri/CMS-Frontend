@@ -187,7 +187,7 @@ function CreatePathDialog({
               id="path-sig"
               value={sigId}
               onChange={(event) => setSigId(event.target.value)}
-              className="border-input focus-visible:ring-ring/50 h-9 w-full rounded-lg border bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+              className="border-input focus-visible:ring-ring/50 h-9 w-full rounded-lg border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
             >
               <option value="none">Global (no SIG)</option>
               {(sigs.data ?? []).map((sig) => (
