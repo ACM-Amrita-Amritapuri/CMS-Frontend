@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -23,7 +21,7 @@ export function QuizRunner({ quiz }: { quiz: LearningQuiz }) {
   });
   const current = quizQuery.data;
 
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [attempt, setAttempt] = useState<{ score: number; total_questions: number } | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -32,10 +30,7 @@ export function QuizRunner({ quiz }: { quiz: LearningQuiz }) {
   const submit = async () => {
     setPending(true);
     try {
-      const stringAnswers = Object.fromEntries(
-        Object.entries(answers).map(([questionId, choice]) => [questionId, choice]),
-      );
-      const result = await attemptQuiz(current.id, stringAnswers);
+      const result = await attemptQuiz(current.id, answers);
       setAttempt({ score: result.score, total_questions: result.total_questions });
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not submit the attempt.");
