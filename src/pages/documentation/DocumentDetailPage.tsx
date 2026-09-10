@@ -86,14 +86,13 @@ function DocumentReader({
   const act = useMutation({
     mutationFn: (action: "submit" | "publish" | "archive" | "restore") =>
       runDocumentAction(documentId, action),
-    onSuccess: (result, action) => {
+    onSuccess: (_result, action) => {
       invalidate();
       toast.success(
         action === "submit" ? "Submitted for review." :
         action === "publish" ? "Document published." :
         action === "archive" ? "Document archived." : "Restored to draft.",
       );
-      void result;
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "The action failed."),

@@ -4,7 +4,7 @@ import { getMe, refreshSession } from "@/lib/api/auth";
 import { sessionStore } from "@/lib/auth/session-store";
 import { useSession } from "@/app/providers";
 
-export type SessionStatus =
+type SessionStatus =
   | "loading"
   | "ready"
   | "password-change-required"
