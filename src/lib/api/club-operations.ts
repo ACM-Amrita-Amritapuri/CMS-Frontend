@@ -24,17 +24,6 @@ export interface Meeting {
   minutes_document_id: number | null;
 }
 
-export interface Announcement {
-  id: number;
-  title: string;
-  body: string;
-  sig_id: number | null;
-  author_user_id: number;
-  state: "DRAFT" | "PUBLISHED" | "EXPIRED";
-  expires_at: string | null;
-  published_at: string | null;
-}
-
 type EventInput = {
   title: string;
   description?: string;
@@ -52,37 +41,6 @@ function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {
   if (params.includeDrafts) search.set("include_drafts", "true");
   const query = search.toString();
   return query ? `?${query}` : "";
-}
-
-export async function listAnnouncements(params: {
-  limit?: number;
-  includeDrafts?: boolean;
-} = {}) {
-  const { announcements } = await apiRequest<{ announcements: Announcement[] }>(
-    `/operations/announcements${buildQuery(params)}`,
-  );
-  return announcements;
-}
-
-export async function createAnnouncement(input: {
-  title: string;
-  body: string;
-  sig_id?: number | null;
-  expires_at?: string | null;
-}) {
-  const { announcement } = await apiRequest<{ announcement: Announcement }>(
-    "/operations/announcements",
-    { method: "POST", body: input },
-  );
-  return announcement;
-}
-
-export async function publishAnnouncement(announcementId: number) {
-  const { announcement } = await apiRequest<{ announcement: Announcement }>(
-    `/operations/announcements/${announcementId}/publish`,
-    { method: "POST" },
-  );
-  return announcement;
 }
 
 export async function listEvents(params: { limit?: number; includeDrafts?: boolean } = {}) {

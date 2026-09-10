@@ -4,21 +4,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   CalendarDaysIcon,
-  CheckCircle2Icon,
-  MegaphoneIcon,
   PlusIcon,
   UsersIcon,
 } from "lucide-react";
 import { z } from "zod";
 
 import {
-  createAnnouncement,
   createEvent,
   createMeeting,
-  listAnnouncements,
   listEvents,
   listMeetings,
-  publishAnnouncement,
 } from "@/lib/api/club-operations";
 import { listSigs } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/errors";
@@ -48,26 +43,16 @@ const eventSchema = z.object({
   ends_at: z.string().min(1, "Pick an end time."),
 });
 
-const announcementSchema = z.object({
-  title: z.string().min(1, "Enter a title."),
-  body: z.string().min(1, "Write the announcement."),
-});
-
 export default function OperationsPage() {
   useDocumentTitle("Operations");
   const { hasCapability } = useSession();
   const manage = hasCapability("manage_operations");
   const [creatingEvent, setCreatingEvent] = useState(false);
-  const [creatingAnnouncement, setCreatingAnnouncement] = useState(false);
   const [creatingMeeting, setCreatingMeeting] = useState(false);
 
   const eventsQuery = useQuery({
     queryKey: ["operations", "events", manage],
     queryFn: () => listEvents({ includeDrafts: manage }),
-  });
-  const announcementsQuery = useQuery({
-    queryKey: ["operations", "announcements", manage],
-    queryFn: () => listAnnouncements({ includeDrafts: manage }),
   });
   const meetingsQuery = useQuery({
     queryKey: ["operations", "meetings", manage],
@@ -80,14 +65,11 @@ export default function OperationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Operations</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Plan events, announcements, and meetings for the club.
+            Plan events and meetings for the club.
           </p>
         </div>
         {manage ? (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setCreatingAnnouncement(true)}>
-              <MegaphoneIcon /> New announcement
-            </Button>
             <Button onClick={() => setCreatingEvent(true)}>
               <PlusIcon /> New event
             </Button>
@@ -101,7 +83,6 @@ export default function OperationsPage() {
       <Tabs defaultValue="events">
         <TabsList>
           <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="meetings">Meetings</TabsTrigger>
         </TabsList>
 
@@ -133,44 +114,6 @@ export default function OperationsPage() {
                         </Badge>
                       </div>
                     </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </AsyncBoundary>
-        </TabsContent>
-
-        <TabsContent value="announcements">
-          <AsyncBoundary
-            query={announcementsQuery}
-            isEmpty={(items) => items.length === 0}
-            empty={{ icon: MegaphoneIcon, title: "No announcements yet" }}
-          >
-            {(items) => (
-              <ul className="flex flex-col gap-3">
-                {items.map((item) => (
-                  <li key={item.id} className="bg-card rounded-xl border p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h2 className="text-sm font-semibold">{item.title}</h2>
-                      <Badge
-                        variant={
-                          item.state === "PUBLISHED"
-                            ? "success"
-                            : item.state === "DRAFT"
-                              ? "warning"
-                              : "secondary"
-                        }
-                      >
-                        {item.state.toLowerCase()}
-                      </Badge>
-                    </div>
-                    <p className="text-muted-foreground mt-1 text-sm">{item.body}</p>
-                    {item.state === "DRAFT" && manage ? (
-                      <PublishButton
-                        label="announcement"
-                        onPublish={() => publishAnnouncement(item.id)}
-                      />
-                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -210,7 +153,6 @@ export default function OperationsPage() {
       </Tabs>
 
       <EventDialog open={creatingEvent} onOpenChange={setCreatingEvent} />
-      <AnnouncementDialog open={creatingAnnouncement} onOpenChange={setCreatingAnnouncement} />
       <MeetingDialog open={creatingMeeting} onOpenChange={setCreatingMeeting} />
     </div>
   );
@@ -220,37 +162,6 @@ function EventStateBadge({ state }: { state: string }) {
   const variant =
     state === "PUBLISHED" ? "success" : state === "CANCELLED" ? "destructive" : "warning";
   return <Badge variant={variant}>{state.toLowerCase()}</Badge>;
-}
-
-function PublishButton({
-  label,
-  onPublish,
-}: {
-  label: string;
-  onPublish: () => Promise<unknown>;
-}) {
-  const [pending, setPending] = useState(false);
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="mt-3"
-      disabled={pending}
-      onClick={async () => {
-        setPending(true);
-        try {
-          await onPublish();
-          toast.success(`${label} published.`);
-        } catch (error) {
-          toast.error(error instanceof ApiError ? error.message : "Could not publish.");
-        } finally {
-          setPending(false);
-        }
-      }}
-    >
-      <CheckCircle2Icon /> Publish {label}
-    </Button>
-  );
 }
 
 function EventDialog({
@@ -360,74 +271,6 @@ function EventDialog({
             </Button>
             <Button type="submit" disabled={create.isPending}>
               Create event
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AnnouncementDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const queryClient = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-
-  const create = useMutation({
-    mutationFn: async () => {
-      setFormError(null);
-      const values = parseForm(announcementSchema, { title, body }, (_field, message) =>
-        setFormError(message),
-      );
-      if (!values) return null;
-      return createAnnouncement(values);
-    },
-    onSuccess: (announcement) => {
-      if (!announcement) return;
-      queryClient.invalidateQueries({ queryKey: ["operations"] });
-      toast.success("Announcement saved as a draft.");
-      onOpenChange(false);
-      setTitle("");
-      setBody("");
-    },
-    onError: (error) =>
-      setFormError(error instanceof ApiError ? error.message : "Could not create the announcement."),
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New announcement</DialogTitle>
-          <DialogDescription>Publish it to make it visible to all members.</DialogDescription>
-        </DialogHeader>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            create.mutate();
-          }}
-          noValidate
-        >
-          <Field label="Title" htmlFor="ann-title" error={formError ?? undefined}>
-            <Input id="ann-title" value={title} onChange={(event) => setTitle(event.target.value)} />
-          </Field>
-          <Field label="Body" htmlFor="ann-body">
-            <Textarea id="ann-body" rows={4} value={body} onChange={(event) => setBody(event.target.value)} />
-          </Field>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={create.isPending}>
-              Save draft
             </Button>
           </DialogFooter>
         </form>

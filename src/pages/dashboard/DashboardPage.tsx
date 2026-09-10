@@ -2,15 +2,14 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpenIcon,
-  CalendarClockIcon,
+  CalendarDaysIcon,
   FolderKanbanIcon,
   GraduationCapIcon,
-  MegaphoneIcon,
 } from "lucide-react";
 
 import { getMyProfile } from "@/lib/api/members";
-import { listAnnouncements, listEvents } from "@/lib/api/club-operations";
-import { formatDate, formatRelative, formatDateTime, parseUtc } from "@/lib/formatters/date";
+import { listEvents } from "@/lib/api/club-operations";
+import { formatDate, formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
@@ -22,7 +21,7 @@ const quickLinks = [
   { to: "/learning", label: "Learning", description: "Paths, lessons, and assignments", icon: GraduationCapIcon },
   { to: "/documentation", label: "Documentation", description: "Club knowledge base", icon: BookOpenIcon },
   { to: "/projects", label: "Projects", description: "Build with a team", icon: FolderKanbanIcon },
-  { to: "/operations", label: "Operations", description: "Events and announcements", icon: MegaphoneIcon },
+  { to: "/operations", label: "Operations", description: "Events and meetings", icon: CalendarDaysIcon },
 ];
 
 export default function DashboardPage() {
@@ -59,7 +58,6 @@ export default function DashboardPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
         <ProfilePanel />
         <div className="flex flex-col gap-6">
-          <AnnouncementsPanel />
           <UpcomingEventsPanel />
         </div>
       </div>
@@ -107,57 +105,6 @@ function ProfilePanel() {
         </Card>
       )}
     </AsyncBoundary>
-  );
-}
-
-function AnnouncementsPanel() {
-  const query = useQuery({
-    queryKey: ["announcements", "recent"],
-    queryFn: () => listAnnouncements({ limit: 5 }),
-  });
-
-  return (
-    <AsyncBoundary
-      query={query}
-      isEmpty={(items) => items.length === 0}
-      empty={{
-        title: "No announcements",
-        description: "Club announcements will appear here once published.",
-      }}
-      skeleton={<AnnouncementsSkeleton />}
-    >
-      {(items) => (
-        <Card>
-          <CardHeader className="flex-row items-center">
-            <CardTitle className="text-base">Announcements</CardTitle>
-            <Button asChild variant="ghost" size="sm" className="ml-auto">
-              <Link to="/operations">
-                All <CalendarClockIcon className="size-3.5" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="flex flex-col divide-y">
-            {items.map((item) => (
-              <AnnouncementRow key={item.id} item={item} />
-            ))}
-          </CardContent>
-        </Card>
-      )}
-    </AsyncBoundary>
-  );
-}
-
-function AnnouncementRow({ item }: { item: Awaited<ReturnType<typeof listAnnouncements>>[number] }) {
-  return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm font-medium">{item.title}</p>
-        <time className="text-muted-foreground shrink-0 text-xs">
-          {formatRelative(item.published_at)}
-        </time>
-      </div>
-      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">{item.body}</p>
-    </div>
   );
 }
 
@@ -220,22 +167,4 @@ function UpcomingEventsPanel() {
 
 function isUpcoming(event: Awaited<ReturnType<typeof listEvents>>[number]) {
   return (parseUtc(event.ends_at)?.getTime() ?? 0) > Date.now();
-}
-
-function AnnouncementsSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Announcements</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex flex-col gap-1.5">
-            <div className="bg-muted h-4 w-2/3 animate-pulse rounded" />
-            <div className="bg-muted h-3 w-full animate-pulse rounded" />
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
 }
