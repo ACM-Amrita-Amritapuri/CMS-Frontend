@@ -116,7 +116,7 @@ function DocumentReader({
   return editing ? (
     <DocumentEditor document={doc} onDone={() => setEditing(false)} />
   ) : (
-    <article className="bg-card flex flex-col gap-5 rounded-xl border p-6">
+    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
@@ -302,7 +302,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
   });
 
   return (
-    <div className="bg-card flex flex-col gap-4 rounded-xl border p-6">
+    <div className="bg-card flex flex-col gap-4 rounded-lg border p-6">
       <h2 className="text-lg font-semibold">Edit document</h2>
       <form
         className="flex flex-col gap-4"

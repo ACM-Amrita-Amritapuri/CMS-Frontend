@@ -71,7 +71,7 @@ function EventCard({ event }: { event: ClubEvent }) {
   const kind = event.kind === "CTF" ? "CTF" : event.kind === "HACKATHON" ? "Hackathon" : "Event";
 
   return (
-    <li className="bg-card flex h-full flex-col gap-5 rounded-xl border p-5 shadow-sm">
+    <li className="bg-card flex h-full flex-col gap-5 rounded-lg border p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <Badge variant="outline">{kind}</Badge>

@@ -58,7 +58,7 @@ export default function LearningPathPage() {
     return <EmptyState title="Path not found" description="This learning path does not exist." />;
   }
   if (pathQuery.isPending) {
-    return <div className="bg-muted h-64 animate-pulse rounded-xl" />;
+    return <div className="bg-muted h-64 animate-pulse rounded-lg" />;
   }
   if (pathQuery.isError) {
     return <QueryErrorState error={pathQuery.error} retry={() => pathQuery.refetch()} />;
@@ -182,7 +182,7 @@ function ModuleCard({
   };
 
   return (
-    <div className="bg-card overflow-hidden rounded-xl border">
+    <div className="bg-card overflow-hidden rounded-lg border">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -353,7 +353,7 @@ function LessonPanel({
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-xl border p-6">
+    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />

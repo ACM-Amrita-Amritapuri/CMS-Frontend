@@ -116,7 +116,7 @@ export default function DocumentationListPage() {
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
-                  className="bg-card hover:border-primary/50 hover:shadow-md flex h-full flex-col gap-2 rounded-xl border p-4 transition-all"
+                  className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="text-sm font-semibold">{doc.title}</h2>

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/primitives";
 function Splash() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-4">
-      <div className="bg-primary/15 text-primary flex size-12 animate-pulse items-center justify-center rounded-2xl font-bold text-lg">
+      <div className="bg-primary/15 text-primary flex size-12 animate-pulse items-center justify-center rounded-lg font-bold text-lg">
         A
       </div>
       <div className="flex flex-col gap-2">

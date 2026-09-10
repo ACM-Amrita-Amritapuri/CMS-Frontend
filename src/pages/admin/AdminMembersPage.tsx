@@ -82,7 +82,7 @@ export default function AdminMembersPage() {
         empty={{ title: "No members match this filter" }}
       >
         {(members) => (
-          <div className="bg-card rounded-xl border">
+          <div className="bg-card rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>

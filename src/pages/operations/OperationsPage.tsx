@@ -98,7 +98,7 @@ export default function OperationsPage() {
                   <li key={event.id}>
                     <Link
                       to={`/operations/events/${event.id}`}
-                      className="bg-card hover:border-primary/50 hover:shadow-md flex h-full flex-col gap-2 rounded-xl border p-4 transition-all"
+                      className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h2 className="text-sm font-semibold">{event.title}</h2>
@@ -130,7 +130,7 @@ export default function OperationsPage() {
             {(meetings) => (
               <ul className="flex flex-col gap-3">
                 {meetings.map((meeting) => (
-                  <li key={meeting.id} className="bg-card rounded-xl border p-4">
+                  <li key={meeting.id} className="bg-card rounded-lg border p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h2 className="text-sm font-semibold">{meeting.event.title}</h2>

@@ -85,7 +85,7 @@ export default function CalendarPage() {
                 <li key={event.id}>
                   <Link
                     to={`/operations/events/${event.id}`}
-                    className="hover:border-primary/50 flex items-center gap-4 rounded-xl border p-4 transition-colors"
+                    className="hover:border-primary flex items-center gap-4 rounded-lg border p-4 transition-colors"
                   >
                     <div className="bg-primary/10 text-primary flex size-12 shrink-0 flex-col items-center justify-center rounded-lg text-xs font-bold">
                       <span>{parseUtc(event.starts_at)?.toLocaleDateString(undefined, { month: "short" }) ?? "—"}</span>

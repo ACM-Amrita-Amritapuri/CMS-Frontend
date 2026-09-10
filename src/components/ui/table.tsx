@@ -64,7 +64,7 @@ function EmptyState({
   return (
     <div
       className={cn(
-        "text-muted-foreground flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-6 py-14 text-center",
+        "text-muted-foreground flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed px-6 py-14 text-center",
         className,
       )}
     >

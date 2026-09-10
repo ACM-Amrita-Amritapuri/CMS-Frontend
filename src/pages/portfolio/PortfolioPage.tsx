@@ -165,7 +165,7 @@ export default function PortfolioPage() {
                   />
                 ) : (
                   showcases.map((showcase) => (
-                    <div key={showcase.id} className="rounded-xl border p-4">
+                    <div key={showcase.id} className="rounded-lg border p-4">
                       <p className="text-sm leading-relaxed">{showcase.summary}</p>
                       <p className="text-muted-foreground mt-2 text-xs">
                         <span className="font-medium">Tech:</span> {showcase.technology}

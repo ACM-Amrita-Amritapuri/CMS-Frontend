@@ -39,11 +39,11 @@ export function ProfileCard({
   );
 
   return (
-    <div className="bg-card rounded-xl border">
-      <div className="from-primary/15 via-primary/5 h-20 rounded-t-xl bg-gradient-to-r to-transparent" />
+    <div className="bg-card rounded-lg border">
+      <div className="bg-primary/10 h-20 rounded-t-lg" />
       <div className="flex flex-col gap-4 px-6 pb-6">
         <div className="-mt-8 flex flex-wrap items-end justify-between gap-3">
-          <div className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-2xl border-4 border-card text-xl font-bold shadow-md">
+          <div className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-lg border-4 border-card text-xl font-bold">
             {profile.real_name.slice(0, 1).toUpperCase()}
           </div>
           {actions}

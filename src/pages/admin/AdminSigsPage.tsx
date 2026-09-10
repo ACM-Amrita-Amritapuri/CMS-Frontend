@@ -63,7 +63,7 @@ export default function AdminSigsPage() {
             {sigs.map((sig) => (
               <li
                 key={sig.id}
-                className="bg-card flex items-center gap-3 rounded-xl border p-4"
+                className="bg-card flex items-center gap-3 rounded-lg border p-4"
               >
                 <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
                   <LayersIcon className="size-4" />

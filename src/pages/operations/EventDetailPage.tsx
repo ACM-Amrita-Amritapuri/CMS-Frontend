@@ -40,7 +40,7 @@ export default function EventDetailPage() {
       {invalidId ? (
         <EmptyState title="Event not found" description="This event does not exist." />
       ) : query.isPending ? (
-        <div className="bg-muted h-64 animate-pulse rounded-xl" />
+        <div className="bg-muted h-64 animate-pulse rounded-lg" />
       ) : query.isError ? (
         <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
@@ -77,7 +77,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-xl border p-6">
+    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>

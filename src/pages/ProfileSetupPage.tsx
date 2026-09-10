@@ -200,8 +200,8 @@ export default function ProfileSetupPage() {
 
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center px-4 py-10">
-      <div className="bg-card rounded-2xl border p-6 shadow-lg sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-xl">
+      <div className="bg-card rounded-lg border p-6 sm:p-8">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
           <IdCardIcon className="size-5" />
         </div>
         <h1 className="text-xl font-semibold">Complete your profile</h1>

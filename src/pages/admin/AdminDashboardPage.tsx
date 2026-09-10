@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
               <Link
                 key={key}
                 to={to}
-                className="bg-card hover:border-primary/50 hover:shadow-md rounded-xl border p-4 transition-all"
+                className="bg-card hover:border-primary rounded-lg border p-4 transition-colors"
               >
                 <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
                   <Icon className="size-4" />
@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
           </section>
 
           <section aria-label="Role distribution" className="max-w-xl">
-            <div className="bg-card rounded-xl border p-5">
+            <div className="bg-card rounded-lg border p-5">
               <h2 className="text-sm font-semibold">Role distribution</h2>
               <ul className="mt-3 flex flex-col gap-2">
                 {Object.entries(query.data.role_counts).map(([role, count]) => (

@@ -64,7 +64,7 @@ export default function ProjectDetailPage() {
       {invalidId ? (
         <EmptyState title="Project not found" description="This project does not exist." />
       ) : query.isPending ? (
-        <div className="bg-muted h-64 animate-pulse rounded-xl" />
+        <div className="bg-muted h-64 animate-pulse rounded-lg" />
       ) : query.isError ? (
         <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
@@ -117,7 +117,7 @@ function ProjectDetail({ project }: { project: Project }) {
           <TabsTrigger value="work">Work</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="about" className="bg-card rounded-xl border p-6">
+      <TabsContent value="about" className="bg-card rounded-lg border p-6">
           <Markdown source={project.description} />
         </TabsContent>
 
@@ -192,7 +192,7 @@ function RolesSection({
     project.team_memberships.filter((membership) => membership.role_id === roleId && !membership.left_at).length;
 
   return (
-    <section className="bg-card rounded-xl border p-5">
+    <section className="bg-card rounded-lg border p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Open roles</h2>
         {isLead ? (
@@ -289,7 +289,7 @@ function ApplicationsSection({ project, isLead }: { project: Project; isLead: bo
   if (!isLead || pending.length === 0) return null;
 
   return (
-    <section className="bg-card rounded-xl border p-5">
+    <section className="bg-card rounded-lg border p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wide">Pending applications</h2>
       <ul className="mt-3 flex flex-col gap-2">
         {pending.map((application) => (
@@ -335,7 +335,7 @@ function LeaveButton({ projectId }: { projectId: number }) {
   });
 
   return (
-    <div className="bg-card flex items-center justify-between gap-3 rounded-xl border p-5">
+    <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-5">
       <p className="text-sm">You are a member of this project.</p>
       {confirming ? (
         <div className="flex gap-2">
@@ -388,7 +388,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
   });
 
   return (
-    <section className="bg-card rounded-xl border p-5">
+    <section className="bg-card rounded-lg border p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Tasks</h2>
         {canWork ? (
@@ -462,7 +462,7 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
   const scoped = milestones.filter((milestone) => milestone.project_id === projectId);
 
   return (
-    <section className="bg-card rounded-xl border p-5">
+    <section className="bg-card rounded-lg border p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">
           <FlagIcon className="mr-1 inline size-3.5" /> Milestones
@@ -534,7 +534,7 @@ function ShowcaseSection({ project }: { project: Project }) {
   });
 
   return (
-    <section className="bg-card rounded-xl border p-5">
+    <section className="bg-card rounded-lg border p-5">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
         <UsersIcon className="size-4" /> Project showcase
       </h2>

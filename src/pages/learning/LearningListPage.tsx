@@ -69,7 +69,7 @@ export default function LearningListPage() {
               <li key={path.id}>
                 <Link
                   to={`/learning/paths/${path.id}`}
-                  className="bg-card hover:border-primary/50 hover:shadow-md flex h-full flex-col gap-3 rounded-xl border p-5 transition-all"
+                  className="bg-card hover:border-primary flex h-full flex-col gap-3 rounded-lg border p-5 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="text-base font-semibold">{path.title}</h2>

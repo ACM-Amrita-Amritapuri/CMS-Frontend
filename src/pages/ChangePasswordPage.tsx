@@ -79,8 +79,8 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
-      <div className="bg-card w-full max-w-md rounded-2xl border p-6 shadow-lg sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-xl">
+      <div className="bg-card w-full max-w-md rounded-lg border p-6 sm:p-8">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
           <LockIcon className="size-5" />
         </div>
         <h1 className="text-xl font-semibold">
