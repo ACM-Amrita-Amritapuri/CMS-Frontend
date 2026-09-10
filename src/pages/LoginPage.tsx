@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { motion } from "motion/react";
 import { GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
 import { z } from "zod";
 
@@ -58,17 +57,11 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="relative flex min-h-svh items-center justify-center overflow-hidden px-4">
-      <BackgroundGlow />
+    <div className="flex min-h-svh items-center justify-center px-4">
       <div className="relative grid w-full max-w-4xl gap-10 lg:grid-cols-[1fr_400px] lg:items-center">
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden flex-col gap-6 lg:flex"
-        >
+        <section className="hidden flex-col gap-6 lg:flex">
           <Brand />
-          <h1 className="text-4xl font-semibold tracking-tight text-balance">
+          <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance">
             The club workspace for learning, building, and running ACM.
           </h1>
           <ul className="flex flex-col gap-3">
@@ -81,14 +74,9 @@ export default function LoginPage() {
               </li>
             ))}
           </ul>
-        </motion.section>
+        </section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-card rounded-2xl border p-6 shadow-lg sm:p-8"
-        >
+        <section className="bg-card rounded-lg border p-6 sm:p-8">
           <div className="mb-6 lg:hidden">
             <Brand />
           </div>
@@ -131,7 +119,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground mt-6 text-center text-xs">
             Trouble signing in? Ask an administrator to reset your password.
           </p>
-        </motion.section>
+        </section>
       </div>
     </div>
   );
@@ -140,19 +128,10 @@ export default function LoginPage() {
 function Brand() {
   return (
     <Link to="/login" className="flex items-center gap-2.5 font-semibold">
-      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-xl text-base font-bold shadow-md">
+      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md text-base font-bold">
         A
       </span>
       <span className="text-lg">ACM CMS</span>
     </Link>
-  );
-}
-
-function BackgroundGlow() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-      <div className="absolute top-[-20%] left-[10%] size-[500px] rounded-full bg-primary/15 blur-[120px]" />
-      <div className="absolute right-[5%] bottom-[-10%] size-[400px] rounded-full bg-info/10 blur-[100px]" />
-    </div>
   );
 }

@@ -44,7 +44,7 @@ export default function DashboardPage() {
           <Link
             key={to}
             to={to}
-            className="bg-card hover:border-primary/50 group rounded-lg border p-4 transition-colors"
+            className="bg-card hover:border-primary group rounded-lg border border-l-2 p-4 transition-colors"
           >
             <div className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-9 items-center justify-center rounded-lg transition-colors">
               <Icon className="size-4" />
