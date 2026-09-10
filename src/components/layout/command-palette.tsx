@@ -1,6 +1,4 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import {
   BookOpenIcon,
@@ -35,13 +33,13 @@ export function CommandPalette({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { setTheme } = useTheme();
   const { hasCapability } = useSession();
 
   const go = (href: string) => {
     onOpenChange(false);
-    router.push(href);
+    navigate(href);
   };
 
   return (

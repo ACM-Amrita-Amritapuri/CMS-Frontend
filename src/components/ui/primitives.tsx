@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import * as ProgressPrimitive from "@radix-ui/react-progress";

@@ -19,14 +19,10 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "types": [
+      "vite/client",
       "vitest/globals"
     ],
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": [
         "./src/*"
@@ -34,11 +30,9 @@
     }
   },
   "include": [
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/dev/types/**/*.ts"
+    "src",
+    "vite.config.ts",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules"

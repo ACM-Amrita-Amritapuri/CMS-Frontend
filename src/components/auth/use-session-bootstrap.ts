@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "@/lib/api/errors";
 import { getMe, refreshSession } from "@/lib/api/auth";

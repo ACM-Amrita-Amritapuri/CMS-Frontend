@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { EmptyState } from "@/components/ui/table";
@@ -69,14 +67,15 @@ export function QueryErrorState({
   error: unknown;
   retry: () => void;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (error instanceof ApiError) {
-      if (error.code === "PROFILE_INCOMPLETE") router.replace("/profile/setup");
-      if (error.code === "PASSWORD_CHANGE_REQUIRED") router.replace("/change-password");
+      if (error.code === "PROFILE_INCOMPLETE") navigate("/profile/setup", { replace: true });
+      if (error.code === "PASSWORD_CHANGE_REQUIRED")
+        navigate("/change-password", { replace: true });
     }
-  }, [error, router]);
+  }, [error, navigate]);
 
   if (
     error instanceof ApiError &&
