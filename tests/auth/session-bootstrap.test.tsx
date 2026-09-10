@@ -1,9 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
 import { getMe, refreshSession } from "@/lib/api/auth";
 import { sessionStore } from "@/lib/auth/session-store";
-import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
 
 vi.mock("@/lib/api/auth", () => ({
   getMe: vi.fn(),
@@ -25,11 +25,10 @@ describe("useSessionBootstrap", () => {
     vi.mocked(getMe).mockResolvedValue(user);
   });
 
-  it("reports signed out when a ready session is cleared", async () => {
+  it("reports signed out when the ready session is cleared", async () => {
     const { result } = renderHook(() => useSessionBootstrap());
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
-
     act(() => sessionStore.clearSession());
 
     expect(result.current.status).toBe("signed-out");

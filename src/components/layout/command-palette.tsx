@@ -1,16 +1,14 @@
-"use client";
-
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import {
   BookOpenIcon,
   FolderKanbanIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
-  MegaphoneIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
+  TrophyIcon,
   UsersIcon,
 } from "lucide-react";
 
@@ -20,10 +18,10 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const destinations = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
   { href: "/learning", label: "Learning", icon: GraduationCapIcon },
   { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
-  { href: "/operations", label: "Operations", icon: MegaphoneIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
   { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
 ];
@@ -35,13 +33,13 @@ export function CommandPalette({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { setTheme } = useTheme();
   const { hasCapability } = useSession();
 
   const go = (href: string) => {
     onOpenChange(false);
-    router.push(href);
+    navigate(href);
   };
 
   return (

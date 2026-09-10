@@ -20,7 +20,6 @@ export interface LearningModule {
   publication_state: PublicationState;
   lessons: LearningLesson[];
   assignments: LearningAssignment[];
-  quizzes: LearningQuiz[];
 }
 
 export interface LearningLesson {
@@ -58,23 +57,6 @@ export interface LearningAssignment {
   feedback?: string | null;
   score?: number | null;
   reviewed_at?: string | null;
-}
-
-export interface LearningQuiz {
-  id: number;
-  title: string;
-  instructions: string;
-  position: number;
-  publication_state: PublicationState;
-  questions: QuizQuestion[];
-}
-
-export interface QuizQuestion {
-  id: number;
-  prompt: string;
-  choices: string[];
-  position: number;
-  correct_choice?: number;
 }
 
 export interface PathProgress {
@@ -229,48 +211,6 @@ export async function reviewSubmission(
     { method: "PATCH", body: input },
   );
   return submission;
-}
-
-export async function createQuiz(
-  moduleId: number,
-  input: { title: string; instructions: string; position: number },
-) {
-  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(
-    `/learning/modules/${moduleId}/quizzes`,
-    { method: "POST", body: input },
-  );
-  return quiz;
-}
-
-export async function setQuizState(quizId: number, publication_state: PublicationState) {
-  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(
-    `/learning/quizzes/${quizId}`,
-    { method: "PATCH", body: { publication_state } },
-  );
-  return quiz;
-}
-
-export async function getQuiz(quizId: number) {
-  const { quiz } = await apiRequest<{ quiz: LearningQuiz }>(`/learning/quizzes/${quizId}`);
-  return quiz;
-}
-
-export async function createQuestion(
-  quizId: number,
-  input: { prompt: string; choices: string[]; correct_choice: number; position: number },
-) {
-  const { question } = await apiRequest<{ question: QuizQuestion }>(
-    `/learning/quizzes/${quizId}/questions`,
-    { method: "POST", body: input },
-  );
-  return question;
-}
-
-export async function attemptQuiz(quizId: number, answers: Record<string, number>) {
-  const { attempt } = await apiRequest<{
-    attempt: { quiz_id: number; score: number; total_questions: number };
-  }>(`/learning/quizzes/${quizId}/attempts`, { method: "POST", body: { answers } });
-  return attempt;
 }
 
 export async function completeLesson(lessonId: number) {

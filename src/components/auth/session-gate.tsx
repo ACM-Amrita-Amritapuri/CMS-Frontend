@@ -1,7 +1,5 @@
-"use client";
-
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { RefreshCwIcon } from "lucide-react";
 
 import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
@@ -11,7 +9,7 @@ import { Skeleton } from "@/components/ui/primitives";
 function Splash() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-4">
-      <div className="bg-primary/15 text-primary flex size-12 animate-pulse items-center justify-center rounded-2xl font-bold text-lg">
+      <div className="bg-primary/15 text-primary flex size-12 animate-pulse items-center justify-center rounded-lg font-bold text-lg">
         A
       </div>
       <div className="flex flex-col gap-2">
@@ -29,13 +27,15 @@ function Splash() {
  */
 export function SessionGate({ children }: { children: React.ReactNode }) {
   const { status, error, retry } = useSessionBootstrap();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (status === "signed-out") router.replace("/login");
-    if (status === "password-change-required") router.replace("/change-password");
-    if (status === "profile-incomplete") router.replace("/profile/setup");
-  }, [status, router]);
+    if (status === "signed-out") navigate("/login", { replace: true });
+    if (status === "password-change-required")
+      navigate("/change-password", { replace: true });
+    if (status === "profile-incomplete")
+      navigate("/profile/setup", { replace: true });
+  }, [status, navigate]);
 
   if (status === "ready") return <>{children}</>;
   if (status === "error") {

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -76,7 +74,7 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
   };
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-xl border p-6">
+    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{assignment.title}</h2>
@@ -107,7 +105,7 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
       <Markdown source={assignment.instructions} />
 
       {submission ? (
-        <div className="rounded-xl border p-4">
+        <div className="rounded-lg border p-4">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium">Submission</p>
             <Badge variant={stateLabels[submission.submission_state ?? "DRAFT"].variant}>

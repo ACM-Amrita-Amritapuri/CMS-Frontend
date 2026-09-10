@@ -1,8 +1,5 @@
-"use client";
-
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/components/theme";
 import {
@@ -12,12 +9,12 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   LogOutIcon,
-  MegaphoneIcon,
   MenuIcon,
   MoonIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
+  TrophyIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
@@ -38,10 +35,10 @@ import { CommandPalette } from "@/components/layout/command-palette";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
+  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
   { href: "/learning", label: "Learning", icon: GraduationCapIcon },
   { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
-  { href: "/operations", label: "Operations", icon: MegaphoneIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
   { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
 ];
@@ -79,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button
             type="button"
             aria-label="Close navigation"
-            className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
           <Sidebar className="animate-slide-up fixed inset-y-0 left-0 z-50 w-64" onNavigate={() => setMobileOpen(false)} />
@@ -87,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4">
+        <header className="bg-background sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4">
           <Button
             variant="ghost"
             size="icon"
@@ -113,7 +110,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
@@ -128,14 +125,14 @@ function Sidebar({
   className?: string;
   onNavigate?: () => void;
 }) {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { user, hasCapability } = useSession();
 
   return (
     <aside
       className={`bg-sidebar flex w-64 shrink-0 flex-col border-r ${className ?? ""}`}
     >
-      <Link href="/dashboard" className="flex h-14 items-center gap-2.5 border-b px-4 font-semibold">
+      <Link to="/dashboard" className="flex h-14 items-center gap-2.5 border-b px-4 font-semibold">
         <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg text-sm font-bold">
           A
         </span>
@@ -151,7 +148,7 @@ function Sidebar({
               return (
                 <li key={href}>
                   <Link
-                    href={href}
+                    to={href}
                     onClick={onNavigate}
                     aria-current={active ? "page" : undefined}
                     className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -175,7 +172,7 @@ function Sidebar({
       {user ? (
         <div className="border-t p-3">
           <Link
-            href="/profile"
+            to="/profile"
             onClick={onNavigate}
             className="hover:bg-sidebar-accent/60 flex items-center gap-2.5 rounded-lg p-2 transition-colors"
           >
@@ -218,7 +215,7 @@ function ThemeToggle() {
 
 function UserMenu() {
   const { user } = useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   if (!user) return null;
@@ -228,7 +225,7 @@ function UserMenu() {
       .catch(() => undefined) // Clear local state regardless of server outcome.
       .finally(() => {
         queryClient.clear();
-        sessionCleared(router);
+        navigate("/login", { replace: true });
       });
 
   return (
@@ -246,10 +243,10 @@ function UserMenu() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/profile")}>
+        <DropdownMenuItem onClick={() => navigate("/profile")}>
           <ChartPieIcon /> My profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/change-password")}>
+        <DropdownMenuItem onClick={() => navigate("/change-password")}>
           <SettingsIcon /> Change password
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -265,8 +262,4 @@ function UserMenu() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
-
-function sessionCleared(router: ReturnType<typeof useRouter>) {
-  router.replace("/login");
 }

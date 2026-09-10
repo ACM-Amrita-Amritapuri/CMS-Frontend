@@ -1,12 +1,10 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import { ApiError } from "@/lib/api/errors";
 import { getMe, refreshSession } from "@/lib/api/auth";
 import { sessionStore } from "@/lib/auth/session-store";
 import { useSession } from "@/app/providers";
 
-export type SessionStatus =
+type SessionStatus =
   | "loading"
   | "ready"
   | "password-change-required"

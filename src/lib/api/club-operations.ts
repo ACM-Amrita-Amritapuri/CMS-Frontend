@@ -1,16 +1,19 @@
 import { apiRequest } from "@/lib/api/client";
+
+export type PublicEventKind = "EVENT" | "HACKATHON" | "CTF";
+
 export interface ClubEvent {
   id: number;
   title: string;
-  description: string;
+  description: string | null;
   sig_id: number | null;
   owner_user_id: number;
   starts_at: string;
   ends_at: string;
-  location: string;
+  location: string | null;
   external_url: string | null;
   capacity: number;
-  kind: "EVENT" | "MEETING";
+  kind: PublicEventKind | "MEETING";
   state: "DRAFT" | "PUBLISHED" | "CANCELLED";
   published_at: string | null;
   cancelled_at: string | null;
@@ -24,17 +27,6 @@ export interface Meeting {
   minutes_document_id: number | null;
 }
 
-export interface Announcement {
-  id: number;
-  title: string;
-  body: string;
-  sig_id: number | null;
-  author_user_id: number;
-  state: "DRAFT" | "PUBLISHED" | "EXPIRED";
-  expires_at: string | null;
-  published_at: string | null;
-}
-
 type EventInput = {
   title: string;
   description?: string;
@@ -44,6 +36,7 @@ type EventInput = {
   location?: string;
   external_url?: string | null;
   capacity: number;
+  kind?: PublicEventKind;
 };
 
 function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {
@@ -52,37 +45,6 @@ function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {
   if (params.includeDrafts) search.set("include_drafts", "true");
   const query = search.toString();
   return query ? `?${query}` : "";
-}
-
-export async function listAnnouncements(params: {
-  limit?: number;
-  includeDrafts?: boolean;
-} = {}) {
-  const { announcements } = await apiRequest<{ announcements: Announcement[] }>(
-    `/operations/announcements${buildQuery(params)}`,
-  );
-  return announcements;
-}
-
-export async function createAnnouncement(input: {
-  title: string;
-  body: string;
-  sig_id?: number | null;
-  expires_at?: string | null;
-}) {
-  const { announcement } = await apiRequest<{ announcement: Announcement }>(
-    "/operations/announcements",
-    { method: "POST", body: input },
-  );
-  return announcement;
-}
-
-export async function publishAnnouncement(announcementId: number) {
-  const { announcement } = await apiRequest<{ announcement: Announcement }>(
-    `/operations/announcements/${announcementId}/publish`,
-    { method: "POST" },
-  );
-  return announcement;
 }
 
 export async function listEvents(params: { limit?: number; includeDrafts?: boolean } = {}) {
