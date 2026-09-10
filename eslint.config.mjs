@@ -1,10 +1,14 @@
-import nextVitals from "eslint-config-next/core-web-vitals";
+import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
 
 const eslintConfig = [
   {
-    ignores: [".next/**", "node_modules/**", "coverage/**"],
+    ignores: ["dist/**", "node_modules/**", "coverage/**"],
   },
-  ...nextVitals,
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  reactHooks.configs.flat["recommended-latest"],
 ];
 
 export default eslintConfig;

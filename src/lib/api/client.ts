@@ -15,7 +15,7 @@ function isAuthPath(path: string) {
 }
 
 function resolveUrl(path: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "";
+  const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? "";
   if (!baseUrl || baseUrl === "/") {
     return path;
   }
@@ -65,7 +65,8 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function send(path: string, options: ApiRequestOptions) {
-  const { body, retryOn401: _retryOn401, ...requestInit } = options;
+  const { body, ...requestInit } = options;
+  delete requestInit.retryOn401;
   const init: RequestInit = requestInit;
   const headers = new Headers(init.headers);
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
@@ -83,8 +84,8 @@ async function send(path: string, options: ApiRequestOptions) {
   if (accessToken && !isAuthPath(path)) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
-  // Marks this as an API request for the same-origin rewrite proxy (see
-  // next.config.ts); page navigations to identical paths stay as pages.
+  // Marks this as an API request for the same-origin proxy (see
+  // vite.config.ts server.proxy); page navigations to identical paths stay as pages.
   headers.set("X-CMS-API", "1");
 
   init.credentials = "include";
