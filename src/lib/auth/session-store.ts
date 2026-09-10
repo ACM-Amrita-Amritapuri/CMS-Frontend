@@ -43,7 +43,9 @@ export class SessionStore {
 
   subscribe = (listener: SessionListener) => {
     this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
   };
 
   hasCapability(capability: Capability, sigId?: number) {

@@ -1,9 +1,12 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
-import { useSyncExternalStore, createContext, useContext } from "react";
 import { ThemeProvider } from "@/components/theme";
 import { sessionStore, type SessionStore } from "@/lib/auth/session-store";
 
@@ -26,12 +29,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    const unsubscribe = sessionStore.subscribe(() => {
+    return sessionStore.subscribe(() => {
       if (!sessionStore.getSnapshot().accessToken) queryClient.clear();
     });
-    return () => {
-      unsubscribe();
-    };
   }, [queryClient]);
 
   return (
