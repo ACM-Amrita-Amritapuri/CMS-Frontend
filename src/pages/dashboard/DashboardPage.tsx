@@ -8,8 +8,6 @@ import {
 } from "lucide-react";
 
 import { getMyProfile } from "@/lib/api/members";
-import { listEvents } from "@/lib/api/club-operations";
-import { formatDate, formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
@@ -57,9 +55,6 @@ export default function DashboardPage() {
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
         <ProfilePanel />
-        <div className="flex flex-col gap-6">
-          <UpcomingEventsPanel />
-        </div>
       </div>
     </div>
   );
@@ -106,65 +101,4 @@ function ProfilePanel() {
       )}
     </AsyncBoundary>
   );
-}
-
-function UpcomingEventsPanel() {
-  const query = useQuery({
-    queryKey: ["operations", "events", "recent"],
-    queryFn: () => listEvents({ limit: 10 }),
-  });
-
-  return (
-    <AsyncBoundary
-      query={query}
-      isEmpty={(events) => events.some(isUpcoming) === false}
-      empty={{ title: "No upcoming events", description: "Upcoming club events will appear here." }}
-    >
-      {(events) => {
-        const upcoming = events
-          .filter(isUpcoming)
-          .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-          .slice(0, 4);
-        return (
-          <Card>
-            <CardHeader className="flex-row items-center">
-              <CardTitle className="text-base">Upcoming events</CardTitle>
-              <Button asChild variant="ghost" size="sm" className="ml-auto">
-                <Link to="/operations">All operations</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {upcoming.map((event) => (
-                <Link
-                  key={event.id}
-                  to={`/operations/events/${event.id}`}
-                  className="hover:bg-accent/50 flex items-center gap-3 rounded-lg border p-3 transition-colors"
-                >
-                  <div className="bg-primary/10 text-primary flex size-10 shrink-0 flex-col items-center justify-center rounded-lg text-[10px] font-bold leading-none">
-                    <span className="text-sm">{formatDate(event.starts_at).split(" ")[0]}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{event.title}</p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      {formatDateTime(event.starts_at)}
-                      {event.location ? ` · ${event.location}` : ""}
-                    </p>
-                  </div>
-                  {event.capacity > 0 ? (
-                    <Badge variant="outline" className="ml-auto shrink-0">
-                      {event.capacity} capacity
-                    </Badge>
-                  ) : null}
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
-        );
-      }}
-    </AsyncBoundary>
-  );
-}
-
-function isUpcoming(event: Awaited<ReturnType<typeof listEvents>>[number]) {
-  return (parseUtc(event.ends_at)?.getTime() ?? 0) > Date.now();
 }

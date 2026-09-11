@@ -346,6 +346,7 @@ function LessonPanel({
     mutationFn: () => completeLesson(lesson.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["learning", "progress", String(pathId)] });
+      queryClient.invalidateQueries({ queryKey: ["learning", "path", pathId] });
       toast.success("Lesson completed.");
     },
     onError: (error) =>

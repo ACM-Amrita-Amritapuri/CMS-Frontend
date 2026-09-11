@@ -165,6 +165,7 @@ function RolesSection({
     mutationFn: (roleId: number) => applyToRole(project.id, { role_id: roleId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["projects", "detail", project.id] });
       toast.success("Application sent.");
     },
     onError: (error) =>

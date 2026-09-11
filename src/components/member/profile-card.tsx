@@ -4,14 +4,7 @@ import type { ProfileView } from "@/lib/api/members";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters/date";
 
-const roleLabels: Record<string, string> = {
-  MEMBER: "Member",
-  SIG_CORE: "SIG Core",
-  SIG_LEAD: "SIG Lead",
-  WEBMASTER: "Webmaster",
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Super Admin",
-};
+import { roleLabels } from "@/lib/auth/permissions";
 
 const socialLinks = [
   { key: "github_url", label: "GitHub", icon: CodeIcon },

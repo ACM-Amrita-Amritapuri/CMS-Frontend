@@ -43,14 +43,7 @@ const navigation = [
   { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
 ];
 
-const roleLabels: Record<string, string> = {
-  MEMBER: "Member",
-  SIG_CORE: "SIG Core",
-  SIG_LEAD: "SIG Lead",
-  WEBMASTER: "Webmaster",
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Super Admin",
-};
+import { roleLabels } from "@/lib/auth/permissions";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
