@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { TemporaryPasswordDialog } from "@/pages/admin/AdminMembersPage";
 
 const accountSchema = z.object({
@@ -53,7 +54,8 @@ export default function AdminAccountsPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
+    <AdminShell>
+      <div className="mx-auto flex max-w-xl flex-col gap-6">
       <PageHeader
         title="Accounts"
         description="Create club accounts. Members change their temporary password at first sign-in."
@@ -108,6 +110,7 @@ export default function AdminAccountsPage() {
         password={secret?.password ?? null}
         onClose={() => setSecret(null)}
       />
-    </div>
+      </div>
+    </AdminShell>
   );
 }

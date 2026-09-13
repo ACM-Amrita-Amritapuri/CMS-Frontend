@@ -23,6 +23,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 const sigSchema = z.object({
   name: z.string().min(1, "Enter a SIG name."),
@@ -38,7 +39,8 @@ export default function AdminSigsPage() {
   const query = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs() });
 
   return (
-    <div className="flex flex-col gap-6">
+    <AdminShell>
+      <div className="flex flex-col gap-6">
       <PageHeader
         title="SIGs"
         description="Special interest groups and their activation state."
@@ -86,8 +88,9 @@ export default function AdminSigsPage() {
             setEditing(null);
           }
         }}
-      />
-    </div>
+        />
+      </div>
+    </AdminShell>
   );
 }
 
