@@ -73,11 +73,12 @@ export default function LearningPathPage() {
       <PageHeader
         title={path.title}
         description={path.description}
+        eyebrow="Learning path"
         backTo={{ label: "All paths", to: "/learning" }}
         actions={<PublishPathButton pathId={path.id} state={path.publication_state} />}
       />
       {progress ? (
-        <div className="flex items-center gap-3 border-b pb-4">
+        <div className="flex flex-col gap-2 border-y py-4 sm:flex-row sm:items-center sm:gap-3">
           <Progress value={progress.percent_complete} className="max-w-sm" />
           <span className="text-muted-foreground shrink-0 text-xs">
             {progress.completed_items}/{progress.total_items} items · {progress.percent_complete}%
@@ -91,7 +92,7 @@ export default function LearningPathPage() {
           description="Authors add modules to structure the path."
         />
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[340px_1fr]">
+        <div className="grid items-start gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
           <nav aria-label="Path contents" className="flex flex-col gap-3">
             {modules.map((module) => (
               <ModuleCard
@@ -172,43 +173,32 @@ function ModuleCard({
   };
 
   return (
-    <div className="bg-card overflow-hidden rounded-lg border">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="hover:bg-accent/50 flex w-full items-center gap-3 p-4 text-left transition-colors"
-        aria-expanded={open}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{module.title}</p>
-          <p className="text-muted-foreground text-xs">
-            {module.lessons.length} lessons · {module.assignments.length} assignments
-          </p>
-        </div>
-        {module.publication_state === "DRAFT" ? (
-          canManage ? (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                void publish(() => setModuleState(module.id, "PUBLISHED"), module.title);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.stopPropagation();
-                  void publish(() => setModuleState(module.id, "PUBLISHED"), module.title);
-                }
-              }}
-              className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
-            >
-              Publish
-            </span>
-          ) : (
-            <Badge variant="warning">Draft</Badge>
-          )
+    <div className="bg-card overflow-hidden rounded-xl border">
+      <div className="flex items-start gap-2 p-4">
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="hover:bg-accent/50 -m-1 flex min-w-0 flex-1 items-start gap-3 rounded-lg p-1 text-left transition-colors"
+          aria-expanded={open}
+        >
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{module.title}</p>
+            <p className="text-muted-foreground text-xs">
+              {module.lessons.length} lessons · {module.assignments.length} assignments
+            </p>
+          </div>
+          {module.publication_state === "DRAFT" && !canManage ? <Badge variant="warning">Draft</Badge> : null}
+        </button>
+        {module.publication_state === "DRAFT" && canManage ? (
+          <button
+            type="button"
+            onClick={() => void publish(() => setModuleState(module.id, "PUBLISHED"), module.title)}
+            className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
+          >
+            Publish
+          </button>
         ) : null}
-      </button>
+      </div>
       {open ? (
         <ul className="border-t">
           {module.lessons.map((lesson) => (
@@ -261,39 +251,23 @@ function TreeItem({
 }) {
   return (
     <li>
-      <button
-        type="button"
-        onClick={onClick}
-        aria-current={active ? "true" : undefined}
-        className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors ${
-          active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"
-        }`}
-      >
-        <Icon className="size-4 shrink-0" />
-        <span className="truncate">{label}</span>
-        <span className="ml-auto flex shrink-0 items-center gap-1">
-          {draft ? <Badge variant="warning" className="text-[10px]">Draft</Badge> : null}
-          {draft && onPublish ? (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                onPublish();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.stopPropagation();
-                  onPublish();
-                }
-              }}
-              className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
-            >
-              Publish
-            </span>
-          ) : null}
-        </span>
-      </button>
+      <div className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"}`}>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-current={active ? "true" : undefined}
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+        >
+          <Icon className="size-4 shrink-0" />
+          <span className="truncate">{label}</span>
+        </button>
+        {draft ? <Badge variant="warning" className="shrink-0 text-[10px]">Draft</Badge> : null}
+        {draft && onPublish ? (
+          <button type="button" onClick={onPublish} className="text-primary shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline">
+            Publish
+          </button>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -344,7 +318,7 @@ function LessonPanel({
   });
 
   return (
-    <article className="flex flex-col gap-5">
+    <article className="bg-card flex flex-col gap-5 rounded-xl border p-5 sm:p-7">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
@@ -421,7 +395,7 @@ function CompleteButton({
     );
   }
   return (
-    <Button size="sm" onClick={onClick} disabled={disabled}>
+      <Button size="sm" className="rounded-full" onClick={onClick} disabled={disabled}>
       <CircleIcon className="size-3.5" /> Mark complete
     </Button>
   );

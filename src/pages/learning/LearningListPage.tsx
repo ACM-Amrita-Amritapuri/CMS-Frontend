@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { GraduationCapIcon, PlusIcon } from "lucide-react";
+import { ArrowUpRightIcon, GraduationCapIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { z } from "zod";
 
 import { createPath, listPaths } from "@/lib/api/learning";
@@ -36,6 +36,7 @@ export default function LearningListPage() {
   useDocumentTitle("Learning");
   const { hasCapability } = useSession();
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
   const query = useQuery({ queryKey: ["learning", "paths"], queryFn: listPaths });
 
   return (
@@ -43,6 +44,7 @@ export default function LearningListPage() {
       <PageHeader
         title="Learning"
         description="Structured paths with lessons and assignments."
+        eyebrow="Course library"
         actions={hasCapability("manage_content") ? <Button onClick={() => setCreating(true)}><PlusIcon /> New path</Button> : undefined}
       />
 
@@ -57,25 +59,55 @@ export default function LearningListPage() {
             : "Published paths will appear here once authors release them.",
         }}
       >
-        {(paths) => (
-          <ul className="divide-y border-y">
-            {paths.map((path) => (
-              <li key={path.id}>
-                <Link
-                  to={`/learning/paths/${path.id}`}
-                  className="hover:bg-muted/40 flex items-start justify-between gap-4 px-1 py-4 transition-colors sm:px-2"
-                >
-                  <div className="min-w-0">
-                    <h2 className="text-base font-semibold">{path.title}</h2>
-                    {path.description ? <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{path.description}</p> : null}
-                    <p className="text-muted-foreground mt-2 text-xs">{path.modules?.length ?? 0} modules</p>
-                  </div>
-                  {path.publication_state === "DRAFT" ? <Badge variant="warning">Draft</Badge> : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        {(paths) => {
+          const normalized = search.trim().toLowerCase();
+          const filtered = paths.filter((path) =>
+            !normalized || `${path.title} ${path.description ?? ""}`.toLowerCase().includes(normalized),
+          );
+
+          return (
+            <div className="flex flex-col gap-4">
+              <div className="relative max-w-xl">
+                <SearchIcon aria-hidden className="text-muted-foreground pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2" />
+                <Input
+                  type="search"
+                  aria-label="Search learning paths"
+                  placeholder="Search paths, topics, or modules"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="h-10 rounded-full pl-10"
+                />
+              </div>
+              {filtered.length === 0 ? (
+                <div className="border-y py-12 text-center">
+                  <p className="text-sm font-medium">No paths match your search</p>
+                  <p className="text-muted-foreground mt-1 text-sm">Try a different title or topic.</p>
+                </div>
+              ) : (
+                <ul className="divide-y border-y">
+                  {filtered.map((path) => (
+                    <li key={path.id}>
+                      <Link
+                        to={`/learning/paths/${path.id}`}
+                        className="group hover:bg-muted/40 flex items-start justify-between gap-4 px-1 py-5 transition-colors sm:px-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-base font-semibold tracking-tight">{path.title}</h2>
+                            {path.publication_state === "DRAFT" ? <Badge variant="warning">Draft</Badge> : null}
+                          </div>
+                          {path.description ? <p className="text-muted-foreground mt-1 line-clamp-2 max-w-2xl text-sm leading-6">{path.description}</p> : null}
+                          <p className="text-muted-foreground mt-3 text-xs">{path.modules?.length ?? 0} modules</p>
+                        </div>
+                        <ArrowUpRightIcon aria-hidden className="text-muted-foreground mt-1 size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        }}
       </AsyncBoundary>
 
       <CreatePathDialog open={creating} onOpenChange={setCreating} />
