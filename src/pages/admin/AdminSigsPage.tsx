@@ -10,7 +10,6 @@ import { parseForm } from "@/lib/form-validation";
 import { slugify } from "@/lib/formatters/slug";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import {
@@ -22,6 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 const sigSchema = z.object({
   name: z.string().min(1, "Enter a SIG name."),
@@ -38,17 +39,11 @@ export default function AdminSigsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">SIGs</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Special interest groups and their activation state.
-          </p>
-        </div>
-        <Button onClick={() => setCreating(true)}>
-          <PlusIcon /> New SIG
-        </Button>
-      </header>
+      <PageHeader
+        title="SIGs"
+        description="Special interest groups and their activation state."
+        actions={<Button onClick={() => setCreating(true)}><PlusIcon /> New SIG</Button>}
+      />
 
       <AsyncBoundary
         query={query}
@@ -59,13 +54,10 @@ export default function AdminSigsPage() {
         }}
       >
         {(sigs) => (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="divide-y border-y">
             {sigs.map((sig) => (
-              <li
-                key={sig.id}
-                className="bg-card flex items-center gap-3 rounded-lg border p-4"
-              >
-                <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+              <li key={sig.id} className="flex items-center gap-3 px-1 py-4 sm:px-2">
+                <div className="bg-muted text-primary flex size-9 shrink-0 items-center justify-center rounded-md">
                   <LayersIcon className="size-4" />
                 </div>
                 <div className="min-w-0">
@@ -73,11 +65,7 @@ export default function AdminSigsPage() {
                   <p className="text-muted-foreground truncate font-mono text-xs">{sig.slug}</p>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
-                  {sig.is_active ? (
-                    <Badge variant="success">Active</Badge>
-                  ) : (
-                    <Badge variant="secondary">Inactive</Badge>
-                  )}
+                  <StatusBadge status={sig.is_active ? "ACTIVE" : "INACTIVE"} />
                   <Button variant="ghost" size="icon-sm" aria-label={`Edit ${sig.name}`} onClick={() => setEditing(sig)}>
                     <PencilIcon />
                   </Button>

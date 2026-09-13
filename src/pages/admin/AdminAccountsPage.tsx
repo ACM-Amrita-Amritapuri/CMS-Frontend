@@ -11,6 +11,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 import { TemporaryPasswordDialog } from "@/pages/admin/AdminMembersPage";
 
 const accountSchema = z.object({
@@ -53,12 +54,10 @@ export default function AdminAccountsPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Accounts</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Create club accounts. Members change their temporary password at first sign-in.
-        </p>
-      </header>
+      <PageHeader
+        title="Accounts"
+        description="Create club accounts. Members change their temporary password at first sign-in."
+      />
 
       <Card>
         <CardHeader>

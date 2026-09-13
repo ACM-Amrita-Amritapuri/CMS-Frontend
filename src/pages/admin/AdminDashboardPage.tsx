@@ -12,6 +12,7 @@ import { getDashboardSummary } from "@/lib/api/admin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { QueryErrorState } from "@/components/ui/async";
 import { Skeleton } from "@/components/ui/primitives";
+import { PageHeader, SectionHeader } from "@/components/ui/page";
 
 const tiles = [
   { key: "total_users", label: "Total users", icon: UsersIcon, to: "/admin/members" },
@@ -30,12 +31,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Administration</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Club-wide accounts, SIGs, and membership at a glance.
-        </p>
-      </header>
+      <PageHeader title="Administration" description="Club-wide accounts, SIGs, and membership at a glance." />
 
       {query.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -47,25 +43,25 @@ export default function AdminDashboardPage() {
         <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
         <>
-          <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <section aria-label="Summary" className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-5">
             {tiles.map(({ key, label, icon: Icon, to }) => (
               <Link
                 key={key}
                 to={to}
-                className="bg-card hover:border-primary rounded-lg border p-4 transition-colors"
+                className="hover:bg-muted/40 group border-b py-4 transition-colors"
               >
-                <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
-                  <Icon className="size-4" />
+                <div className="flex items-center gap-2">
+                  <Icon className="text-primary size-4" aria-hidden />
+                  <p className="text-muted-foreground text-xs">{label}</p>
                 </div>
-                <p className="mt-3 text-2xl font-semibold tabular-nums">{query.data[key]}</p>
-                <p className="text-muted-foreground text-xs">{label}</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums">{query.data[key]}</p>
               </Link>
             ))}
           </section>
 
           <section aria-label="Role distribution" className="max-w-xl">
-            <div className="bg-card rounded-lg border p-5">
-              <h2 className="text-sm font-semibold">Role distribution</h2>
+            <div>
+              <SectionHeader title="Role distribution" />
               <ul className="mt-3 flex flex-col gap-2">
                 {Object.entries(query.data.role_counts).map(([role, count]) => (
                   <li key={role} className="flex items-center gap-3 text-sm">
