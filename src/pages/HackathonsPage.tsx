@@ -6,6 +6,7 @@ import { parseUtc, formatDateTime } from "@/lib/formatters/date";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader, SectionHeader } from "@/components/ui/page";
 
 export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
   return [...events]
@@ -17,7 +18,7 @@ export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
 }
 
 export default function HackathonsPage() {
-  useDocumentTitle("Hackathons & events");
+  useDocumentTitle("Events");
   const eventsQuery = useQuery({
     queryKey: ["operations", "events", "upcoming"],
     queryFn: () => listEvents({ limit: 100 }),
@@ -26,27 +27,14 @@ export default function HackathonsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <header className="flex flex-col gap-3 border-b pb-6">
-        <div className="text-primary flex items-center gap-2 text-sm font-medium">
-          <TrophyIcon className="size-4" /> Build, compete, and ship
-        </div>
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Hackathons & events</h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm">
-            Find the next hackathon, CTF, or club event and register in a few clicks.
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        title="Events"
+        eyebrow={<span className="inline-flex items-center gap-2"><TrophyIcon className="size-4" /> Build, compete, and ship</span>}
+        description="Find the next hackathon, CTF, or club event and register in a few clicks."
+      />
 
       <section aria-labelledby="upcoming-events-heading">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 id="upcoming-events-heading" className="text-lg font-semibold">
-              Upcoming events
-            </h2>
-            <p className="text-muted-foreground mt-1 text-sm">Save your spot before registration closes.</p>
-          </div>
-        </div>
+        <SectionHeader title="Upcoming events" description="Save your spot before registration closes." />
 
         <AsyncBoundary
           query={eventsQuery}

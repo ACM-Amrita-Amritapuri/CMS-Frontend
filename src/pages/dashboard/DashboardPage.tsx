@@ -14,6 +14,7 @@ import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader, SectionHeader } from "@/components/ui/page";
 
 const quickLinks = [
   { to: "/learning", label: "Learning", description: "Paths, lessons, and assignments", icon: GraduationCapIcon },
@@ -28,29 +29,30 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome back, <span className="text-primary">{user?.username ?? "member"}</span>
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Here&apos;s what&apos;s happening across the club.
-        </p>
-      </header>
+      <PageHeader
+        title={`Welcome back, ${user?.username ?? "member"}`}
+        description="Here's what's happening across the club."
+      />
 
-      <section aria-label="Quick links" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-labelledby="explore-heading">
+        <SectionHeader title="Explore the workspace" />
+        <div className="mt-3 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4">
         {quickLinks.map(({ to, label, description, icon: Icon }) => (
           <Link
             key={to}
             to={to}
-            className="bg-card hover:border-primary group rounded-lg border border-l-2 p-4 transition-colors"
+            className="group flex items-start gap-3 border-b py-4 transition-colors hover:border-primary"
           >
-            <div className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-9 items-center justify-center rounded-lg transition-colors">
+            <div className="bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md transition-colors">
               <Icon className="size-4" />
             </div>
-            <p className="mt-3 text-sm font-semibold">{label}</p>
-            <p className="text-muted-foreground mt-0.5 text-xs">{description}</p>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">{label}</span>
+              <span className="text-muted-foreground mt-0.5 block text-xs">{description}</span>
+            </span>
           </Link>
         ))}
+        </div>
       </section>
 
       <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">

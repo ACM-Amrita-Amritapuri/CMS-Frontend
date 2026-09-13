@@ -19,6 +19,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
   Dialog,
@@ -62,15 +63,11 @@ export default function DocumentationListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Documentation</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            The club knowledge base — search published documents and manage drafts.
-          </p>
-        </div>
-        <CreateDocumentButton open={creating} onOpenChange={setCreating} />
-      </header>
+      <PageHeader
+        title="Knowledge"
+        description="Search published documents and manage drafts in the club knowledge base."
+        actions={<CreateDocumentButton open={creating} onOpenChange={setCreating} />}
+      />
 
       <form
         className="flex gap-2"
@@ -111,29 +108,28 @@ export default function DocumentationListPage() {
         }
       >
         {(items) => (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="divide-y border-y">
             {items.map((doc) => (
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
-                  className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
+                  className="hover:bg-muted/40 flex items-start justify-between gap-4 px-1 py-4 transition-colors sm:px-2"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="text-sm font-semibold">{doc.title}</h2>
-                    {doc.state ? (
-                      <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge>
-                    ) : null}
-                  </div>
-                  {doc.summary ? (
-                    <p className="text-muted-foreground line-clamp-2 text-sm">{doc.summary}</p>
-                  ) : null}
-                  <div className="text-muted-foreground mt-auto flex flex-wrap gap-1.5 text-xs">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
+                      <h2 className="text-sm font-semibold">{doc.title}</h2>
+                      {doc.state ? <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge> : null}
+                    </div>
+                    {doc.summary ? <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{doc.summary}</p> : null}
+                    <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-xs">
                     {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
                     {doc.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[10px]">
+                      <Badge key={tag} variant="secondary">
                         #{tag}
                       </Badge>
                     ))}
+                    </div>
                   </div>
                 </Link>
               </li>

@@ -15,6 +15,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
   Dialog,
@@ -38,19 +39,11 @@ export default function LearningListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Learning</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Structured paths with lessons and assignments.
-          </p>
-        </div>
-        {hasCapability("manage_content") ? (
-          <Button onClick={() => setCreating(true)}>
-            <PlusIcon /> New path
-          </Button>
-        ) : null}
-      </header>
+      <PageHeader
+        title="Learning"
+        description="Structured paths with lessons and assignments."
+        actions={hasCapability("manage_content") ? <Button onClick={() => setCreating(true)}><PlusIcon /> New path</Button> : undefined}
+      />
 
       <AsyncBoundary
         query={query}
@@ -64,25 +57,19 @@ export default function LearningListPage() {
         }}
       >
         {(paths) => (
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="divide-y border-y">
             {paths.map((path) => (
               <li key={path.id}>
                 <Link
                   to={`/learning/paths/${path.id}`}
-                  className="bg-card hover:border-primary flex h-full flex-col gap-3 rounded-lg border p-5 transition-colors"
+                  className="hover:bg-muted/40 flex items-start justify-between gap-4 px-1 py-4 transition-colors sm:px-2"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
                     <h2 className="text-base font-semibold">{path.title}</h2>
-                    {path.publication_state === "DRAFT" ? (
-                      <Badge variant="warning">Draft</Badge>
-                    ) : null}
+                    {path.description ? <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{path.description}</p> : null}
+                    <p className="text-muted-foreground mt-2 text-xs">{path.modules?.length ?? 0} modules</p>
                   </div>
-                  {path.description ? (
-                    <p className="text-muted-foreground line-clamp-2 text-sm">{path.description}</p>
-                  ) : null}
-                  <div className="text-muted-foreground mt-auto flex items-center gap-3 text-xs">
-                    <span>{path.modules?.length ?? 0} modules</span>
-                  </div>
+                  {path.publication_state === "DRAFT" ? <Badge variant="warning">Draft</Badge> : null}
                 </Link>
               </li>
             ))}
