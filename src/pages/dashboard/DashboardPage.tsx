@@ -10,6 +10,7 @@ import {
 import { getMyProfile } from "@/lib/api/members";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { AdminShell } from "@/components/admin/admin-shell";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,30 @@ export const dashboardHeroClassName =
 
 export default function DashboardPage() {
   useDocumentTitle("Dashboard");
-  const { user } = useSession();
+  const { user, hasCapability } = useSession();
+  const isAdmin = hasCapability("administer");
+
+  if (isAdmin) {
+    return (
+      <AdminShell>
+        <div className="flex flex-col gap-6">
+          <section className="rounded-2xl border border-[#1f1f1f] bg-[#0a0a0a] px-6 py-8 sm:px-8 sm:py-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#71717a]">Admin workspace</p>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl">Welcome back, {user?.username ?? "admin"}</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[#a1a1aa]">Manage accounts, SIGs, roles, events, and club operations.</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Button asChild variant="outline" size="sm" className="rounded-full border-[#333333] text-white hover:bg-[#111111]">
+                <Link to="/admin">Administration</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="rounded-full border-[#333333] text-white hover:bg-[#111111]">
+                <Link to="/operations">Operations</Link>
+              </Button>
+            </div>
+          </section>
+        </div>
+      </AdminShell>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
