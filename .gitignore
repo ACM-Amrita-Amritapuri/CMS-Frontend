@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.bun-tmp/
+.env*
+!.env.example
+start-backend.bat
