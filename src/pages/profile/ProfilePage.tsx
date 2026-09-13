@@ -18,6 +18,7 @@ import { AsyncBoundary } from "@/components/ui/async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 
 const urlField = z
   .string()
@@ -58,7 +59,18 @@ export default function ProfilePage() {
   const query = useQuery({ queryKey: ["profile", "me"], queryFn: getMyProfile });
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
+    <div className="flex max-w-2xl flex-col gap-6">
+      <PageHeader
+        title="Profile"
+        description="Keep your member details and external profiles up to date."
+        actions={
+          !editing ? (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <PencilIcon /> Edit profile
+            </Button>
+          ) : null
+        }
+      />
       <AsyncBoundary query={query} empty={{ title: "No profile found" }}>
         {(profile) =>
           editing ? (
@@ -67,16 +79,7 @@ export default function ProfilePage() {
               onDone={() => setEditing(false)}
             />
           ) : (
-            <>
-              <ProfileCard
-                profile={profile}
-                actions={
-                  <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                    <PencilIcon /> Edit
-                  </Button>
-                }
-              />
-            </>
+            <ProfileCard profile={profile} />
           )
         }
       </AsyncBoundary>

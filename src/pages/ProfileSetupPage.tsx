@@ -22,6 +22,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/async";
+import { PageHeader } from "@/components/ui/page";
 
 const urlField = z
   .string()
@@ -201,13 +202,13 @@ export default function ProfileSetupPage() {
   return (
     <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center px-4 py-10">
       <div className="bg-card rounded-lg border p-6 sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-md">
           <IdCardIcon className="size-5" />
         </div>
-        <h1 className="text-xl font-semibold">Complete your profile</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Introduce yourself to the club. You can update this any time.
-        </p>
+        <PageHeader
+          title="Complete your profile"
+          description="Introduce yourself to the club. You can update this any time."
+        />
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
           <div className="grid gap-4 sm:grid-cols-[1fr_100px]">

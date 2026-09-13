@@ -13,6 +13,7 @@ import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 
 const passwordSchema = z
   .object({
@@ -80,17 +81,17 @@ export default function ChangePasswordPage() {
   return (
     <div className="flex min-h-svh items-center justify-center px-4">
       <div className="bg-card w-full max-w-md rounded-lg border p-6 sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-md">
           <LockIcon className="size-5" />
         </div>
-        <h1 className="text-xl font-semibold">
-          {mustChange ? "Set a new password" : "Change your password"}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {mustChange
-            ? "Your account has a temporary password. Choose a new one to continue."
-            : "After changing your password you'll be signed out and need to log in again."}
-        </p>
+        <PageHeader
+          title={mustChange ? "Set a new password" : "Change your password"}
+          description={
+            mustChange
+              ? "Your account has a temporary password. Choose a new one to continue."
+              : "After changing your password you'll be signed out and need to log in again."
+          }
+        />
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
           <Field
