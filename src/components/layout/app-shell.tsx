@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/components/theme";
 import {
   BookOpenIcon,
+  CalendarDaysIcon,
   ChartPieIcon,
   FolderKanbanIcon,
   GraduationCapIcon,
@@ -21,6 +22,7 @@ import {
 
 import { logout, logoutAll } from "@/lib/api/auth";
 import { useSession } from "@/app/providers";
+import type { Capability } from "@/lib/auth/session-store";
 import { UserAvatar } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,15 +34,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { ContentFrame } from "@/components/ui/page";
 
 const navigation = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
-  { href: "/learning", label: "Learning", icon: GraduationCapIcon },
-  { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
-  { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
-  { href: "/members", label: "Members", icon: UsersIcon },
-  { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
+  {
+    label: "Workspace",
+    items: [
+      { href: "/dashboard", label: "Home", icon: LayoutDashboardIcon },
+      { href: "/learning", label: "Learning", icon: GraduationCapIcon },
+      { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
+      { href: "/documentation", label: "Knowledge", icon: BookOpenIcon },
+      { href: "/members", label: "Members", icon: UsersIcon },
+      { href: "/hackathons", label: "Events", icon: TrophyIcon },
+    ],
+  },
+  {
+    label: "Manage",
+    items: [
+      { href: "/operations", label: "Operations", icon: CalendarDaysIcon, capability: "manage_operations" as const },
+      { href: "/admin", label: "Administration", icon: SettingsIcon, capability: "administer" as const },
+    ],
+  },
 ];
 
 import { roleLabels } from "@/lib/auth/permissions";
@@ -90,11 +104,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="outline"
             size="sm"
-            className="text-muted-foreground w-56 justify-start gap-2"
+            className="text-muted-foreground w-56 justify-start gap-2 sm:w-64"
             onClick={() => setPaletteOpen(true)}
+            aria-label="Open quick switcher"
           >
             <SearchIcon className="size-3.5" />
-            Search…
+            <span className="hidden sm:inline">Quick switcher</span>
+            <span className="sm:hidden">Go to…</span>
             <kbd className="bg-muted ml-auto rounded px-1.5 font-mono text-[10px]">⌘K</kbd>
           </Button>
           <div className="ml-auto flex items-center gap-1">
@@ -103,7 +119,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        <main className="flex-1">
+          <ContentFrame width="wide">{children}</ContentFrame>
+        </main>
       </div>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
@@ -133,33 +151,44 @@ function Sidebar({
       </Link>
 
       <nav className="flex-1 overflow-y-auto p-3" aria-label="Primary">
-        <ul className="flex flex-col gap-0.5">
-          {navigation
-            .filter((item) => !item.capability || hasCapability(item.capability))
-            .map(({ href, label, icon: Icon }) => {
-              const active = pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <li key={href}>
-                  <Link
-                    to={href}
-                    onClick={onNavigate}
-                    aria-current={active ? "page" : undefined}
-                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                      active
-                        ? "bg-sidebar-accent text-sidebar-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {label}
-                    {active ? (
-                      <span className="bg-primary ml-auto size-1.5 rounded-full" aria-hidden />
-                    ) : null}
-                  </Link>
-                </li>
-              );
-            })}
-        </ul>
+        <div className="flex flex-col gap-6">
+          {navigation.map((group) => {
+            const items = group.items.filter(
+              (item) =>
+                !("capability" in item) || hasCapability(item.capability as Capability),
+            );
+            if (items.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="text-muted-foreground mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.08em]">
+                  {group.label}
+                </p>
+                <ul className="flex flex-col gap-0.5">
+                  {items.map(({ href, label, icon: Icon }) => {
+                    const active = pathname === href || pathname.startsWith(`${href}/`);
+                    return (
+                      <li key={href}>
+                        <Link
+                          to={href}
+                          onClick={onNavigate}
+                          aria-current={active ? "page" : undefined}
+                          className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                            active
+                              ? "bg-sidebar-accent text-sidebar-foreground"
+                              : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                          }`}
+                        >
+                          <Icon className="size-4" />
+                          {label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
       </nav>
 
       {user ? (
