@@ -15,6 +15,7 @@ import { slugify } from "@/lib/formatters/slug";
 import { localInputToIso } from "@/lib/formatters/date";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Dialog,
   DialogContent,
@@ -182,15 +183,14 @@ function ResourceForm({ modules, author }: { modules: LearningModule[]; author: 
         <Input id="r-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </Field>
       <Field label="Type" htmlFor="r-type">
-        <select
+        <NativeSelect
           id="r-type"
           value={type}
           onChange={(e) => setType(e.target.value as "MARKDOWN" | "EXTERNAL_LINK")}
-          className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
         >
           <option value="MARKDOWN">Markdown</option>
           <option value="EXTERNAL_LINK">External link</option>
-        </select>
+        </NativeSelect>
       </Field>
       {type === "MARKDOWN" ? (
         <Field label="Content" htmlFor="r-content">
@@ -241,10 +241,10 @@ function AssignmentForm({ modules, author }: { modules: LearningModule[]; author
       </Field>
       <div className="grid grid-cols-2 gap-4">
         <Field label="Submission type" htmlFor="a-type">
-          <select id="a-type" value={type} onChange={(e) => setType(e.target.value as "TEXT" | "LINK")} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+          <NativeSelect id="a-type" value={type} onChange={(e) => setType(e.target.value as "TEXT" | "LINK")}>
             <option value="TEXT">Text</option>
             <option value="LINK">Link</option>
-          </select>
+          </NativeSelect>
         </Field>
         <Field label="Deadline (optional)" htmlFor="a-deadline">
           <Input id="a-deadline" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
@@ -266,18 +266,17 @@ function ModuleSelect({
 }) {
   return (
     <Field label="Module" htmlFor="sel-module">
-      <select
+      <NativeSelect
         id="sel-module"
         value={moduleId}
         onChange={(e) => onModuleChange(e.target.value)}
-        className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
       >
         {modules.map((module) => (
           <option key={module.id} value={String(module.id)}>
             {module.title}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </Field>
   );
 }
@@ -293,18 +292,17 @@ function LessonSelect({
 }) {
   return (
     <Field label="Lesson" htmlFor="sel-lesson">
-      <select
+      <NativeSelect
         id="sel-lesson"
         value={lessonId}
         onChange={(e) => onLessonChange(e.target.value)}
-        className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
       >
         {lessons.map((lesson) => (
           <option key={lesson.id} value={String(lesson.id)}>
             {lesson.title}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </Field>
   );
 }
