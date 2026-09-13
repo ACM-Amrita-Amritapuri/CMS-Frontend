@@ -23,9 +23,11 @@ import { parseForm } from "@/lib/form-validation";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Dialog,
   DialogContent,
@@ -62,14 +64,10 @@ export default function OperationsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Operations</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Plan events and meetings for the club.
-          </p>
-        </div>
-        {manage ? (
+      <PageHeader
+        title="Operations"
+        description="Plan events and meetings for the club."
+        actions={manage ? (
           <div className="flex gap-2">
             <Button onClick={() => setCreatingEvent(true)}>
               <PlusIcon /> New event
@@ -79,7 +77,7 @@ export default function OperationsPage() {
             </Button>
           </div>
         ) : null}
-      </header>
+      />
 
       <Tabs defaultValue="events">
         <TabsList>
@@ -94,25 +92,25 @@ export default function OperationsPage() {
             empty={{ icon: CalendarDaysIcon, title: "No events yet" }}
           >
             {(events) => (
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="divide-border overflow-hidden rounded-md border">
                 {events.map((event) => (
                   <li key={event.id}>
                     <Link
                       to={`/operations/events/${event.id}`}
-                      className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
+                      className="hover:bg-muted/30 flex items-center gap-4 p-4 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <h2 className="text-sm font-semibold">{event.title}</h2>
-                        <EventStateBadge state={event.state} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-sm font-semibold">{event.title}</h2>
+                          <EventStateBadge state={event.state} />
+                        </div>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {formatDateTime(event.starts_at)}
+                          {event.location ? ` · ${event.location}` : ""}
+                        </p>
                       </div>
-                      <p className="text-muted-foreground text-xs">
-                        {formatDateTime(event.starts_at)}
-                        {event.location ? ` · ${event.location}` : ""}
-                      </p>
-                      <div className="mt-auto flex items-center gap-2 text-xs">
-                        <Badge variant="outline">
-                          <UsersIcon className="size-3" /> {event.capacity} capacity
-                        </Badge>
+                      <div className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
+                        <UsersIcon className="size-3.5" /> {event.capacity}
                       </div>
                     </Link>
                   </li>
@@ -129,10 +127,10 @@ export default function OperationsPage() {
             empty={{ icon: UsersIcon, title: "No meetings scheduled" }}
           >
             {(meetings) => (
-              <ul className="flex flex-col gap-3">
+              <ul className="divide-border overflow-hidden rounded-md border">
                 {meetings.map((meeting) => (
-                  <li key={meeting.id} className="bg-card rounded-lg border p-4">
-                    <div className="flex items-start justify-between gap-2">
+                  <li key={meeting.id} className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <h2 className="text-sm font-semibold">{meeting.event.title}</h2>
                         <p className="text-muted-foreground text-xs">
@@ -160,9 +158,7 @@ export default function OperationsPage() {
 }
 
 function EventStateBadge({ state }: { state: string }) {
-  const variant =
-    state === "PUBLISHED" ? "success" : state === "CANCELLED" ? "destructive" : "warning";
-  return <Badge variant={variant}>{state.toLowerCase()}</Badge>;
+  return <StatusBadge status={state} />;
 }
 
 function EventDialog({
@@ -254,16 +250,15 @@ function EventDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Type" htmlFor="ev-kind">
-              <select
+              <NativeSelect
                 id="ev-kind"
                 value={kind}
                 onChange={(event) => setKind(event.target.value as PublicEventKind)}
-                className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
               >
                 <option value="EVENT">Event</option>
                 <option value="HACKATHON">Hackathon</option>
                 <option value="CTF">CTF</option>
-              </select>
+              </NativeSelect>
             </Field>
             <Field label="Registration URL" htmlFor="ev-url">
               <Input
@@ -284,14 +279,14 @@ function EventDialog({
             </Field>
           </div>
           <Field label="SIG (optional)" htmlFor="ev-sig">
-            <select id="ev-sig" value={sigId} onChange={(event) => setSigId(event.target.value)} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+            <NativeSelect id="ev-sig" value={sigId} onChange={(event) => setSigId(event.target.value)}>
               <option value="none">Global</option>
               {(sigs.data ?? []).map((sig) => (
                 <option key={sig.id} value={String(sig.id)}>
                   {sig.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
@@ -411,12 +406,12 @@ function MeetingDialog({
               <Input id="meeting-location" value={location} onChange={(event) => setLocation(event.target.value)} />
             </Field>
             <Field label="SIG (optional)" htmlFor="meeting-sig">
-              <select id="meeting-sig" value={sigId} onChange={(event) => setSigId(event.target.value)} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+              <NativeSelect id="meeting-sig" value={sigId} onChange={(event) => setSigId(event.target.value)}>
                 <option value="none">Global</option>
                 {(sigs.data ?? []).map((sig) => (
                   <option key={sig.id} value={String(sig.id)}>{sig.name}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
           </div>
           <DialogFooter>

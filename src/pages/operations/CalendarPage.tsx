@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDaysIcon, MapPinIcon } from "lucide-react";
+import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon } from "lucide-react";
 
 import { getCalendarRange } from "@/lib/api/club-operations";
 import { formatDateTime, parseUtc } from "@/lib/formatters/date";
@@ -9,6 +9,8 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 function monthBounds(year: number, month: number) {
   const start = new Date(year, month, 1, 0, 0, 0);
@@ -34,39 +36,35 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Events and meetings across the club, month by month.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Calendar"
+        description="Events and meetings across the club, month by month."
+        actions={
+          <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
+            aria-label="Previous month"
             onClick={() =>
               setCursor(({ year, month }) =>
                 month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 },
               )
             }
-          >
-            ←
-          </Button>
+          ><ChevronLeftIcon /></Button>
           <span className="min-w-36 text-center text-sm font-medium">{bounds.label}</span>
           <Button
             variant="outline"
             size="sm"
+            aria-label="Next month"
             onClick={() =>
               setCursor(({ year, month }) =>
                 month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 },
               )
             }
-          >
-            →
-          </Button>
+          ><ChevronRightIcon /></Button>
         </div>
-      </header>
+        }
+      />
 
       <AsyncBoundary
         query={query}
@@ -104,7 +102,7 @@ export default function CalendarPage() {
                       </p>
                     </div>
                     {event.kind === "MEETING" ? <Badge variant="info">meeting</Badge> : null}
-                    {event.state === "CANCELLED" ? <Badge variant="destructive">cancelled</Badge> : null}
+                    {event.state === "CANCELLED" ? <StatusBadge status="CANCELLED" /> : null}
                   </Link>
                 </li>
               ))}
