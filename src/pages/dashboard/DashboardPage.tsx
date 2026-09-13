@@ -14,7 +14,7 @@ import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader, SectionHeader } from "@/components/ui/page";
+import { SectionHeader } from "@/components/ui/page";
 
 const quickLinks = [
   { to: "/learning", label: "Learning", description: "Paths, lessons, and assignments", icon: GraduationCapIcon },
@@ -28,34 +28,59 @@ export default function DashboardPage() {
   const { user } = useSession();
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={`Welcome back, ${user?.username ?? "member"}`}
-        description="Here's what's happening across the club."
-      />
+    <div className="flex flex-col gap-8">
+      <section className="relative overflow-hidden rounded-2xl bg-primary px-6 py-8 text-primary-foreground sm:px-8 sm:py-10">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-primary-foreground/65 text-[10px] font-semibold uppercase tracking-[0.18em]">
+            ACM member workspace
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            Welcome back, {user?.username ?? "member"}
+          </h1>
+          <p className="text-primary-foreground/70 mt-3 max-w-xl text-sm leading-6 sm:text-base">
+            Pick up where you left off, find a project to join, or catch up on what the club is running this week.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button asChild variant="secondary" className="rounded-full">
+              <Link to="/learning">Continue learning</Link>
+            </Button>
+            <Button asChild variant="ghost" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+              <Link to="/projects">Explore projects</Link>
+            </Button>
+          </div>
+        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-primary-foreground/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-4 -top-12 size-48 rounded-full border border-primary-foreground/10" />
+      </section>
 
       <section aria-labelledby="explore-heading">
-        <SectionHeader title="Explore the workspace" />
-        <div className="mt-3 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4">
-        {quickLinks.map(({ to, label, description, icon: Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            className="group flex items-start gap-3 border-b py-4 transition-colors hover:border-primary"
-          >
-            <div className="bg-muted text-primary group-hover:bg-primary group-hover:text-primary-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md transition-colors">
-              <Icon className="size-4" />
-            </div>
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold">{label}</span>
-              <span className="text-muted-foreground mt-0.5 block text-xs">{description}</span>
-            </span>
-          </Link>
-        ))}
+        <SectionHeader title="Explore the workspace" description="The places members use most often." />
+        <div className="mt-4 grid border-y sm:grid-cols-2 lg:grid-cols-4">
+          {quickLinks.map(({ to, label, description, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex min-h-28 items-start gap-3 border-b px-1 py-5 transition-colors hover:bg-muted/50 sm:border-r sm:px-4 lg:border-b-0 lg:last:border-r-0"
+            >
+              <div className="bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors">
+                <Icon className="size-4" />
+              </div>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">{label}</span>
+                <span className="text-muted-foreground mt-1 block text-xs leading-5">{description}</span>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="border-t pt-5">
+          <SectionHeader title="What’s happening" description="Use the navigation to pick up a current club workflow." />
+          <div className="text-muted-foreground mt-5 border-b py-10 text-sm">
+            Your latest activity will appear here as you join learning paths, projects, and events.
+          </div>
+        </section>
         <ProfilePanel />
       </div>
     </div>

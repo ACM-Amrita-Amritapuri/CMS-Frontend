@@ -80,10 +80,10 @@ function PageHeader({
           </Link>
         </Button>
       ) : null}
-      {eyebrow ? <div className="text-muted-foreground text-sm font-medium">{eyebrow}</div> : null}
+      {eyebrow ? <div className="text-muted-foreground text-[10px] font-semibold uppercase tracking-[0.16em]">{eyebrow}</div> : null}
       <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-balance">{title}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-[2.15rem]">{title}</h1>
           {description ? <div className="text-muted-foreground mt-1.5 max-w-2xl text-sm">{description}</div> : null}
           {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
         </div>

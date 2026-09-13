@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
+import { ArrowRightIcon, GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
 import { z } from "zod";
 
 import { login } from "@/lib/api/auth";
@@ -57,13 +57,19 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-svh items-center justify-center px-4">
-      <div className="relative grid w-full max-w-4xl gap-10 lg:grid-cols-[1fr_400px] lg:items-center">
-        <section className="hidden flex-col gap-6 lg:flex">
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8 sm:px-6">
+      <div className="relative grid w-full max-w-5xl gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-20">
+        <section className="hidden flex-col gap-7 lg:flex">
           <Brand />
-          <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance">
+          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-[0.18em]">
+            ACM student community
+          </p>
+          <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance xl:text-5xl">
             The club workspace for learning, building, and running ACM.
           </h1>
+          <p className="text-muted-foreground max-w-lg text-sm leading-6">
+            Keep your learning paths, projects, events, and club knowledge in one focused workspace.
+          </p>
           <ul className="flex flex-col gap-3">
             {highlights.map(({ icon: Icon, text }) => (
               <li key={text} className="text-muted-foreground flex items-center gap-3 text-sm">
@@ -76,11 +82,11 @@ export default function LoginPage() {
           </ul>
         </section>
 
-        <section className="bg-card rounded-lg border p-6 sm:p-8">
+        <section className="bg-card rounded-2xl border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.08)] sm:p-8 dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)]">
           <div className="mb-6 lg:hidden">
             <Brand />
           </div>
-          <h2 className="text-xl font-semibold">Sign in</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
           <p className="text-muted-foreground mt-1 text-sm">
             Accounts are created by club administrators.
           </p>
@@ -110,9 +116,10 @@ export default function LoginPage() {
                 {formError}
               </p>
             ) : null}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 w-full">
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 h-10 w-full rounded-full">
               {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
-              Sign in
+              <span>Sign in</span>
+              {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}
             </Button>
           </form>
 
@@ -128,7 +135,7 @@ export default function LoginPage() {
 function Brand() {
   return (
     <Link to="/login" className="flex items-center gap-2.5 font-semibold">
-      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md text-base font-bold">
+      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded text-base font-bold">
         A
       </span>
       <span className="text-lg">ACM CMS</span>
