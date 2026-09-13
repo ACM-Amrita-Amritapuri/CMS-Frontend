@@ -15,6 +15,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
@@ -170,11 +171,10 @@ function CreatePathDialog({
             />
           </Field>
           <Field label="SIG (optional)" htmlFor="path-sig">
-            <select
+            <NativeSelect
               id="path-sig"
               value={sigId}
               onChange={(event) => setSigId(event.target.value)}
-              className="border-input focus-visible:ring-ring/50 h-9 w-full rounded-lg border bg-transparent px-3 text-sm outline-none focus-visible:ring-[3px]"
             >
               <option value="none">Global (no SIG)</option>
               {(sigs.data ?? []).map((sig) => (
@@ -182,7 +182,7 @@ function CreatePathDialog({
                   {sig.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

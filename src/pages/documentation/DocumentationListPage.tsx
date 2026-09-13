@@ -9,7 +9,6 @@ import {
   createDocument,
   listDocuments,
   searchDocuments,
-  type DocumentState,
 } from "@/lib/api/documentation";
 import { listSigs } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/errors";
@@ -19,7 +18,9 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
   Dialog,
@@ -29,15 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const stateVariants: Record<DocumentState, "success" | "info" | "warning" | "destructive" | "secondary"> = {
-  PUBLISHED: "success",
-  APPROVED: "info",
-  SUBMITTED: "info",
-  DRAFT: "warning",
-  REJECTED: "destructive",
-  ARCHIVED: "secondary",
-};
 
 export default function DocumentationListPage() {
   useDocumentTitle("Documentation");
@@ -119,7 +111,7 @@ export default function DocumentationListPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
                       <h2 className="text-sm font-semibold">{doc.title}</h2>
-                      {doc.state ? <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge> : null}
+                      {doc.state ? <StatusBadge status={doc.state} /> : null}
                     </div>
                     {doc.summary ? <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{doc.summary}</p> : null}
                     <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-xs">
@@ -233,11 +225,10 @@ function CreateDocumentButton({
               </Field>
             </div>
             <Field label="SIG (optional)" htmlFor="doc-sig">
-              <select
+              <NativeSelect
                 id="doc-sig"
                 value={sigId}
                 onChange={(event) => setSigId(event.target.value)}
-                className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
               >
                 <option value="none">Global</option>
                 {(sigs.data ?? []).map((sig) => (
@@ -245,7 +236,7 @@ function CreateDocumentButton({
                     {sig.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
