@@ -255,7 +255,7 @@ function TreeItem({
         <button
           type="button"
           onClick={onClick}
-          aria-current={active ? "true" : undefined}
+          aria-current={active ? "page" : undefined}
           className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
         >
           <Icon className="size-4 shrink-0" />
