@@ -30,8 +30,8 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Administration" description="Club-wide accounts, SIGs, and membership at a glance." />
+    <div className="flex flex-col gap-6 rounded-xl bg-[#0a0a0a] p-5 ring-1 ring-[#1f1f1f] md:p-8">
+      <PageHeader title="Administration" description="Club-wide accounts, SIGs, and membership." />
 
       {query.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -43,38 +43,38 @@ export default function AdminDashboardPage() {
         <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
         <>
-          <section aria-label="Summary" className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-5">
+          <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {tiles.map(({ key, label, icon: Icon, to }) => (
               <Link
                 key={key}
                 to={to}
-                className="hover:bg-muted/40 group border-b py-4 transition-colors"
+                className="group rounded-lg border border-[#1f1f1f] bg-[#050505] p-4 transition-colors hover:border-[#333333] hover:bg-[#111111]"
               >
                 <div className="flex items-center gap-2">
                   <Icon className="text-primary size-4" aria-hidden />
-                  <p className="text-muted-foreground text-xs">{label}</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#a1a1aa]">{label}</p>
                 </div>
-                <p className="mt-2 text-2xl font-semibold tabular-nums">{query.data[key]}</p>
+                <p className="mt-3 text-3xl font-bold tabular-nums text-white">{query.data[key]}</p>
               </Link>
             ))}
           </section>
 
-          <section aria-label="Role distribution" className="max-w-xl">
+          <section aria-label="Role distribution" className="max-w-xl rounded-lg border border-[#1f1f1f] bg-[#050505] p-5">
             <div>
               <SectionHeader title="Role distribution" />
-              <ul className="mt-3 flex flex-col gap-2">
+              <ul className="mt-4 flex flex-col gap-3">
                 {Object.entries(query.data.role_counts).map(([role, count]) => (
-                  <li key={role} className="flex items-center gap-3 text-sm">
-                    <span className="w-28 shrink-0 font-medium">{role}</span>
-                    <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+                  <li key={role} className="flex items-center gap-3 text-sm text-[#f4f4f5]">
+                    <span className="w-28 shrink-0 text-xs font-semibold uppercase tracking-wide text-[#71717a]">{role}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#111111]">
                       <div
-                        className="bg-primary h-full rounded-full"
+                        className="h-full rounded-full bg-[#ffffff]"
                         style={{
                           width: `${Math.max(4, (count / Math.max(...Object.values(query.data.role_counts))) * 100)}%`,
                         }}
                       />
                     </div>
-                    <span className="text-muted-foreground w-8 text-right tabular-nums">{count}</span>
+                    <span className="w-8 text-right tabular-nums text-[#f4f4f5]">{count}</span>
                   </li>
                 ))}
               </ul>

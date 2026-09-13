@@ -58,7 +58,7 @@ export default function AdminMembersPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 rounded-xl bg-[#0a0a0a] p-5 ring-1 ring-[#1f1f1f] md:p-8">
       <PageHeader
         title="Members"
         description="Manage account status, roles, and password resets."
@@ -80,7 +80,7 @@ export default function AdminMembersPage() {
       <AsyncBoundary
         query={query}
         isEmpty={(members) => members.length === 0}
-        empty={{ title: "No members match this filter" }}
+        empty={{ title: "No members match this filter", description: "Try changing the active filter above." }}
       >
         {(members) => (
           <>
