@@ -6,6 +6,8 @@ import {
   LayersIcon,
   ShieldCheckIcon,
   UsersIcon,
+  UsersRoundIcon,
+  ShieldIcon,
 } from "lucide-react";
 
 import { getDashboardSummary } from "@/lib/api/admin";
@@ -47,16 +49,18 @@ export default function AdminDashboardPage() {
       ) : (
         <>
           <section aria-label="Quick actions" className="flex flex-wrap gap-2">
-        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
-          <Link to="/admin/members">Manage members</Link>
+        <Button asChild variant="outline" size="sm" className="border-[#333333] bg-[#050505] text-white hover:border-[#555555] hover:bg-[#111111]">
+          <Link to="/admin/members"><UsersRoundIcon className="mr-1.5 size-3.5" /> Manage members</Link>
         </Button>
-        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
-          <Link to="/admin/sigs">Manage SIGs</Link>
+        <Button asChild variant="outline" size="sm" className="border-[#333333] bg-[#050505] text-white hover:border-[#555555] hover:bg-[#111111]">
+          <Link to="/admin/sigs"><LayersIcon className="mr-1.5 size-3.5" /> Manage SIGs</Link>
         </Button>
-        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
-          <Link to="/admin/accounts">Create account</Link>
+        <Button asChild variant="outline" size="sm" className="border-[#333333] bg-[#050505] text-white hover:border-[#555555] hover:bg-[#111111]">
+          <Link to="/admin/accounts"><ShieldIcon className="mr-1.5 size-3.5" /> Create account</Link>
         </Button>
       </section>
+
+      <div className="h-px bg-[#1f1f1f]" />
 
       <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {tiles.map(({ key, label, icon: Icon, to }) => (
@@ -73,6 +77,8 @@ export default function AdminDashboardPage() {
               </Link>
             ))}
           </section>
+
+          <div className="h-px bg-[#1f1f1f] my-2" />
 
           <section aria-label="Role distribution" className="max-w-xl rounded-lg border border-[#1f1f1f] bg-[#050505] p-5">
             <div>
