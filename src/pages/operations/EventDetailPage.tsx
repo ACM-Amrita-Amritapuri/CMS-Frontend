@@ -14,8 +14,9 @@ import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { formatDateTime } from "@/lib/formatters/date";
 import { QueryErrorState } from "@/components/ui/async";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DetailRow, EmptyState } from "@/components/ui/table";
 
 export default function EventDetailPage() {
@@ -77,18 +78,12 @@ function EventDetail({ event }: { event: ClubEvent }) {
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
-          {event.description ? (
-            <p className="text-muted-foreground mt-1 max-w-xl text-sm">{event.description}</p>
-          ) : null}
-        </div>
-        <Badge variant={event.state === "PUBLISHED" ? "success" : event.state === "CANCELLED" ? "destructive" : "warning"}>
-          {event.state.toLowerCase()}
-        </Badge>
-      </header>
+    <article className="flex flex-col gap-6">
+      <PageHeader
+        title={event.title}
+        description={event.description}
+        meta={<StatusBadge status={event.state} />}
+      />
 
       <dl className="flex flex-col gap-2">
         <DetailRow label="When">
@@ -105,7 +100,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
       </dl>
 
       {manage ? (
-        <section className="border-t flex flex-wrap items-end gap-3 pt-4">
+      <section className="flex flex-wrap items-end gap-3 border-t pt-4">
           {event.state === "DRAFT" ? (
             <Button onClick={() => publish.mutate()} disabled={publish.isPending}>
               Publish event

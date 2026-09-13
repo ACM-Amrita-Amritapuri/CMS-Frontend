@@ -11,7 +11,6 @@ import {
   runDocumentAction,
   updateDocument,
   type ClubDocument,
-  type DocumentState,
 } from "@/lib/api/documentation";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
@@ -22,16 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/ui/markdown";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DetailRow, EmptyState } from "@/components/ui/table";
-
-const stateVariants: Record<DocumentState, "success" | "info" | "warning" | "destructive" | "secondary"> = {
-  PUBLISHED: "success",
-  APPROVED: "info",
-  SUBMITTED: "info",
-  DRAFT: "warning",
-  REJECTED: "destructive",
-  ARCHIVED: "secondary",
-};
 
 export default function DocumentDetailPage() {
   useDocumentTitle("Document");
@@ -116,26 +108,22 @@ function DocumentReader({
   return editing ? (
     <DocumentEditor document={doc} onDone={() => setEditing(false)} />
   ) : (
-    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
-          <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge>
-        </div>
-        {doc.summary ? <p className="text-muted-foreground text-sm">{doc.summary}</p> : null}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
-          {doc.tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-[10px]">
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-      </header>
+    <article className="flex flex-col gap-6">
+      <PageHeader
+        title={doc.title}
+        description={doc.summary}
+        meta={
+          <>
+            <StatusBadge status={doc.state} />
+            {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
+            {doc.tags.map((tag) => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+          </>
+        }
+      />
 
       <Markdown source={doc.body ?? ""} />
 
-      <dl className="border-t flex flex-col gap-2 pt-4">
+      <dl className="flex flex-col gap-2 border-t pt-4">
         <DetailRow label="State">{doc.state}</DetailRow>
         {doc.review_comment ? <DetailRow label="Review note">{doc.review_comment}</DetailRow> : null}
         {doc.reviewed_at ? <DetailRow label="Reviewed">{formatDateTime(doc.reviewed_at)}</DetailRow> : null}
