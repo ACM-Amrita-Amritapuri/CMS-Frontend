@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowLeftIcon,
   CheckIcon,
   FlagIcon,
   PlusIcon,
@@ -38,6 +37,8 @@ import { Field, Input, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/ui/markdown";
 import { Progress } from "@/components/ui/primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/table";
 
 const taskStates = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] as const;
@@ -56,11 +57,6 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" size="sm" className="w-fit">
-        <Link to="/projects">
-          <ArrowLeftIcon /> All projects
-        </Link>
-      </Button>
       {invalidId ? (
         <EmptyState title="Project not found" description="This project does not exist." />
       ) : query.isPending ? (
@@ -87,37 +83,27 @@ function ProjectDetail({ project }: { project: Project }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
-            <p className="text-muted-foreground mt-1 max-w-2xl text-sm">{project.summary}</p>
-          </div>
-          <div className="text-right">
-            <Badge variant={project.state === "PUBLISHED" ? "success" : "secondary"}>
-              {project.state.toLowerCase()}
-            </Badge>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Lead: user #{project.lead_user_id}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Progress value={project.progress} className="max-w-xs" />
-          <span className="text-muted-foreground text-xs tabular-nums">{project.progress}%</span>
-        </div>
-      </header>
+      <PageHeader
+        title={project.title}
+        description={project.summary}
+        backTo={{ label: "All projects", to: "/projects" }}
+        meta={<><StatusBadge status={project.state} /><span className="text-muted-foreground text-xs">Lead: user #{project.lead_user_id}</span></>}
+      />
+      <div className="flex items-center gap-3 border-b pb-4">
+        <Progress value={project.progress} className="max-w-xs" />
+        <span className="text-muted-foreground text-xs tabular-nums">{project.progress}%</span>
+      </div>
 
-      <Tabs defaultValue="about">
+      <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="about">About</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="team">
             Team ({activeMemberships.length}/{project.team_capacity})
           </TabsTrigger>
           <TabsTrigger value="work">Work</TabsTrigger>
         </TabsList>
 
-      <TabsContent value="about" className="bg-card rounded-lg border p-6">
+        <TabsContent value="overview" className="max-w-3xl py-2">
           <Markdown source={project.description} />
         </TabsContent>
 

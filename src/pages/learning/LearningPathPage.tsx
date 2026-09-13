@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowLeftIcon,
   CheckCircle2Icon,
   CircleIcon,
   ExternalLinkIcon,
@@ -32,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
 import { Progress } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
 import { EmptyState } from "@/components/ui/table";
 import { AssignmentPanel } from "@/components/learning/assignment-panel";
 import { AuthorDialog, useAuthorActions, type DialogKind } from "@/components/learning/author-dialogs";
@@ -70,30 +70,20 @@ export default function LearningPathPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <Button asChild variant="ghost" size="sm" className="w-fit">
-          <Link to="/learning">
-            <ArrowLeftIcon /> All paths
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{path.title}</h1>
-            {path.description ? (
-              <p className="text-muted-foreground mt-1 max-w-2xl text-sm">{path.description}</p>
-            ) : null}
-          </div>
-          <PublishPathButton pathId={path.id} state={path.publication_state} />
+      <PageHeader
+        title={path.title}
+        description={path.description}
+        backTo={{ label: "All paths", to: "/learning" }}
+        actions={<PublishPathButton pathId={path.id} state={path.publication_state} />}
+      />
+      {progress ? (
+        <div className="flex items-center gap-3 border-b pb-4">
+          <Progress value={progress.percent_complete} className="max-w-sm" />
+          <span className="text-muted-foreground shrink-0 text-xs">
+            {progress.completed_items}/{progress.total_items} items · {progress.percent_complete}%
+          </span>
         </div>
-        {progress ? (
-          <div className="flex items-center gap-3">
-            <Progress value={progress.percent_complete} className="max-w-sm" />
-            <span className="text-muted-foreground shrink-0 text-xs">
-              {progress.completed_items}/{progress.total_items} items · {progress.percent_complete}%
-            </span>
-          </div>
-        ) : null}
-      </header>
+      ) : null}
 
       {modules.length === 0 ? (
         <EmptyState
@@ -354,7 +344,7 @@ function LessonPanel({
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
+    <article className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
