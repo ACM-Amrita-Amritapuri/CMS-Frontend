@@ -52,6 +52,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    base: mode === "production" ? "/cms/" : "/",
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),

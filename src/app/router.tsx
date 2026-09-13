@@ -118,7 +118,9 @@ export const router = createBrowserRouter([
       { path: "*", lazy: lazyPage(() => import("../pages/NotFoundPage")) },
     ],
   },
-]);
+], {
+  basename: import.meta.env.BASE_URL,
+});
 
 function RouterFallback() {
   return <div className="min-h-svh" />;

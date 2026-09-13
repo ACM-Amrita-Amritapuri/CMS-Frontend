@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { KeyRoundIcon, ShieldUserIcon, UserMinusIcon, UserPlusIcon } from "lucide-react";
+import { KeyRoundIcon, ShieldUserIcon } from "lucide-react";
 
 import {
   changeRoles,
@@ -16,6 +16,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Select,
   SelectContent,
@@ -61,17 +63,16 @@ export default function AdminMembersPage() {
         title="Members"
         description="Manage account status, roles, and password resets."
         actions={
-          <div className="w-40">
-            <Select value={activeFilter} onValueChange={setActiveFilter}>
-              <SelectTrigger aria-label="Filter by status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All members</SelectItem>
-                <SelectItem value="true">Active only</SelectItem>
-                <SelectItem value="false">Inactive only</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="w-44">
+            <NativeSelect
+              aria-label="Filter by status"
+              value={activeFilter}
+              onChange={(event) => setActiveFilter(event.target.value)}
+            >
+              <option value="all">All members</option>
+              <option value="true">Active only</option>
+              <option value="false">Inactive only</option>
+            </NativeSelect>
           </div>
         }
       />
@@ -82,23 +83,30 @@ export default function AdminMembersPage() {
         empty={{ title: "No members match this filter" }}
       >
         {(members) => (
-          <div className="border-y">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((member) => (
-                  <MemberRow key={member.id} member={member} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            <div className="hidden border-y md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Roles</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {members.map((member) => (
+                    <MemberRow key={member.id} member={member} />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <ul className="flex flex-col gap-2 md:hidden">
+              {members.map((member) => (
+                <MemberCard key={member.id} member={member} />
+              ))}
+            </ul>
+          </>
         )}
       </AsyncBoundary>
     </div>
@@ -180,33 +188,20 @@ function MemberRow({ member }: { member: AdminMember }) {
         </DropdownMenu>
       </TableCell>
 
-      <Dialog open={confirmStatus} onOpenChange={setConfirmStatus}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {member.is_active ? "Deactivate" : "Activate"} {member.username}?
-            </DialogTitle>
-            <DialogDescription>
-              {member.is_active
-                ? "Deactivated members cannot sign in."
-                : "The member will be able to sign in again."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmStatus(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant={member.is_active ? "destructive" : "default"}
-              onClick={() => status.mutate(!member.is_active)}
-              disabled={status.isPending}
-            >
-              {member.is_active ? <UserMinusIcon /> : <UserPlusIcon />}
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmStatus}
+        onOpenChange={setConfirmStatus}
+        title={`${member.is_active ? "Deactivate" : "Activate"} ${member.username}?`}
+        description={
+          member.is_active
+            ? "Deactivated members cannot sign in."
+            : "The member will be able to sign in again."
+        }
+        confirmLabel="Confirm"
+        variant={member.is_active ? "destructive" : "default"}
+        pending={status.isPending}
+        onConfirm={() => status.mutate(!member.is_active)}
+      />
 
       <TemporaryPasswordDialog
         username={member.username}
@@ -220,6 +215,96 @@ function MemberRow({ member }: { member: AdminMember }) {
         onOpenChange={setRolesOpen}
       />
     </TableRow>
+  );
+}
+
+function MemberCard({ member }: { member: AdminMember }) {
+  const queryClient = useQueryClient();
+  const [confirmStatus, setConfirmStatus] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
+  const [resetSecret, setResetSecret] = useState<string | null>(null);
+
+  const status = useMutation({
+    mutationFn: (isActive: boolean) => setMemberStatus(member.id, isActive),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+      toast.success(`${updated.username} is now ${updated.is_active ? "active" : "inactive"}.`);
+      setConfirmStatus(false);
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Could not update the status."),
+  });
+
+  const reset = useMutation({
+    mutationFn: () => resetPassword(member.id),
+    onSuccess: (result) => {
+      setResetSecret(result.temporary_password);
+      toast.success("Temporary password generated — share it once.");
+    },
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : "Could not reset the password."),
+  });
+
+  return (
+    <li className="flex flex-col gap-3 rounded-lg border p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{member.username}</p>
+          <p className="text-muted-foreground font-mono text-xs">{member.roll_number}</p>
+        </div>
+        <StatusBadge status={member.is_active ? "ACTIVE" : "INACTIVE"} />
+      </div>
+      <div className="flex flex-wrap gap-1" aria-label={`Roles for ${member.username}`}>
+        {member.role_assignments.length === 0 ? (
+          <span className="text-muted-foreground text-sm">Member</span>
+        ) : (
+          member.role_assignments.map((assignment, index) => (
+            <Badge key={index} variant="secondary">
+              {assignment.role_code}
+              {assignment.sig_id ? ` · SIG ${assignment.sig_id}` : ""}
+            </Badge>
+          ))
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+        <Switch
+          checked={member.is_active}
+          onCheckedChange={() => setConfirmStatus(true)}
+          aria-label={`Toggle active state for ${member.username}`}
+        />
+        <span className="text-muted-foreground text-xs">
+          {member.is_active ? "Active" : "Inactive"}
+        </span>
+        <span className="flex-1" />
+        <Button variant="outline" size="sm" onClick={() => reset.mutate()} disabled={reset.isPending}>
+          <KeyRoundIcon /> Reset password
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setRolesOpen(true)}>
+          <ShieldUserIcon /> Roles
+        </Button>
+      </div>
+
+      <ConfirmDialog
+        open={confirmStatus}
+        onOpenChange={setConfirmStatus}
+        title={`${member.is_active ? "Deactivate" : "Activate"} ${member.username}?`}
+        description={
+          member.is_active
+            ? "Deactivated members cannot sign in."
+            : "The member will be able to sign in again."
+        }
+        confirmLabel="Confirm"
+        variant={member.is_active ? "destructive" : "default"}
+        pending={status.isPending}
+        onConfirm={() => status.mutate(!member.is_active)}
+      />
+      <TemporaryPasswordDialog
+        username={member.username}
+        password={resetSecret}
+        onClose={() => setResetSecret(null)}
+      />
+      <RoleDialog open={rolesOpen} member={member} onOpenChange={setRolesOpen} />
+    </li>
   );
 }
 

@@ -80,10 +80,17 @@ export default function OperationsPage() {
       />
 
       <Tabs defaultValue="events">
-        <TabsList>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="meetings">Meetings</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="meetings">Meetings</TabsTrigger>
+          </TabsList>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/operations/calendar">
+              <CalendarDaysIcon /> Calendar
+            </Link>
+          </Button>
+        </div>
 
         <TabsContent value="events">
           <AsyncBoundary
