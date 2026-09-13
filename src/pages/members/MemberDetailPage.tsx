@@ -7,6 +7,7 @@ import { ProfileCard } from "@/components/member/profile-card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { EmptyState } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
 
 export default function MemberDetailPage() {
   useDocumentTitle("Member");
@@ -30,5 +31,14 @@ export default function MemberDetailPage() {
     );
   }
 
-  return <ProfileCard profile={query.data} />;
+  return (
+    <div className="flex max-w-2xl flex-col gap-6">
+      <PageHeader
+        title={query.data.real_name || query.data.username}
+        description="Member profile and club details."
+        backTo={{ label: "Back to members", to: "/members" }}
+      />
+      <ProfileCard profile={query.data} />
+    </div>
+  );
 }

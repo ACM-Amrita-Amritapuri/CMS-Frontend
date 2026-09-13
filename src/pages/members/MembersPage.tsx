@@ -9,6 +9,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { EmptyState } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 
 export default function MembersPage() {
   useDocumentTitle("Members");
@@ -25,12 +26,10 @@ export default function MembersPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Look up a club member by their roll number.
-        </p>
-      </header>
+      <PageHeader
+        title="Members"
+        description="Look up a club member by their roll number."
+      />
 
       <form
         className="flex gap-2"

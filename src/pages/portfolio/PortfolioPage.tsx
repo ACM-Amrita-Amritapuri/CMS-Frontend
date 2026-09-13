@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
 
 const contentTypeLabels = {
   LESSON: "Lesson",
@@ -66,12 +67,11 @@ export default function PortfolioPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Portfolio</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Learning achievements, project contributions, and showcases.
-        </p>
-      </header>
+      <PageHeader
+        title={`${profile.real_name || profile.username}'s portfolio`}
+        description="Learning achievements, project contributions, and showcases."
+        backTo={{ label: "Back to members", to: "/members" }}
+      />
 
       <div className="grid items-start gap-6 lg:grid-cols-[380px_1fr]">
         <ProfileCard profile={profile} />
