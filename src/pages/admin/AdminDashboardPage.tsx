@@ -13,6 +13,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { QueryErrorState } from "@/components/ui/async";
 import { Skeleton } from "@/components/ui/primitives";
 import { PageHeader, SectionHeader } from "@/components/ui/page";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 const tiles = [
   { key: "total_users", label: "Total users", icon: UsersIcon, to: "/admin/members" },
@@ -30,7 +31,8 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl bg-[#0a0a0a] p-5 ring-1 ring-[#1f1f1f] md:p-8">
+    <AdminShell>
+      <div className="flex flex-col gap-6">
       <PageHeader title="Administration" description="Club-wide accounts, SIGs, and membership." />
 
       {query.isPending ? (
@@ -82,6 +84,7 @@ export default function AdminDashboardPage() {
           </section>
         </>
       )}
-    </div>
+      </div>
+    </AdminShell>
   );
 }

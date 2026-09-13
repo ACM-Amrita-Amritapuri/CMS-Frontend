@@ -43,6 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { AdminShell } from "@/components/admin/admin-shell";
 
 const roleCodes = ["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"];
 
@@ -58,7 +59,8 @@ export default function AdminMembersPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl bg-[#0a0a0a] p-5 ring-1 ring-[#1f1f1f] md:p-8">
+    <AdminShell>
+      <div className="flex flex-col gap-6">
       <PageHeader
         title="Members"
         description="Manage account status, roles, and password resets."
@@ -109,7 +111,8 @@ export default function AdminMembersPage() {
           </>
         )}
       </AsyncBoundary>
-    </div>
+      </div>
+    </AdminShell>
   );
 }
 
