@@ -12,6 +12,7 @@ import { getDashboardSummary } from "@/lib/api/admin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { QueryErrorState } from "@/components/ui/async";
 import { Skeleton } from "@/components/ui/primitives";
+import { Button } from "@/components/ui/button";
 import { PageHeader, SectionHeader } from "@/components/ui/page";
 import { AdminShell } from "@/components/admin/admin-shell";
 
@@ -33,7 +34,7 @@ export default function AdminDashboardPage() {
   return (
     <AdminShell>
       <div className="flex flex-col gap-6">
-      <PageHeader title="Administration" description="Club-wide accounts, SIGs, and membership." />
+      <PageHeader title="Administration" description="Operate the club: manage accounts, roles, SIGs, and view membership at a glance." />
 
       {query.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -45,7 +46,19 @@ export default function AdminDashboardPage() {
         <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
         <>
-          <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <section aria-label="Quick actions" className="flex flex-wrap gap-2">
+        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
+          <Link to="/admin/members">Manage members</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
+          <Link to="/admin/sigs">Manage SIGs</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="border-[#333333] text-white hover:bg-[#111111]">
+          <Link to="/admin/accounts">Create account</Link>
+        </Button>
+      </section>
+
+      <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {tiles.map(({ key, label, icon: Icon, to }) => (
               <Link
                 key={key}
