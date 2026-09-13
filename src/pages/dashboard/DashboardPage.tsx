@@ -23,34 +23,37 @@ const quickLinks = [
   { to: "/operations", label: "Operations", description: "Events and meetings", icon: CalendarDaysIcon },
 ];
 
+export const dashboardHeroClassName =
+  "relative overflow-hidden rounded-2xl border border-transparent bg-primary px-6 py-8 text-primary-foreground dark:border-white/10 dark:bg-[#111111] dark:text-white sm:px-8 sm:py-10";
+
 export default function DashboardPage() {
   useDocumentTitle("Dashboard");
   const { user } = useSession();
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="relative overflow-hidden rounded-2xl bg-primary px-6 py-8 text-primary-foreground sm:px-8 sm:py-10">
+      <section className={dashboardHeroClassName}>
         <div className="relative z-10 max-w-2xl">
-          <p className="text-primary-foreground/65 text-[10px] font-semibold uppercase tracking-[0.18em]">
+          <p className="text-primary-foreground/65 text-[10px] font-semibold uppercase tracking-[0.18em] dark:text-white/65">
             ACM member workspace
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             Welcome back, {user?.username ?? "member"}
           </h1>
-          <p className="text-primary-foreground/70 mt-3 max-w-xl text-sm leading-6 sm:text-base">
+          <p className="text-primary-foreground/70 mt-3 max-w-xl text-sm leading-6 sm:text-base dark:text-white/70">
             Pick up where you left off, find a project to join, or catch up on what the club is running this week.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Button asChild variant="secondary" className="rounded-full">
               <Link to="/learning">Continue learning</Link>
             </Button>
-            <Button asChild variant="ghost" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+            <Button asChild variant="ghost" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:text-white dark:hover:bg-white/10 dark:hover:text-white">
               <Link to="/projects">Explore projects</Link>
             </Button>
           </div>
         </div>
-        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-primary-foreground/10" />
-        <div aria-hidden="true" className="pointer-events-none absolute -right-4 -top-12 size-48 rounded-full border border-primary-foreground/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-primary-foreground/10 dark:border-white/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute -right-4 -top-12 size-48 rounded-full border border-primary-foreground/10 dark:border-white/10" />
       </section>
 
       <section aria-labelledby="explore-heading">
