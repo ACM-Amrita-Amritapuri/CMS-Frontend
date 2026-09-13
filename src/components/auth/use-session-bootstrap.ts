@@ -66,7 +66,7 @@ export function useSessionBootstrap() {
   const status = useMemo<SessionStatus>(() => {
     if (user) return "ready";
     if (!outcome) return "loading";
-    if (outcome.kind === "ready") return "signed-out";
+    if (outcome.kind === "ready") return "ready";
     return outcome.kind === "error" ? "error" : outcome.kind;
   }, [user, outcome]);
 
