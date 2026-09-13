@@ -10,6 +10,7 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
   DRAFT: "warning",
   DONE: "success",
   IN_PROGRESS: "info",
+  INACTIVE: "secondary",
   PUBLISHED: "success",
   REJECTED: "destructive",
   REVIEWED: "success",

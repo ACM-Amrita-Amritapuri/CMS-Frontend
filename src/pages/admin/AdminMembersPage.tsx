@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 const roleCodes = ["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"];
 
@@ -55,26 +57,24 @@ export default function AdminMembersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage account status, roles, and password resets.
-          </p>
-        </div>
-        <div className="w-40">
-          <Select value={activeFilter} onValueChange={setActiveFilter}>
-            <SelectTrigger aria-label="Filter by status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All members</SelectItem>
-              <SelectItem value="true">Active only</SelectItem>
-              <SelectItem value="false">Inactive only</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </header>
+      <PageHeader
+        title="Members"
+        description="Manage account status, roles, and password resets."
+        actions={
+          <div className="w-40">
+            <Select value={activeFilter} onValueChange={setActiveFilter}>
+              <SelectTrigger aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All members</SelectItem>
+                <SelectItem value="true">Active only</SelectItem>
+                <SelectItem value="false">Inactive only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        }
+      />
 
       <AsyncBoundary
         query={query}
@@ -82,7 +82,7 @@ export default function AdminMembersPage() {
         empty={{ title: "No members match this filter" }}
       >
         {(members) => (
-          <div className="bg-card rounded-lg border">
+          <div className="border-y">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -153,11 +153,14 @@ function MemberRow({ member }: { member: AdminMember }) {
         </div>
       </TableCell>
       <TableCell>
-        <Switch
-          checked={member.is_active}
-          onCheckedChange={() => setConfirmStatus(true)}
-          aria-label={`Toggle active state for ${member.username}`}
-        />
+        <div className="flex items-center gap-3">
+          <StatusBadge status={member.is_active ? "ACTIVE" : "INACTIVE"} />
+          <Switch
+            checked={member.is_active}
+            onCheckedChange={() => setConfirmStatus(true)}
+            aria-label={`Toggle active state for ${member.username}`}
+          />
+        </div>
       </TableCell>
       <TableCell>
         <DropdownMenu>
