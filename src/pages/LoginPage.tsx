@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { ArrowRightIcon, GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
+import { ArrowRightIcon, Loader2Icon } from "lucide-react";
 import { z } from "zod";
 
 import { login } from "@/lib/api/auth";
@@ -19,12 +19,6 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const highlights = [
-  { icon: GraduationCapIcon, text: "Structured learning paths for every SIG" },
-  { icon: SparklesIcon, text: "Showcase projects and grow your portfolio" },
-  { icon: ShieldCheckIcon, text: "One workspace for the whole club" },
-];
-
 export default function LoginPage() {
   useDocumentTitle("Login");
   const navigate = useNavigate();
@@ -37,7 +31,6 @@ export default function LoginPage() {
       form.setError(field as keyof LoginForm, { message }),
     );
     if (!data) return;
-
     return login(data).then(
       (response) => {
         sessionStore.setSession(response.user, response.access_token);
@@ -48,9 +41,7 @@ export default function LoginPage() {
       },
       (error: unknown) => {
         setFormError(
-          error instanceof ApiError
-            ? error.message
-            : "Could not sign in. Please try again.",
+          error instanceof ApiError ? error.message : "Could not sign in. Please try again.",
         );
       },
     );
@@ -58,36 +49,18 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8 sm:px-6">
-      <div className="relative grid w-full max-w-5xl gap-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-20">
-        <section className="hidden flex-col gap-7 lg:flex">
-          <Brand />
-          <p className="text-muted-foreground text-[10px] font-semibold uppercase tracking-[0.18em]">
-            ACM student community
-          </p>
-          <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance xl:text-5xl">
-            The club workspace for learning, building, and running ACM.
-          </h1>
-          <p className="text-muted-foreground max-w-lg text-sm leading-6">
-            Keep your learning paths, projects, events, and club knowledge in one focused workspace.
-          </p>
-          <ul className="flex flex-col gap-3">
-            {highlights.map(({ icon: Icon, text }) => (
-              <li key={text} className="text-muted-foreground flex items-center gap-3 text-sm">
-                <span className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-lg">
-                  <Icon className="size-4" />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
-        </section>
+      <div className="flex w-full max-w-md flex-col items-center gap-8">
+        <Link to="/login" className="flex flex-col items-center gap-3 font-semibold">
+          <span className="bg-primary text-primary-foreground flex size-14 items-center justify-center rounded-xl text-2xl font-extrabold shadow-md">
+            A
+          </span>
+          <span className="text-xl tracking-tight">ACM CMS</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Club workspace</span>
+        </Link>
 
-        <section className="bg-card rounded-2xl border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.08)] sm:p-8 dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)]">
-          <div className="mb-6 lg:hidden">
-            <Brand />
-          </div>
-          <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
+        <section className="w-full rounded-2xl border bg-card p-6 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)] sm:p-8">
+          <h2 className="text-center text-2xl font-semibold tracking-tight">Sign in</h2>
+          <p className="text-muted-foreground mt-1 text-center text-sm">
             Accounts are created by club administrators.
           </p>
 
@@ -129,16 +102,5 @@ export default function LoginPage() {
         </section>
       </div>
     </div>
-  );
-}
-
-function Brand() {
-  return (
-    <Link to="/login" className="flex items-center gap-2.5 font-semibold">
-      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded text-base font-bold">
-        A
-      </span>
-      <span className="text-lg">ACM CMS</span>
-    </Link>
   );
 }
