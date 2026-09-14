@@ -50,12 +50,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8 sm:px-6">
       <div className="flex w-full max-w-md flex-col items-center gap-8">
-        <Link to="/login" className="flex flex-col items-center gap-3 font-semibold">
-          <span className="bg-primary text-primary-foreground flex size-14 items-center justify-center rounded-xl text-2xl font-extrabold shadow-md">
+        <Link to="/login" className="flex flex-col items-center gap-2 font-semibold">
+          <span className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-2xl text-3xl font-extrabold shadow-lg" aria-label="ACM logo">
             A
           </span>
-          <span className="text-xl tracking-tight">ACM CMS</span>
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Club workspace</span>
+          <span className="text-2xl tracking-tight">ACM CMS</span>
         </Link>
 
         <section className="w-full rounded-2xl border bg-card p-6 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)] sm:p-8">
@@ -95,10 +94,6 @@ export default function LoginPage() {
               {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}
             </Button>
           </form>
-
-          <p className="text-muted-foreground mt-6 text-center text-xs">
-            Trouble signing in? Ask an administrator to reset your password.
-          </p>
         </section>
       </div>
     </div>
