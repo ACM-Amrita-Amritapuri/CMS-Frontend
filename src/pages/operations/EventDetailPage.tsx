@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,11 @@ import {
 
 import {
   cancelEvent,
+  cancelMeeting,
+  getMeeting,
+  publishMeeting,
+  updateMinutes,
+  type Meeting,
   getEvent,
   getMyAttendance,
   listAttendance,
@@ -36,6 +41,8 @@ import { DetailRow, EmptyState } from "@/components/ui/table";
 export default function EventDetailPage() {
   useDocumentTitle("Event");
   const { eventId } = useParams();
+  const [search] = useSearchParams();
+  const meetingId = search.get("meetingId");
   const id = Number(eventId);
   const invalidId = normalizeId(eventId) === null;
   const query = useQuery({
@@ -56,22 +63,59 @@ export default function EventDetailPage() {
         <EmptyState title="Event not found" description="This event does not exist." />
       ) : (
         <QueryState query={query} notFound="Event not found">
-          {(event) => <EventDetail event={event} />}
+          {(event) => meetingId !== null ? (
+            <MeetingDetail event={event} meetingId={meetingId} />
+          ) : <EventDetail key={event.id} event={event} />}
         </QueryState>
       )}
     </div>
   );
 }
 
-function EventDetail({ event }: { event: ClubEvent }) {
+function MeetingDetail({ event, meetingId }: { event: ClubEvent; meetingId: string | number }) {
+  const query = useQuery({
+    queryKey: queryKeys.operations.meeting(meetingId),
+    queryFn: ({ signal }) => getMeeting(Number(meetingId), signal),
+    enabled: normalizeId(meetingId) !== null,
+    retry: false,
+  });
+  if (normalizeId(meetingId) === null) return <EmptyState title="Meeting not found" />;
+  return (
+    <QueryState query={query} notFound="Meeting not found">
+      {(meeting) => meeting.event.id === event.id ? (
+        <EventDetail key={meeting.id} event={meeting.event} meeting={meeting} />
+      ) : <EmptyState title="Meeting not found" />}
+    </QueryState>
+  );
+}
+
+function EventDetail({ event, meeting }: { event: ClubEvent; meeting?: Meeting }) {
   const { hasCapability } = useSession();
-  const manage = hasCapability("manage_operations");
+  const manage = event.sig_id === null
+    ? hasCapability("manage_operations", 0)
+    : hasCapability("manage_operations", event.sig_id);
   const queryClient = useQueryClient();
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [minutesId, setMinutesId] = useState<string | null>(null);
+  const minutesValue = minutesId ?? meeting?.minutes_document_id?.toString() ?? "";
+  const minutes = useMutation({
+    mutationFn: () => {
+      const documentId = normalizeId(minutesValue.trim());
+      if (!meeting || documentId === null) throw new Error("Enter a positive document ID.");
+      return updateMinutes(meeting.id, documentId);
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(queryKeys.operations.meeting(updated.id), updated);
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
+      setMinutesId(null);
+      toast.success("Minutes attached.");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Could not attach minutes."),
+  });
   const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
 
   const publish = useMutation({
-    mutationFn: () => publishEvent(event.id),
+    mutationFn: async () => meeting ? (await publishMeeting(meeting.id)).event : publishEvent(event.id),
     onSuccess: () => {
       refresh();
       toast.success("Event published.");
@@ -81,7 +125,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
   });
 
   const cancel = useMutation({
-    mutationFn: () => cancelEvent(event.id),
+    mutationFn: async () => meeting ? (await cancelMeeting(meeting.id)).event : cancelEvent(event.id),
     onSuccess: () => {
       refresh();
       setConfirmCancel(false);
@@ -117,7 +161,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
         <section className="flex flex-wrap items-end gap-3 border-t pt-4">
           {event.state === "DRAFT" ? (
             <Button onClick={() => publish.mutate()} disabled={publish.isPending}>
-              Publish event
+              Publish {meeting ? "meeting" : "event"}
             </Button>
           ) : null}
           {event.state !== "CANCELLED" ? (
@@ -126,7 +170,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
               onClick={() => setConfirmCancel(true)}
               disabled={cancel.isPending}
             >
-              <CalendarX2Icon /> Cancel event
+              <CalendarX2Icon /> Cancel {meeting ? "meeting" : "event"}
             </Button>
           ) : null}
         </section>
@@ -143,6 +187,21 @@ function EventDetail({ event }: { event: ClubEvent }) {
         onConfirm={() => cancel.mutate()}
       />
 
+      {meeting ? (
+        <section className="flex flex-col gap-3 border-t pt-4">
+          <SectionHeader title="Meeting" />
+          <p className="whitespace-pre-wrap text-sm">{meeting.agenda}</p>
+          {meeting.minutes_document_id ? <Link className="text-primary hover:underline" to={`/documentation/${meeting.minutes_document_id}`}>View minutes</Link> : <p className="text-muted-foreground text-sm">No minutes attached.</p>}
+          {manage && event.state !== "CANCELLED" ? (
+            <form className="flex items-end gap-3" onSubmit={(event) => { event.preventDefault(); minutes.mutate(); }}>
+              <Field label="Minutes document ID" htmlFor="minutes-id" hint="Use a published document in the meeting's scope.">
+                <Input id="minutes-id" value={minutesValue} onChange={(event) => setMinutesId(event.target.value)} disabled={minutes.isPending} />
+              </Field>
+              <Button type="submit" disabled={minutes.isPending || normalizeId(minutesValue.trim()) === null}>Attach minutes</Button>
+            </form>
+          ) : null}
+        </section>
+      ) : null}
       <AttendanceSection event={event} manage={manage} />
     </article>
   );
@@ -153,9 +212,23 @@ function AttendanceSection({ event, manage }: { event: ClubEvent; manage: boolea
   return <MemberAttendance eventId={event.id} />;
 }
 
+type IdentityType = "user" | "username" | "roll";
+
+export function resolveAttendanceIdentity(type: IdentityType, value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) throw new Error("Enter a member identifier.");
+  if (type === "user") {
+    const id = normalizeId(trimmed);
+    if (id === null) throw new Error("Enter a positive integer user ID.");
+    return { user_id: id };
+  }
+  return type === "username" ? { username: trimmed } : { roll_number: trimmed };
+}
+
 function ManagerAttendance({ event }: { event: ClubEvent }) {
   const queryClient = useQueryClient();
   const [identifier, setIdentifier] = useState("");
+  const [identityType, setIdentityType] = useState<IdentityType>("roll");
   const [removing, setRemoving] = useState<{ userId: number; label: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -170,18 +243,7 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
     queryClient.invalidateQueries({ queryKey: queryKeys.operations.attendance(event.id) });
 
   const mark = useMutation({
-    mutationFn: (value: string) => {
-      const trimmed = value.trim();
-      if (!trimmed) throw new Error("Enter a roll number, username, or user ID.");
-      const asId = Number(trimmed);
-      if (/^\d+$/.test(trimmed)) return markAttendance(event.id, { user_id: asId });
-      if (/^[A-Za-z0-9@._-]+$/.test(trimmed) && trimmed.includes("@") === false && /[A-Za-z]/.test(trimmed) && trimmed.length <= 64) {
-        return markAttendance(event.id, { username: trimmed }).catch(() =>
-          markAttendance(event.id, { roll_number: trimmed }),
-        );
-      }
-      return markAttendance(event.id, { roll_number: trimmed });
-    },
+    mutationFn: (identity: ReturnType<typeof resolveAttendanceIdentity>) => markAttendance(event.id, identity),
     onSuccess: () => {
       setIdentifier("");
       setFormError(null);
@@ -233,12 +295,27 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
         className="flex flex-col gap-2 sm:flex-row sm:items-end"
         onSubmit={(e) => {
           e.preventDefault();
-          mark.mutate(identifier);
+          try {
+            const identity = resolveAttendanceIdentity(identityType, identifier);
+            setFormError(null);
+            mark.mutate(identity);
+          } catch (error) {
+            setFormError((error as Error).message);
+          }
         }}
         noValidate
       >
+        <fieldset className="flex gap-3" disabled={mark.isPending}>
+          <legend className="text-sm font-medium">Identity type</legend>
+          {([ ["user", "User ID"], ["username", "Username"], ["roll", "Roll number"] ] as const).map(([type, label]) => (
+            <label key={type} className="flex items-center gap-1 text-sm">
+              <input type="radio" name="identity-type" value={type} checked={identityType === type} onChange={() => { setIdentityType(type); setFormError(null); }} />
+              {label}
+            </label>
+          ))}
+        </fieldset>
         <div className="flex-1">
-          <Field label="Member roll number, username, or ID" htmlFor="attendance-id" error={formError ?? undefined}>
+          <Field label="Member identifier" htmlFor="attendance-id" error={formError ?? undefined}>
             <Input
               id="attendance-id"
               value={identifier}

@@ -137,7 +137,8 @@ export default function OperationsPage() {
             {(meetings) => (
               <ul className="divide-border overflow-hidden rounded-md border">
                 {meetings.map((meeting) => (
-                  <li key={meeting.id} className="p-4">
+                  <li key={meeting.id}>
+                    <Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
                         <h2 className="text-sm font-semibold">{meeting.event.title}</h2>
@@ -151,6 +152,7 @@ export default function OperationsPage() {
                     {meeting.agenda ? (
                       <p className="text-muted-foreground mt-2 text-sm">{meeting.agenda}</p>
                     ) : null}
+                    </Link>
                   </li>
                 ))}
               </ul>

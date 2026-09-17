@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
 
 export type PublicationState = "DRAFT" | "PUBLISHED";
 
@@ -49,14 +50,20 @@ export interface LearningAssignment {
   position: number;
   deadline_at: string | null;
   publication_state: PublicationState;
-  /** Only present in submission responses. */
-  submission_state?: string;
-  content?: string | null;
-  external_url?: string | null;
-  submitted_at?: string | null;
-  feedback?: string | null;
-  score?: number | null;
-  reviewed_at?: string | null;
+}
+
+export interface LearningSubmission {
+  id: number;
+  assignment_id: number;
+  member_user_id?: number;
+  member_username?: string;
+  submission_state: "DRAFT" | "SUBMITTED" | "REVIEWED";
+  content: string | null;
+  external_url: string | null;
+  submitted_at: string | null;
+  feedback: string | null;
+  score: number | null;
+  reviewed_at: string | null;
 }
 
 export interface PathProgress {
@@ -193,11 +200,30 @@ export async function setAssignmentState(assignmentId: number, publication_state
   return assignment;
 }
 
+export async function getMySubmission(assignmentId: number, signal?: AbortSignal) {
+  try {
+    const { submission } = await apiRequest<{ submission: LearningSubmission }>(
+      `/learning/assignments/${assignmentId}/submission`, { signal },
+    );
+    return submission;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function listSubmissions(assignmentId: number, signal?: AbortSignal) {
+  const { submissions } = await apiRequest<{ submissions: LearningSubmission[] }>(
+    `/learning/assignments/${assignmentId}/submissions`, { signal },
+  );
+  return submissions;
+}
+
 export async function submitAssignment(
   assignmentId: number,
   input: { submission_state: "DRAFT" | "FINAL"; content?: string; external_url?: string },
 ) {
-  const { submission } = await apiRequest<{ submission: LearningAssignment }>(
+  const { submission } = await apiRequest<{ submission: LearningSubmission }>(
     `/learning/assignments/${assignmentId}/submissions`,
     { method: "POST", body: input },
   );
@@ -208,7 +234,7 @@ export async function reviewSubmission(
   submissionId: number,
   input: { feedback?: string; score?: number },
 ) {
-  const { submission } = await apiRequest<{ submission: LearningAssignment }>(
+  const { submission } = await apiRequest<{ submission: LearningSubmission }>(
     `/learning/submissions/${submissionId}/review`,
     { method: "PATCH", body: input },
   );

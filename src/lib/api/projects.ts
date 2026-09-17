@@ -120,6 +120,24 @@ export async function reviewApplication(
   return application;
 }
 
+export async function listTasks(projectId: number, signal?: AbortSignal) {
+  const { tasks } = await apiRequest<{ tasks: ProjectTask[] }>(`/projects/${projectId}/tasks`, { signal });
+  return tasks;
+}
+
+export async function listMilestones(projectId: number, signal?: AbortSignal) {
+  const { milestones } = await apiRequest<{ milestones: ProjectMilestone[] }>(`/projects/${projectId}/milestones`, { signal });
+  return milestones;
+}
+
+export async function updateMilestone(milestoneId: number, state: ProjectMilestone["state"]) {
+  const { milestone } = await apiRequest<{ milestone: ProjectMilestone }>(`/projects/milestones/${milestoneId}`, {
+    method: "PATCH",
+    body: { state },
+  });
+  return milestone;
+}
+
 export async function createTask(
   projectId: number,
   input: {

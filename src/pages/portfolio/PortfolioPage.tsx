@@ -80,7 +80,7 @@ export default function PortfolioPage() {
                           {contentTypeLabels[item.content_type]}
                         </Badge>
                         <span className="text-muted-foreground text-sm">
-                          path #{item.path_id} · module #{item.module_id}
+                          {item.path_title || "Learning path"} · {item.module_title || "Module"}
                         </span>
                         <time className="text-muted-foreground ml-auto shrink-0 text-xs">
                           {formatDate(item.completed_at)}

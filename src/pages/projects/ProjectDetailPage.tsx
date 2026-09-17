@@ -17,6 +17,9 @@ import {
   createTask,
   getProject,
   leaveProject,
+  listTasks,
+  listMilestones,
+  updateMilestone,
   reviewApplication,
   updateTask,
   upsertShowcase,
@@ -347,15 +350,17 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
-  const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  // The project payload does not embed tasks; created tasks accumulate here
-  // within the session.
-  const allTasks = tasks.filter((task) => task.project_id === project.id);
+  const key = queryKeys.projects.tasks(project.id);
+  const query = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => listTasks(project.id, signal),
+  });
+  const allTasks = query.data ?? [];
 
   const create = useMutation({
     mutationFn: () => createTask(project.id, { title }),
     onSuccess: (task) => {
-      setTasks((current) => [...current, task]);
+      queryClient.setQueryData<ProjectTask[]>(key, (current = []) => [...current.filter((item) => item.id !== task.id), task]);
       setCreating(false);
       setTitle("");
       toast.success("Task created.");
@@ -368,8 +373,9 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
     mutationFn: ({ task, state }: { task: ProjectTask; state: ProjectTask["state"] }) =>
       updateTask(task.id, { state }),
     onSuccess: (updated) => {
-      setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.setQueryData<ProjectTask[]>(key, (current = []) => current.map((task) => (task.id === updated.id ? updated : task)));
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(project.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.list() });
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Invalid transition."),
@@ -397,9 +403,11 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
           <Button type="submit">Add</Button>
         </form>
       ) : null}
-      {allTasks.length === 0 ? (
+      {query.isPending ? <p role="status">Loading tasks…</p> : query.isError ? (
+        <QueryErrorState error={query.error} retry={() => query.refetch()} />
+      ) : allTasks.length === 0 ? (
         <p className="text-muted-foreground mt-3 text-sm">
-          Tasks created in this session appear here.
+          No tasks yet.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
@@ -407,7 +415,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
             <li key={task.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
               <p className="min-w-0 flex-1 truncate text-sm font-medium">{task.title}</p>
               <div className="flex gap-1">
-                {taskStates
+                {canWork ? taskStates
                   .filter((state) => state !== task.state)
                   .map((state) => (
                     <Button
@@ -419,7 +427,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
                     >
                       {state.toLowerCase()}
                     </Button>
-                  ))}
+                  )) : null}
               </div>
               <Badge variant="secondary">{task.state.toLowerCase()}</Badge>
             </li>
@@ -431,14 +439,19 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
 }
 
 function MilestonesSection({ projectId, canWork }: { projectId: number; canWork: boolean }) {
-  const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
+  const queryClient = useQueryClient();
+  const key = queryKeys.projects.milestones(projectId);
+  const query = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => listMilestones(projectId, signal),
+  });
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
   const create = useMutation({
     mutationFn: () => createMilestone(projectId, { title }),
     onSuccess: (milestone) => {
-      setMilestones((current) => [...current, milestone]);
+      queryClient.setQueryData<ProjectMilestone[]>(key, (current = []) => [...current.filter((item) => item.id !== milestone.id), milestone]);
       setCreating(false);
       setTitle("");
       toast.success("Milestone added.");
@@ -447,7 +460,15 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
       toast.error(error instanceof ApiError ? error.message : "Could not add the milestone."),
   });
 
-  const scoped = milestones.filter((milestone) => milestone.project_id === projectId);
+  const move = useMutation({
+    mutationFn: ({ id, state }: { id: number; state: ProjectMilestone["state"] }) => updateMilestone(id, state),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ProjectMilestone[]>(key, (current = []) => current.map((item) => item.id === updated.id ? updated : item));
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Could not update the milestone."),
+  });
+  const scoped = query.data ?? [];
 
   return (
     <section className="bg-card rounded-lg border p-5">
@@ -473,9 +494,11 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
           <Button type="submit">Add</Button>
         </form>
       ) : null}
-      {scoped.length === 0 ? (
+      {query.isPending ? <p role="status">Loading milestones…</p> : query.isError ? (
+        <QueryErrorState error={query.error} retry={() => query.refetch()} />
+      ) : scoped.length === 0 ? (
         <p className="text-muted-foreground mt-3 text-sm">
-          Milestones added in this session appear here.
+          No milestones yet.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
@@ -483,6 +506,11 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
             <li key={milestone.id} className="flex items-center gap-3 rounded-lg border p-3 text-sm">
               <FlagIcon className="text-primary size-4 shrink-0" />
               {milestone.title}
+              {canWork ? (["PLANNED", "IN_PROGRESS", "DONE"] as const).filter((state) => state !== milestone.state).map((state) => (
+                <Button key={state} size="sm" variant="ghost" disabled={move.isPending} onClick={() => move.mutate({ id: milestone.id, state })}>
+                  {state.toLowerCase()}
+                </Button>
+              )) : null}
               <Badge variant="secondary" className="ml-auto">
                 {milestone.state.toLowerCase()}
               </Badge>

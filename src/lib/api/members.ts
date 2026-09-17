@@ -90,6 +90,8 @@ export interface PortfolioView {
     id: number;
     path_id: number;
     module_id: number;
+    path_title?: string | null;
+    module_title?: string | null;
     content_type: "LESSON" | "ASSIGNMENT";
     content_id: number;
     completed_at: string | null;

@@ -101,6 +101,29 @@ export async function listMeetings(params: { limit?: number; includeDrafts?: boo
   return meetings;
 }
 
+export async function getMeeting(meetingId: number, signal?: AbortSignal) {
+  const { meeting } = await apiRequest<{ meeting: Meeting }>(`/operations/meetings/${meetingId}`, { signal });
+  return meeting;
+}
+
+export async function publishMeeting(meetingId: number) {
+  const { meeting } = await apiRequest<{ meeting: Meeting }>(`/operations/meetings/${meetingId}/publish`, { method: "POST" });
+  return meeting;
+}
+
+export async function cancelMeeting(meetingId: number) {
+  const { meeting } = await apiRequest<{ meeting: Meeting }>(`/operations/meetings/${meetingId}/cancel`, { method: "POST" });
+  return meeting;
+}
+
+export async function updateMinutes(meetingId: number, minutesDocumentId: number | null) {
+  const { meeting } = await apiRequest<{ meeting: Meeting }>(`/operations/meetings/${meetingId}/minutes`, {
+    method: "PATCH",
+    body: { minutes_document_id: minutesDocumentId },
+  });
+  return meeting;
+}
+
 export async function createMeeting(input: {
   title: string;
   description?: string;

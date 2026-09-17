@@ -30,11 +30,15 @@ export const queryKeys = {
     paths: ["learning", "paths"] as const,
     path: (id: EntityId) => ["learning", "path", normalizeId(id)] as const,
     progress: (id: EntityId) => ["learning", "progress", normalizeId(id)] as const,
+    mySubmission: (id: EntityId, userId: EntityId) => ["learning", "assignment", normalizeId(id), "submission", normalizeId(userId)] as const,
+    submissions: (id: EntityId) => ["learning", "assignment", normalizeId(id), "submissions"] as const,
   },
   projects: {
     all: ["projects"] as const,
     list: (limit = 100) => ["projects", "list", limit] as const,
     detail: (id: EntityId) => ["projects", "detail", normalizeId(id)] as const,
+    tasks: (id: EntityId) => ["projects", "tasks", normalizeId(id)] as const,
+    milestones: (id: EntityId) => ["projects", "milestones", normalizeId(id)] as const,
   },
   documentation: {
     all: ["documentation"] as const,
@@ -48,6 +52,7 @@ export const queryKeys = {
     events: (includeDrafts = false, limit = 100) => ["operations", "events", { includeDrafts, limit }] as const,
     meetings: (includeDrafts = false, limit = 100) => ["operations", "meetings", { includeDrafts, limit }] as const,
     event: (id: EntityId) => ["operations", "event", normalizeId(id)] as const,
+    meeting: (id: EntityId) => ["operations", "meeting", normalizeId(id)] as const,
     calendar: (start: string, end: string) => ["operations", "calendar", start, end] as const,
     attendance: (id: EntityId) => ["operations", "event", normalizeId(id), "attendance"] as const,
     attendanceList: (id: EntityId, limit = 100) => ["operations", "event", normalizeId(id), "attendance", "list", limit] as const,

@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLinkIcon, SendIcon } from "lucide-react";
 
 import {
+  getMySubmission,
+  listSubmissions,
+  type LearningSubmission,
   reviewSubmission,
   setAssignmentState,
   submitAssignment,
@@ -18,6 +21,51 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/ui/markdown";
 import { DetailRow } from "@/components/ui/table";
+import { QueryErrorState } from "@/components/ui/async";
+
+function SubmissionReview({ submission, onReviewed }: {
+  submission: LearningSubmission;
+  onReviewed: (submission: LearningSubmission) => void;
+}) {
+  const [feedback, setFeedback] = useState(submission.feedback ?? "");
+  const [score, setScore] = useState(submission.score?.toString() ?? "");
+  const [pending, setPending] = useState(false);
+  return (
+    <article className="flex flex-col gap-3 rounded-lg border p-4">
+      <h3 className="font-semibold">
+        Submission #{submission.id}
+        {submission.member_username ? ` · ${submission.member_username}` : submission.member_user_id ? ` · Member #${submission.member_user_id}` : ""}
+      </h3>
+      <Badge className="w-fit" variant="secondary">{submission.submission_state}</Badge>
+      <p className="whitespace-pre-wrap text-sm">{submission.content || submission.external_url}</p>
+      {submission.submission_state === "SUBMITTED" ? (
+        <form className="flex flex-col gap-3" onSubmit={async (event) => {
+          event.preventDefault();
+          setPending(true);
+          try {
+            onReviewed(await reviewSubmission(submission.id, {
+              feedback: feedback || undefined,
+              score: score === "" ? undefined : Number(score),
+            }));
+            toast.success("Review saved.");
+          } catch (error) {
+            toast.error(error instanceof ApiError ? error.message : "Could not review.");
+          } finally {
+            setPending(false);
+          }
+        }}>
+          <Field label="Feedback" htmlFor={`feedback-${submission.id}`}>
+            <Textarea id={`feedback-${submission.id}`} value={feedback} onChange={(event) => setFeedback(event.target.value)} disabled={pending} />
+          </Field>
+          <Field label="Score (0–100)" htmlFor={`score-${submission.id}`}>
+            <Input id={`score-${submission.id}`} type="number" min={0} max={100} value={score} onChange={(event) => setScore(event.target.value)} disabled={pending} />
+          </Field>
+          <Button type="submit" className="w-fit" disabled={pending}>Save review</Button>
+        </form>
+      ) : <p>{submission.feedback}{submission.score !== null ? ` · ${submission.score}/100` : ""}</p>}
+    </article>
+  );
+}
 
 const stateLabels: Record<string, { label: string; variant: "success" | "info" | "warning" }> = {
   SUBMITTED: { label: "Awaiting review", variant: "info" },
@@ -26,18 +74,32 @@ const stateLabels: Record<string, { label: string; variant: "success" | "info" |
 };
 
 export function AssignmentPanel({ assignment }: { assignment: LearningAssignment }) {
-  const { hasCapability } = useSession();
-  const queryClient = useQueryClient();
+  const { user } = useSession();
+  return <AssignmentContent key={`${assignment.id}:${user?.id}`} assignment={assignment} />;
+}
 
-  // The backend has no submission-read endpoint, so the active submission is
-  // tracked for the current session from the POST responses.
-  const [submission, setSubmission] = useState<LearningAssignment | null>(null);
-  const [value, setValue] = useState("");
-  const [reviewFeedback, setReviewFeedback] = useState("");
-  const [reviewScore, setReviewScore] = useState("");
+function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
+  const { user, hasCapability } = useSession();
+  const queryClient = useQueryClient();
+  const submissionKey = queryKeys.learning.mySubmission(assignment.id, user?.id);
+  const mine = useQuery({
+    queryKey: submissionKey,
+    queryFn: ({ signal }) => getMySubmission(assignment.id, signal),
+    retry: false,
+  });
+  const submission = mine.data;
+  const [editedValue, setValue] = useState<string | null>(null);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const queue = useQuery({
+    queryKey: queryKeys.learning.submissions(assignment.id),
+    queryFn: ({ signal }) => listSubmissions(assignment.id, signal),
+    enabled: queueOpen && hasCapability("manage_content"),
+    retry: false,
+  });
   const [pending, setPending] = useState(false);
 
   const isLink = assignment.assignment_type === "LINK";
+  const value = editedValue ?? (isLink ? submission?.external_url : submission?.content) ?? "";
 
   const submit = async (submissionState: "DRAFT" | "FINAL") => {
     setPending(true);
@@ -46,8 +108,9 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
         submission_state: submissionState,
         ...(isLink ? { external_url: value } : { content: value }),
       });
-      setSubmission(result);
-      setValue("");
+      queryClient.setQueryData(submissionKey, result);
+      setValue(null);
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.submissions(assignment.id) });
       toast.success(result.submission_state === "SUBMITTED" ? "Submitted for review." : "Draft saved.");
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not submit.");
@@ -56,23 +119,6 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
     }
   };
 
-  const review = async () => {
-    if (!submission) return;
-    setPending(true);
-    try {
-      const result = await reviewSubmission(submission.id, {
-        feedback: reviewFeedback || undefined,
-        score: reviewScore === "" ? undefined : Number(reviewScore),
-      });
-      setSubmission(result);
-      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
-      toast.success("Review saved.");
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Could not review.");
-    } finally {
-      setPending(false);
-    }
-  };
 
   return (
     <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
@@ -145,7 +191,9 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
         </div>
       ) : null}
 
-      <section className="border-t pt-4">
+      {mine.isPending ? <p role="status">Loading your submission…</p> : mine.isError ? (
+        <QueryErrorState error={mine.error} retry={() => mine.refetch()} />
+      ) : <section className="border-t pt-4">
         <h3 className="text-sm font-semibold">{submission ? "Update submission" : "Your work"}</h3>
         <div className="mt-3 flex flex-col gap-3">
           {isLink ? (
@@ -181,34 +229,30 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
             </Button>
           </div>
         </div>
-      </section>
+      </section>}
 
-      {hasCapability("manage_content") && submission?.submission_state === "SUBMITTED" ? (
-        <section className="border-t pt-4">
-          <h3 className="text-sm font-semibold">Review submission</h3>
-          <div className="mt-3 flex flex-col gap-3">
-            <Field label="Feedback" htmlFor="review-feedback">
-              <Textarea
-                id="review-feedback"
-                rows={3}
-                value={reviewFeedback}
-                onChange={(event) => setReviewFeedback(event.target.value)}
-              />
-            </Field>
-            <Field label="Score (0–100)" htmlFor="review-score" className="w-40">
-              <Input
-                id="review-score"
-                type="number"
-                min={0}
-                max={100}
-                value={reviewScore}
-                onChange={(event) => setReviewScore(event.target.value)}
-              />
-            </Field>
-            <Button className="w-fit" onClick={review} disabled={pending}>
-              <SendIcon /> Save review
-            </Button>
-          </div>
+      {hasCapability("manage_content") ? (
+        <section className="flex flex-col gap-3 border-t pt-4" aria-label="Review queue">
+          <Button variant="outline" className="w-fit" onClick={() => setQueueOpen((open) => !open)}>
+            {queueOpen ? "Hide review queue" : "Load review queue"}
+          </Button>
+          {queueOpen ? queue.isPending ? <p role="status">Loading submissions…</p> : queue.isError ? (
+            <QueryErrorState error={queue.error} retry={() => queue.refetch()} />
+          ) : queue.data.length === 0 ? <p>No submissions to review.</p> : (
+            <ul className="flex flex-col gap-3">
+              {queue.data.map((item) => (
+                <li key={item.id}>
+                  <SubmissionReview submission={item} onReviewed={(updated) => {
+                    queryClient.setQueryData<LearningSubmission[]>(queryKeys.learning.submissions(assignment.id),
+                      (current = []) => current.map((entry) => entry.id === updated.id ? updated : entry));
+                    if (submission?.id === updated.id) queryClient.setQueryData(submissionKey, updated);
+                    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all, refetchType: "none" });
+                    queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
+                  }} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
       ) : null}
     </article>

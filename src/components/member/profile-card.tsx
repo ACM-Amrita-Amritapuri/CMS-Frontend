@@ -1,5 +1,9 @@
 import { CodeIcon, ExternalLinkIcon, LinkIcon, TerminalIcon } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "@/app/providers";
+import { listSigs } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import type { ProfileView } from "@/lib/api/members";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters/date";
@@ -22,14 +26,23 @@ export function ProfileCard({
   profile: ProfileView;
   actions?: React.ReactNode;
 }) {
+  const { hasCapability } = useSession();
   const sigNames = profile.club_role?.sig_info ?? {};
-  const roles = (profile.club_role?.assignments ?? []).map(
-    (assignment) =>
-      roleLabels[assignment.role_code] ??
-      (assignment.sig_id && sigNames[String(assignment.sig_id)]
-        ? `${roleLabels[assignment.role_code] ?? assignment.role_code} · ${sigNames[String(assignment.sig_id)]}`
-        : (assignment.role_code)),
-  );
+  const assignments = profile.club_role?.assignments ?? [];
+  const permitted = hasCapability("administer");
+  const sigs = useQuery({
+    queryKey: queryKeys.sigs.list(),
+    queryFn: ({ signal }) => listSigs(undefined, signal),
+    enabled: permitted && assignments.some(({ sig_id }) => sig_id !== null && !sigNames[String(sig_id)]),
+    retry: false,
+  });
+  const roles = assignments.map((assignment) => {
+    const label = roleLabels[assignment.role_code] ?? assignment.role_code;
+    if (assignment.sig_id === null) return label;
+    const name = sigNames[String(assignment.sig_id)] ??
+      (permitted ? sigs.data?.find((sig) => sig.id === assignment.sig_id)?.name : undefined);
+    return `${label} · ${name ?? `SIG ${assignment.sig_id}`}`;
+  });
 
   return (
     <div className="bg-card rounded-lg border">
