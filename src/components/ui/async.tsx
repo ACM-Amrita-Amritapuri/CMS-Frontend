@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -58,11 +58,14 @@ export function QueryState<T>({
 export const AsyncBoundary = QueryState;
 
 function DefaultSkeleton() {
+  const labelId = useId();
+
   return (
-    <div className="flex flex-col gap-3">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-40 w-full" />
-      <Skeleton className="h-40 w-full" />
+    <div role="status" aria-labelledby={labelId} className="flex flex-col gap-3">
+      <span id={labelId} className="sr-only">Loading content…</span>
+      <Skeleton aria-hidden="true" className="h-24 w-full" />
+      <Skeleton aria-hidden="true" className="h-40 w-full" />
+      <Skeleton aria-hidden="true" className="h-40 w-full" />
     </div>
   );
 }

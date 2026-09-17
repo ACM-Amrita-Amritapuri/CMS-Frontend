@@ -36,6 +36,62 @@ it.each([
   mount(() => Promise.reject(error));
   expect(await screen.findByText(title)).toBeInTheDocument();
   expect(screen.queryByText("No items")).not.toBeInTheDocument();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+it("announces default loading with visually hidden text and removes the status after success", async () => {
+  let resolve: (items: string[]) => void = () => {};
+  mount(() => new Promise<string[]>((done) => { resolve = done; }));
+
+  const status = screen.getByRole("status", { name: "Loading content…" });
+  const label = screen.getByText("Loading content…");
+  expect(label).toHaveClass("sr-only");
+  expect(label.id).not.toBe("");
+  expect(status).toHaveAttribute("aria-labelledby", label.id);
+  expect(status).toHaveClass("flex", "flex-col", "gap-3");
+  const skeletons = status.querySelectorAll(".animate-pulse");
+  expect(skeletons).toHaveLength(3);
+  expect(skeletons[0]).toHaveClass("h-24", "w-full");
+  expect(skeletons[1]).toHaveClass("h-40", "w-full");
+  expect(skeletons[2]).toHaveClass("h-40", "w-full");
+  for (const skeleton of skeletons) expect(skeleton).toHaveAttribute("aria-hidden", "true");
+
+  await act(async () => { resolve(["loaded"]); });
+  expect(await screen.findByText("loaded")).toBeInTheDocument();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+it("preserves a custom skeleton without adding a default loading status", () => {
+  render(
+    <QueryState<string[]>
+      query={{ data: undefined, isPending: true, isError: false, error: null, refetch: vi.fn() }}
+      skeleton={<p role="status">Loading members</p>}
+    >
+      {(items) => <p>{items.join(", ")}</p>}
+    </QueryState>,
+  );
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+  expect(screen.getByRole("status")).toHaveTextContent("Loading members");
+  expect(screen.queryByText("Loading content…")).not.toBeInTheDocument();
+});
+
+it("gives simultaneous default loading statuses unique labels", () => {
+  const query = { data: undefined, isPending: true, isError: false, error: null, refetch: vi.fn() };
+  render(
+    <>
+      <QueryState query={query}>{() => <p>First result</p>}</QueryState>
+      <QueryState query={query}>{() => <p>Second result</p>}</QueryState>
+    </>,
+  );
+  const statuses = screen.getAllByRole("status", { name: "Loading content…" });
+  expect(statuses).toHaveLength(2);
+  expect(statuses[0].getAttribute("aria-labelledby")).not.toBe(statuses[1].getAttribute("aria-labelledby"));
+});
+
+it("does not announce loading when cached data is available", () => {
+  mount(() => new Promise<string[]>(() => {}), ["cached"]);
+  expect(screen.getByText("cached")).toBeInTheDocument();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
 
 it("keeps cached data on refetch failure and retries successfully", async () => {

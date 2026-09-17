@@ -48,10 +48,10 @@ function Label({
   );
 }
 
-function FieldError({ children }: { children?: React.ReactNode }) {
+function FieldError({ id, children }: { id?: string; children?: React.ReactNode }) {
   if (!children) return null;
   return (
-    <p role="alert" className="text-destructive text-xs font-medium">
+    <p id={id} role="alert" className="text-destructive text-xs font-medium">
       {children}
     </p>
   );
@@ -76,14 +76,34 @@ function Field({
   children: React.ReactNode;
   className?: string;
 }) {
+  const generatedId = React.useId();
+  const childNodes = React.Children.toArray(children);
+  const controls = childNodes.filter(
+    React.isValidElement<React.HTMLAttributes<HTMLElement>>,
+  );
+  const control = controls.find((child) => htmlFor && child.props.id === htmlFor) ?? controls[0];
+  const controlId = control?.props.id ?? htmlFor ?? `${generatedId}-control`;
+  const errorId = `${generatedId}-error`;
+  const hintId = `${generatedId}-hint`;
+  const descriptionId = error ? errorId : hint ? hintId : undefined;
+  const describedBy = [control?.props["aria-describedby"], descriptionId].filter(Boolean).join(" ") || undefined;
+
   return (
     <div className={cn("flex flex-col gap-1.5", className)} data-slot="field">
-      <Label htmlFor={htmlFor}>{label}</Label>
-      {children}
+      <Label htmlFor={controlId}>{label}</Label>
+      {childNodes.map((child) =>
+        React.isValidElement<React.HTMLAttributes<HTMLElement>>(child) && child === control
+          ? React.cloneElement(child, {
+              id: controlId,
+              "aria-describedby": describedBy,
+              "aria-invalid": error ? true : child.props["aria-invalid"],
+            })
+          : child,
+      )}
       {hint && !error ? (
-        <p className="text-muted-foreground text-xs">{hint}</p>
+        <p id={hintId} className="text-muted-foreground text-xs">{hint}</p>
       ) : null}
-      <FieldError>{error}</FieldError>
+      <FieldError id={errorId}>{error}</FieldError>
     </div>
   );
 }
