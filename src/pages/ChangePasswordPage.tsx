@@ -14,6 +14,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
+import { QueryErrorState } from "@/components/ui/async";
 
 const passwordSchema = z
   .object({
@@ -31,7 +32,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 export default function ChangePasswordPage() {
   useDocumentTitle("Change password");
   const navigate = useNavigate();
-  const { status } = useSessionBootstrap();
+  const { status, error, retry } = useSessionBootstrap();
   const form = useForm<PasswordForm>({
     defaultValues: { current_password: "", new_password: "", confirm_password: "" },
   });
@@ -47,18 +48,19 @@ export default function ChangePasswordPage() {
     );
     if (!data) return;
 
+    const generation = sessionStore.getGeneration();
     return changePassword({
       current_password: data.current_password,
       new_password: data.new_password,
     }).then(
       () => {
-        // The backend invalidates every session after a password change,
-        // so the in-memory access token is dropped and re-login is required.
+        if (!sessionStore.isCurrentGeneration(generation)) return;
         sessionStore.clearSession();
         toast.success("Password updated. Please sign in with your new password.");
         navigate("/login", { replace: true });
       },
       (error: unknown) => {
+        if (!sessionStore.isCurrentGeneration(generation)) return;
         if (error instanceof ApiError && error.status === 401) {
           form.setError("current_password", { message: error.message });
         } else if (error instanceof ApiError && error.status === 422) {
@@ -71,6 +73,14 @@ export default function ChangePasswordPage() {
       },
     );
   });
+
+  if (status === "error") {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4">
+        <QueryErrorState error={error} retry={retry} />
+      </div>
+    );
+  }
 
   if (status !== "ready" && status !== "password-change-required") {
     return <OnboardingSplash />;

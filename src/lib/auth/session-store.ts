@@ -19,10 +19,18 @@ const emptySession: SessionState = { accessToken: null, user: null };
 export class SessionStore {
   private state: SessionState = emptySession;
   private readonly listeners = new Set<SessionListener>();
+  private generation = 0;
 
   getSnapshot = () => this.state;
 
+  getGeneration = () => this.generation;
+
+  isCurrentGeneration = (generation: number) => this.generation === generation;
+
+  canBootstrap = () => this.generation === 0 || this.state.accessToken !== null;
+
   setSession(user: AuthUser, accessToken: string) {
+    this.generation += 1;
     this.state = { user, accessToken };
     this.notify();
   }
@@ -37,7 +45,8 @@ export class SessionStore {
   }
 
   clearSession() {
-    this.state = emptySession;
+    this.generation += 1;
+    this.state = { ...emptySession };
     this.notify();
   }
 

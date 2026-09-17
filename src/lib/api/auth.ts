@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
+import { sessionStore } from "@/lib/auth/session-store";
 import type {
   AuthLoginResponse,
   AuthRefreshResponse,
@@ -36,15 +37,22 @@ export async function refreshSession() {
   });
 }
 
+async function signOut(path: string) {
+  const generation = sessionStore.getGeneration();
+  try {
+    return await apiRequest<{ message: string }>(path, {
+      method: "POST",
+      retryOn401: false,
+    });
+  } finally {
+    if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession();
+  }
+}
+
 export async function logout() {
-  return apiRequest<{ message: string }>("/auth/logout", {
-    method: "POST",
-    retryOn401: false,
-  });
+  return signOut("/auth/logout");
 }
 
 export async function logoutAll() {
-  return apiRequest<{ message: string }>("/auth/logout-all", {
-    method: "POST",
-  });
+  return signOut("/auth/logout-all");
 }

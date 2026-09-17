@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { IdCardIcon, Loader2Icon } from "lucide-react";
@@ -102,7 +102,10 @@ function formToProfileInput(data: z.output<typeof profileSchema>): ProfileInput 
 export default function ProfileSetupPage() {
   useDocumentTitle("Profile setup");
   const navigate = useNavigate();
-  const { status } = useSessionBootstrap();
+  const { status, error: bootstrapError, retry: retryBootstrap } = useSessionBootstrap();
+  const queryClient = useQueryClient();
+  const { user, generation } = useSession();
+  const canLoadProfile = status === "ready" || status === "profile-incomplete";
 
   useEffect(() => {
     if (status === "signed-out") navigate("/login", { replace: true });
@@ -111,34 +114,25 @@ export default function ProfileSetupPage() {
 
   const profileQuery = useQuery({
     queryKey: ["profile", "me"],
-    queryFn: getMyProfile,
-    enabled: status === "ready" || status === "profile-incomplete",
+    queryFn: async () => {
+      try {
+        return await getMyProfile();
+      } catch (error) {
+        if (
+          error instanceof ApiError && error.status === 404 && user &&
+          sessionStore.isCurrentGeneration(generation)
+        ) {
+          return initializeMyProfile(user.username);
+        }
+        throw error;
+      }
+    },
+    enabled: canLoadProfile,
+    retry: false,
+    retryOnMount: false,
   });
-
-  const { user } = useSession();
-  const initMutation = useMutation({
-    mutationFn: (username: string) => initializeMyProfile(username),
-    onSuccess: () => profileQuery.refetch(),
-  });
-
-  // A genuinely missing profile (no record at all) passes every gate but
-  // 404s here; create it once so the member can onboard.
-  useEffect(() => {
-    if (
-      profileQuery.error instanceof ApiError &&
-      profileQuery.error.status === 404 &&
-      user &&
-      !initMutation.isPending
-    ) {
-      initMutation.mutate(user.username);
-    }
-  }, [profileQuery.error, user, initMutation]);
 
   const isComplete = profileQuery.data?.is_complete === true;
-
-  useEffect(() => {
-    if (isComplete) navigate("/dashboard", { replace: true });
-  }, [isComplete, navigate]);
 
   const form = useForm<ProfileForm>();
 
@@ -150,19 +144,26 @@ export default function ProfileSetupPage() {
 
   const saveMutation = useMutation({
     mutationFn: (input: ProfileInput) => updateMyProfile(input),
-    onSuccess: async (profile) => {
+    onMutate: () => sessionStore.getGeneration(),
+    onSuccess: async (profile, _input, startedGeneration) => {
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
+      await queryClient.cancelQueries({ queryKey: ["profile", "me"] });
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
+      queryClient.setQueryData(["profile", "me"], profile);
       if (!profile.is_complete) {
         toast.error("The profile is still incomplete — check the required fields.");
         return;
       }
-      // Re-sync the user now that /auth/me passes the profile gate.
       const user = await getMe();
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
       const token = sessionStore.getSnapshot().accessToken;
-      if (user && token) sessionStore.setSession(user, token);
+      if (!token) return;
+      sessionStore.setSession(user, token);
       toast.success("Profile saved.");
       navigate("/dashboard", { replace: true });
     },
-    onError: (error) => {
+    onError: (error, _input, startedGeneration) => {
+      if (startedGeneration === undefined || !sessionStore.isCurrentGeneration(startedGeneration)) return;
       if (error instanceof ApiError && error.status === 422) {
         toast.error(error.message);
       } else {
@@ -173,6 +174,12 @@ export default function ProfileSetupPage() {
     },
   });
 
+  useEffect(() => {
+    if (isComplete && canLoadProfile && !saveMutation.isPending && !saveMutation.isError) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isComplete, canLoadProfile, saveMutation.isPending, saveMutation.isError, navigate]);
+
   const onSubmit = form.handleSubmit((values) => {
     const data = parseForm(profileSchema, values, (field, message) =>
       form.setError(field as keyof ProfileForm, { message }),
@@ -181,17 +188,29 @@ export default function ProfileSetupPage() {
     saveMutation.mutate(formToProfileInput(data));
   });
 
-  if (status === "loading" || profileQuery.isPending || initMutation.isPending) {
-    return <div className="min-h-svh" />;
-  }
-  if (status === "error" || profileQuery.isError) {
-    const error =
-      status === "error"
-        ? new Error("The session could not be verified.")
-        : profileQuery.error;
+  if (status === "error") {
     return (
       <div className="flex min-h-svh items-center justify-center px-4">
-        <QueryErrorState error={error} retry={() => window.location.reload()} />
+        <QueryErrorState error={bootstrapError} retry={retryBootstrap} />
+      </div>
+    );
+  }
+  if (!canLoadProfile || profileQuery.isPending) {
+    return <div className="min-h-svh" />;
+  }
+  if (profileQuery.isError) {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4">
+        <QueryErrorState error={profileQuery.error} retry={() => void profileQuery.refetch()} />
+      </div>
+    );
+  }
+  if (isComplete && saveMutation.isError) {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4">
+        <QueryErrorState error={saveMutation.error} retry={() => {
+          if (saveMutation.variables) saveMutation.mutate(saveMutation.variables);
+        }} />
       </div>
     );
   }
