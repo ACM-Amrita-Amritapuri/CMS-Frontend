@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FolderKanbanIcon } from "lucide-react";
 
 import { listProjects } from "@/lib/api/projects";
+import { queryKeys } from "@/lib/query-keys";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +12,7 @@ import { PageHeader } from "@/components/ui/page";
 
 export default function ProjectsListPage() {
   useDocumentTitle("Projects");
-  const projectsQuery = useQuery({ queryKey: ["projects"], queryFn: () => listProjects() });
+  const projectsQuery = useQuery({ queryKey: queryKeys.projects.list(), queryFn: ({ signal }) => listProjects(undefined, signal) });
 
   return (
     <div className="flex flex-col gap-8">

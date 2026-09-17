@@ -23,6 +23,7 @@ import {
   type LearningLesson,
   type LearningModule,
 } from "@/lib/api/learning";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -40,15 +41,15 @@ export default function LearningPathPage() {
   useDocumentTitle("Learning path");
   const { pathId } = useParams();
   const id = Number(pathId);
-  const invalidId = !pathId || Number.isNaN(id);
+  const invalidId = normalizeId(pathId) === null;
   const pathQuery = useQuery({
-    queryKey: ["learning", "path", pathId],
-    queryFn: () => getPath(id),
+    queryKey: queryKeys.learning.path(pathId),
+    queryFn: ({ signal }) => getPath(id, signal),
     enabled: !invalidId,
   });
   const progressQuery = useQuery({
-    queryKey: ["learning", "progress", pathId],
-    queryFn: () => getPathProgress(id),
+    queryKey: queryKeys.learning.progress(pathId),
+    queryFn: ({ signal }) => getPathProgress(id, signal),
     enabled: !invalidId,
   });
 
@@ -134,7 +135,7 @@ function PublishPathButton({ pathId, state }: { pathId: number; state: string })
   const publish = useMutation({
     mutationFn: () => setPathState(pathId, "PUBLISHED"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["learning"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
       toast.success("Path published.");
     },
     onError: (error) =>
@@ -165,7 +166,7 @@ function ModuleCard({
   const publish = async (fn: () => Promise<unknown>, label: string) => {
     try {
       await fn();
-      queryClient.invalidateQueries({ queryKey: ["learning"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
       toast.success(`${label} published.`);
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not publish.");
@@ -309,8 +310,8 @@ function LessonPanel({
   const complete = useMutation({
     mutationFn: () => completeLesson(lesson.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["learning", "progress", String(pathId)] });
-      queryClient.invalidateQueries({ queryKey: ["learning", "path", pathId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.progress(pathId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.path(pathId) });
       toast.success("Lesson completed.");
     },
     onError: (error) =>
@@ -366,7 +367,7 @@ function ResourcePublishButton({ resource }: { resource: LearningLesson["resourc
       onClick={async () => {
         try {
           await setResourceState(resource.id, "PUBLISHED");
-          queryClient.invalidateQueries({ queryKey: ["learning"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
           toast.success("Resource published.");
         } catch (error) {
           toast.error(error instanceof ApiError ? error.message : "Could not publish.");

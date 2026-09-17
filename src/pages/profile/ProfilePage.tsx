@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/members";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
+import { queryKeys } from "@/lib/query-keys";
 import { ProfileCard } from "@/components/member/profile-card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
@@ -56,7 +57,7 @@ type EditableForm = z.input<typeof editableSchema>;
 export default function ProfilePage() {
   useDocumentTitle("Profile");
   const [editing, setEditing] = useState(false);
-  const query = useQuery({ queryKey: ["profile", "me"], queryFn: getMyProfile });
+  const query = useQuery({ queryKey: queryKeys.profile.me, queryFn: ({ signal }) => getMyProfile(signal) });
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -100,7 +101,7 @@ function ProfileEditForm({
   const save = useMutation({
     mutationFn: (input: ProfileInput) => updateMyProfile(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
       toast.success("Profile updated.");
       onDone();
     },

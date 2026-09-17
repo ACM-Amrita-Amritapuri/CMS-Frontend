@@ -74,16 +74,18 @@ export interface PathProgress {
 
 const limit = (value: number) => `?limit=${value}`;
 
-export async function listPaths() {
+export async function listPaths(signal?: AbortSignal) {
   const { paths } = await apiRequest<{ paths: LearningPath[] }>(
     `/learning/paths${limit(100)}`,
+    { signal },
   );
   return paths;
 }
 
-export async function getPath(pathId: number) {
+export async function getPath(pathId: number, signal?: AbortSignal) {
   const { path } = await apiRequest<{ path: LearningPath }>(
     `/learning/paths/${pathId}`,
+    { signal },
   );
   return path;
 }
@@ -219,9 +221,10 @@ export async function completeLesson(lessonId: number) {
   });
 }
 
-export async function getPathProgress(pathId: number) {
+export async function getPathProgress(pathId: number, signal?: AbortSignal) {
   const { progress } = await apiRequest<{ progress: PathProgress }>(
     `/learning/paths/${pathId}/progress`,
+    { signal },
   );
   return progress;
 }

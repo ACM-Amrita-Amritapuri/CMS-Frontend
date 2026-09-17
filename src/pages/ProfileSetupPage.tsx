@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/members";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
+import { queryKeys } from "@/lib/query-keys";
 import { sessionStore } from "@/lib/auth/session-store";
 import { useSession } from "@/app/providers";
 import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
@@ -113,16 +114,17 @@ export default function ProfileSetupPage() {
   }, [status, navigate]);
 
   const profileQuery = useQuery({
-    queryKey: ["profile", "me"],
-    queryFn: async () => {
+    queryKey: queryKeys.profile.me,
+    queryFn: async ({ signal }) => {
       try {
-        return await getMyProfile();
+        return await getMyProfile(signal);
       } catch (error) {
         if (
           error instanceof ApiError && error.status === 404 && user &&
           sessionStore.isCurrentGeneration(generation)
         ) {
-          return initializeMyProfile(user.username);
+          signal.throwIfAborted();
+          return initializeMyProfile(user.username, signal);
         }
         throw error;
       }
@@ -147,9 +149,9 @@ export default function ProfileSetupPage() {
     onMutate: () => sessionStore.getGeneration(),
     onSuccess: async (profile, _input, startedGeneration) => {
       if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
-      await queryClient.cancelQueries({ queryKey: ["profile", "me"] });
+      await queryClient.cancelQueries({ queryKey: queryKeys.profile.me });
       if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
-      queryClient.setQueryData(["profile", "me"], profile);
+      queryClient.setQueryData(queryKeys.profile.me, profile);
       if (!profile.is_complete) {
         toast.error("The profile is still incomplete — check the required fields.");
         return;

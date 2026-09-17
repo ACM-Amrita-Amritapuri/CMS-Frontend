@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDaysIcon, ExternalLinkIcon, MapPinIcon, TrophyIcon } from "lucide-react";
 
+import { queryKeys } from "@/lib/query-keys";
 import { listEvents, type ClubEvent } from "@/lib/api/club-operations";
 import { parseUtc, formatDateTime } from "@/lib/formatters/date";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -20,8 +21,8 @@ export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
 export default function HackathonsPage() {
   useDocumentTitle("Events");
   const eventsQuery = useQuery({
-    queryKey: ["operations", "events", "upcoming"],
-    queryFn: () => listEvents({ limit: 100 }),
+    queryKey: queryKeys.operations.events(),
+    queryFn: ({ signal }) => listEvents({ limit: 100 }, signal),
     select: selectUpcomingEvents,
   });
 

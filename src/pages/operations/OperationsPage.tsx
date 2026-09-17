@@ -17,6 +17,7 @@ import {
   type PublicEventKind,
 } from "@/lib/api/club-operations";
 import { listSigs } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { localInputToIso } from "@/lib/formatters/date";
 import { parseForm } from "@/lib/form-validation";
@@ -54,12 +55,12 @@ export default function OperationsPage() {
   const [creatingMeeting, setCreatingMeeting] = useState(false);
 
   const eventsQuery = useQuery({
-    queryKey: ["operations", "events", manage],
-    queryFn: () => listEvents({ includeDrafts: manage }),
+    queryKey: queryKeys.operations.events(manage),
+    queryFn: ({ signal }) => listEvents({ includeDrafts: manage }, signal),
   });
   const meetingsQuery = useQuery({
-    queryKey: ["operations", "meetings", manage],
-    queryFn: () => listMeetings({ includeDrafts: manage }),
+    queryKey: queryKeys.operations.meetings(manage),
+    queryFn: ({ signal }) => listMeetings({ includeDrafts: manage }, signal),
   });
 
   return (
@@ -187,7 +188,7 @@ function EventDialog({
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -218,7 +219,7 @@ function EventDialog({
     },
     onSuccess: (event) => {
       if (!event) return;
-      queryClient.invalidateQueries({ queryKey: ["operations"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
       toast.success("Event created as a draft — publish it from its page.");
       onOpenChange(false);
     },
@@ -332,7 +333,7 @@ function MeetingDialog({
   const [location, setLocation] = useState("");
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -361,7 +362,7 @@ function MeetingDialog({
     },
     onSuccess: (meeting) => {
       if (!meeting) return;
-      queryClient.invalidateQueries({ queryKey: ["operations"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
       toast.success("Meeting created as a draft.");
       onOpenChange(false);
       setTitle("");

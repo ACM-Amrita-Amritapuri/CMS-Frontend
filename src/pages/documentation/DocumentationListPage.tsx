@@ -11,6 +11,7 @@ import {
   searchDocuments,
 } from "@/lib/api/documentation";
 import { listSigs } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
 import { useSession } from "@/app/providers";
@@ -41,13 +42,13 @@ export default function DocumentationListPage() {
   // q in the URL uses the search endpoint (published only); the bare list is
   // the manager/recent view that also includes the caller's drafts.
   const searchQuery = useQuery({
-    queryKey: ["documentation", "search", q],
-    queryFn: () => searchDocuments({ q }),
+    queryKey: queryKeys.documentation.search(q),
+    queryFn: ({ signal }) => searchDocuments({ q }, signal),
     enabled: q !== "",
   });
   const listQuery = useQuery({
-    queryKey: ["documentation", "list"],
-    queryFn: () => listDocuments(),
+    queryKey: queryKeys.documentation.list(),
+    queryFn: ({ signal }) => listDocuments(undefined, signal),
     enabled: q === "",
   });
 
@@ -151,7 +152,7 @@ function CreateDocumentButton({
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const docSchema = z.object({
     title: z.string().min(1, "Enter a title."),
@@ -175,7 +176,7 @@ function CreateDocumentButton({
     },
     onSuccess: (doc) => {
       if (!doc) return;
-      queryClient.invalidateQueries({ queryKey: ["documentation"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
       toast.success("Document created as a draft.");
       onOpenChange(false);
       navigate(`/documentation/${doc.id}`);

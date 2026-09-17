@@ -71,7 +71,7 @@ it.each([false, true])("does not restore an obsolete session after refresh (new 
   const user = sessionStore.getSnapshot().user!;
   sessionStore.clearSession();
   if (newLogin) sessionStore.setSession(user, "new-login-token");
-  finishRefresh(Response.json({ access_token: "obsolete-token" }));
+  finishRefresh(Response.json({ access_token: "obsolete-token", token_type: "Bearer" }));
   await rejected;
 
   expect(sessionStore.getSnapshot().accessToken).toBe(newLogin ? "new-login-token" : null);

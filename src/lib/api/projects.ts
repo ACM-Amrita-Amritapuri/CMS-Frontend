@@ -80,13 +80,13 @@ export interface Project {
   applications: ProjectApplication[];
 }
 
-export async function listProjects(limit = 100) {
-  const { projects } = await apiRequest<{ projects: Project[] }>(`/projects?limit=${limit}`);
+export async function listProjects(limit = 100, signal?: AbortSignal) {
+  const { projects } = await apiRequest<{ projects: Project[] }>(`/projects?limit=${limit}`, { signal });
   return projects;
 }
 
-export async function getProject(projectId: number) {
-  const { project } = await apiRequest<{ project: Project }>(`/projects/${projectId}`);
+export async function getProject(projectId: number, signal?: AbortSignal) {
+  const { project } = await apiRequest<{ project: Project }>(`/projects/${projectId}`, { signal });
   return project;
 }
 

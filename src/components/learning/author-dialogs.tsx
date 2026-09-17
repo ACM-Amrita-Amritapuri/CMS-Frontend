@@ -10,6 +10,7 @@ import {
   type LearningLesson,
   type LearningModule,
 } from "@/lib/api/learning";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { slugify } from "@/lib/formatters/slug";
 import { localInputToIso } from "@/lib/formatters/date";
@@ -31,7 +32,7 @@ import {
 export function useAuthorActions(onDone: () => void) {
   const queryClient = useQueryClient();
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["learning"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
     onDone();
   };
 

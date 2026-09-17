@@ -9,6 +9,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { getPortfolio } from "@/lib/api/members";
 import { ProfileCard } from "@/components/member/profile-card";
 import { formatDate } from "@/lib/formatters/date";
@@ -16,7 +17,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/primitives";
+import { QueryState } from "@/components/ui/async";
 import { PageHeader } from "@/components/ui/page";
 
 const contentTypeLabels = {
@@ -29,13 +30,13 @@ export default function PortfolioPage() {
   const { userId } = useParams();
   const numericUserId = Number(userId);
   const query = useQuery({
-    queryKey: ["portfolio", userId],
-    queryFn: () => getPortfolio(numericUserId),
+    queryKey: queryKeys.portfolio.detail(userId),
+    queryFn: ({ signal }) => getPortfolio(numericUserId, signal),
     retry: false,
-    enabled: !Number.isNaN(numericUserId),
+    enabled: normalizeId(userId) !== null,
   });
 
-  if (Number.isNaN(numericUserId)) {
+  if (normalizeId(userId) === null) {
     return (
       <EmptyState
         icon={UsersIcon}
@@ -44,28 +45,9 @@ export default function PortfolioPage() {
       />
     );
   }
-  if (query.isPending) {
-    return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-72 w-full max-w-2xl" />
-        <Skeleton className="h-40 w-full" />
-      </div>
-    );
-  }
-  if (query.isError) {
-    return (
-      <EmptyState
-        icon={UsersIcon}
-        title="Portfolio not found"
-        description="This member doesn't have a visible portfolio."
-      />
-    );
-  }
-
-  const { profile, learning_achievements, project_contributions, showcases } =
-    query.data;
-
   return (
+    <QueryState query={query} notFound="Portfolio not found">
+      {({ profile, learning_achievements, project_contributions, showcases }) => (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`${profile.real_name || profile.username}'s portfolio`}
@@ -209,5 +191,7 @@ export default function PortfolioPage() {
         </div>
       </div>
     </div>
+      )}
+    </QueryState>
   );
 }

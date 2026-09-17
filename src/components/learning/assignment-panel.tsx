@@ -10,6 +10,7 @@ import {
   type LearningAssignment,
 } from "@/lib/api/learning";
 import { ApiError } from "@/lib/api/errors";
+import { queryKeys } from "@/lib/query-keys";
 import { useSession } from "@/app/providers";
 import { formatDateTime } from "@/lib/formatters/date";
 import { Badge } from "@/components/ui/badge";
@@ -64,7 +65,7 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
         score: reviewScore === "" ? undefined : Number(reviewScore),
       });
       setSubmission(result);
-      queryClient.invalidateQueries({ queryKey: ["learning"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
       toast.success("Review saved.");
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not review.");
@@ -90,7 +91,7 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
             onClick={async () => {
               try {
                 await setAssignmentState(assignment.id, "PUBLISHED");
-                queryClient.invalidateQueries({ queryKey: ["learning"] });
+                queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
                 toast.success("Assignment published.");
               } catch (error) {
                 toast.error(error instanceof ApiError ? error.message : "Could not publish.");

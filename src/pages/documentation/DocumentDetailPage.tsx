@@ -12,6 +12,7 @@ import {
   updateDocument,
   type ClubDocument,
 } from "@/lib/api/documentation";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -29,10 +30,10 @@ export default function DocumentDetailPage() {
   useDocumentTitle("Document");
   const { documentId } = useParams();
   const id = Number(documentId);
-  const invalidId = !documentId || Number.isNaN(id);
+  const invalidId = normalizeId(documentId) === null;
   const query = useQuery({
-    queryKey: ["documentation", "document", invalidId ? documentId : id],
-    queryFn: () => getDocument(id),
+    queryKey: queryKeys.documentation.detail(documentId),
+    queryFn: ({ signal }) => getDocument(id, signal),
     enabled: !invalidId,
   });
 
@@ -72,7 +73,7 @@ function DocumentReader({
   const [showHistory, setShowHistory] = useState(false);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["documentation"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
   };
 
   const act = useMutation({
@@ -234,8 +235,8 @@ function WorkflowActions({
 
 function RevisionHistory({ documentId }: { documentId: number }) {
   const query = useQuery({
-    queryKey: ["documentation", "revisions", documentId],
-    queryFn: () => listRevisions(documentId),
+    queryKey: queryKeys.documentation.revisions(documentId),
+    queryFn: ({ signal }) => listRevisions(documentId, signal),
   });
 
   return (
@@ -281,7 +282,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
         tags: tags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documentation"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
       toast.success("Document updated (new revision saved).");
       onDone();
     },

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon } from "lucide-react";
 
 import { getCalendarRange } from "@/lib/api/club-operations";
+import { queryKeys } from "@/lib/query-keys";
 import { formatDateTime, parseUtc } from "@/lib/formatters/date";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
@@ -12,12 +13,12 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
 
-function monthBounds(year: number, month: number) {
-  const start = new Date(year, month, 1, 0, 0, 0);
-  const end = new Date(year, month + 1, 0, 23, 59, 59);
+export function monthBounds(year: number, month: number) {
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
   return {
-    start: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}T00:00:00`,
-    end: `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}T23:59:59`,
+    start: start.toISOString(),
+    end: end.toISOString(),
     label: start.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
   };
 }
@@ -30,8 +31,8 @@ export default function CalendarPage() {
   });
   const bounds = monthBounds(cursor.year, cursor.month);
   const query = useQuery({
-    queryKey: ["operations", "calendar", bounds.start],
-    queryFn: () => getCalendarRange(bounds.start, bounds.end),
+    queryKey: queryKeys.operations.calendar(bounds.start, bounds.end),
+    queryFn: ({ signal }) => getCalendarRange(bounds.start, bounds.end, signal),
   });
 
   return (

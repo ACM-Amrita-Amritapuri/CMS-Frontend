@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SearchIcon, UsersIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 
 import { getMemberByRoll } from "@/lib/api/members";
+import { queryKeys } from "@/lib/query-keys";
 import { ProfileCard } from "@/components/member/profile-card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { EmptyState } from "@/components/ui/table";
+import { QueryState } from "@/components/ui/async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
@@ -18,8 +19,8 @@ export default function MembersPage() {
   const [submitted, setSubmitted] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: ["member", submitted],
-    queryFn: () => getMemberByRoll(submitted!),
+    queryKey: queryKeys.member(submitted),
+    queryFn: ({ signal }) => getMemberByRoll(submitted!, signal),
     enabled: Boolean(submitted),
     retry: false,
   });
@@ -49,27 +50,23 @@ export default function MembersPage() {
         </Button>
       </form>
 
-      {submitted && query.isError ? (
-        <EmptyState
-          icon={UsersIcon}
-          title={`No member found for “${submitted}”`}
-          description="Check the roll number and try again."
-        />
-      ) : null}
-
-      {submitted && query.data ? (
-        <ProfileCard
-          profile={query.data}
-          actions={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/portfolio/${query.data.user_id}`)}
-            >
-              View portfolio
-            </Button>
-          }
-        />
+      {submitted ? (
+        <QueryState query={query} notFound={`No member found for “${submitted}”`}>
+          {(profile) => (
+            <ProfileCard
+              profile={profile}
+              actions={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/portfolio/${profile.user_id}`)}
+                >
+                  View portfolio
+                </Button>
+              }
+            />
+          )}
+        </QueryState>
       ) : null}
     </div>
   );

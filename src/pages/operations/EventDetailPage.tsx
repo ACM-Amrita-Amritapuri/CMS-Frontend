@@ -20,11 +20,12 @@ import {
   removeAttendance,
   type ClubEvent,
 } from "@/lib/api/club-operations";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { formatDateTime } from "@/lib/formatters/date";
-import { QueryErrorState } from "@/components/ui/async";
+import { QueryState } from "@/components/ui/async";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Field, Input } from "@/components/ui/input";
@@ -36,10 +37,10 @@ export default function EventDetailPage() {
   useDocumentTitle("Event");
   const { eventId } = useParams();
   const id = Number(eventId);
-  const invalidId = !eventId || Number.isNaN(id);
+  const invalidId = normalizeId(eventId) === null;
   const query = useQuery({
-    queryKey: ["operations", "event", invalidId ? eventId : id],
-    queryFn: () => getEvent(id),
+    queryKey: queryKeys.operations.event(eventId),
+    queryFn: ({ signal }) => getEvent(id, signal),
     retry: false,
     enabled: !invalidId,
   });
@@ -53,12 +54,10 @@ export default function EventDetailPage() {
       </Button>
       {invalidId ? (
         <EmptyState title="Event not found" description="This event does not exist." />
-      ) : query.isPending ? (
-        <div className="bg-muted h-64 animate-pulse rounded-lg" />
-      ) : query.isError ? (
-        <QueryErrorState error={query.error} retry={() => query.refetch()} />
       ) : (
-        <EventDetail event={query.data} />
+        <QueryState query={query} notFound="Event not found">
+          {(event) => <EventDetail event={event} />}
+        </QueryState>
       )}
     </div>
   );
@@ -69,7 +68,7 @@ function EventDetail({ event }: { event: ClubEvent }) {
   const manage = hasCapability("manage_operations");
   const queryClient = useQueryClient();
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["operations"] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
 
   const publish = useMutation({
     mutationFn: () => publishEvent(event.id),
@@ -161,14 +160,14 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: ["operations", "event", event.id, "attendance"],
-    queryFn: () => listAttendance(event.id),
+    queryKey: queryKeys.operations.attendanceList(event.id),
+    queryFn: ({ signal }) => listAttendance(event.id, undefined, signal),
     enabled: event.state === "PUBLISHED",
     retry: false,
   });
 
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: ["operations", "event", event.id, "attendance"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.operations.attendance(event.id) });
 
   const mark = useMutation({
     mutationFn: (value: string) => {
@@ -254,22 +253,15 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
         </Button>
       </form>
 
-      {query.isPending ? (
-        <div className="flex flex-col gap-2" aria-label="Loading attendance">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="bg-muted h-12 animate-pulse rounded-lg" />
-          ))}
-        </div>
-      ) : query.isError ? (
-        <QueryErrorState error={query.error} retry={() => query.refetch()} />
-      ) : query.data.attendance.length === 0 ? (
-        <EmptyState
-          title="No attendance yet"
-          description="Marked members will appear here with their roll number."
-        />
-      ) : (
+      <QueryState
+        query={query}
+        notFound="Attendance not found"
+        isEmpty={(data) => data.attendance.length === 0}
+        empty={{ title: "No attendance yet", description: "Marked members will appear here with their roll number." }}
+      >
+        {(data) => (
         <ul className="divide-border overflow-hidden rounded-md border">
-          {query.data.attendance.map((record) => (
+          {data.attendance.map((record) => (
             <li key={record.id} className="flex items-center gap-3 p-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
@@ -296,7 +288,8 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
             </li>
           ))}
         </ul>
-      )}
+        )}
+      </QueryState>
 
       <ConfirmDialog
         open={removing !== null}
@@ -314,17 +307,17 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
 
 function MemberAttendance({ eventId }: { eventId: number }) {
   const query = useQuery({
-    queryKey: ["operations", "event", eventId, "attendance", "me"],
-    queryFn: () => getMyAttendance(eventId),
+    queryKey: queryKeys.operations.myAttendance(eventId),
+    queryFn: ({ signal }) => getMyAttendance(eventId, signal),
     retry: false,
   });
 
-  if (query.isPending) return <div className="bg-muted h-12 animate-pulse rounded-lg" />;
-  if (query.isError) return null;
   return (
+    <QueryState query={query} notFound="Attendance not found">
+      {(data) => (
     <section aria-label="My attendance" className="border-t pt-4">
       <p className="text-sm">
-        {query.data.present ? (
+        {data.present ? (
           <span className="inline-flex items-center gap-2">
             <ClipboardCheckIcon className="size-4" /> You are marked present for this event.
           </span>
@@ -335,5 +328,7 @@ function MemberAttendance({ eventId }: { eventId: number }) {
         )}
       </p>
     </section>
+      )}
+    </QueryState>
   );
 }

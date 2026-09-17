@@ -27,6 +27,7 @@ import {
   type ProjectRole,
   type ProjectTask,
 } from "@/lib/api/projects";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -47,10 +48,10 @@ export default function ProjectDetailPage() {
   useDocumentTitle("Project");
   const { projectId } = useParams();
   const id = Number(projectId);
-  const invalidId = !projectId || Number.isNaN(id);
+  const invalidId = normalizeId(projectId) === null;
   const query = useQuery({
-    queryKey: ["projects", "detail", invalidId ? projectId : id],
-    queryFn: () => getProject(id),
+    queryKey: queryKeys.projects.detail(projectId),
+    queryFn: ({ signal }) => getProject(id, signal),
     retry: false,
     enabled: !invalidId,
   });
@@ -150,8 +151,8 @@ function RolesSection({
   const apply = useMutation({
     mutationFn: (roleId: number) => applyToRole(project.id, { role_id: roleId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", "detail", project.id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(project.id) });
       toast.success("Application sent.");
     },
     onError: (error) =>
@@ -167,7 +168,7 @@ function RolesSection({
         required_skills: skills.split(",").map((skill) => skill.trim().toLowerCase()).filter(Boolean),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       setCreating(false);
       toast.success("Role added.");
     },
@@ -265,7 +266,7 @@ function ApplicationsSection({ project, isLead }: { project: Project; isLead: bo
     mutationFn: ({ applicationId, decision }: { applicationId: number; decision: "ACCEPT" | "REJECT" }) =>
       reviewApplication(applicationId, decision),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(`Application ${result.state.toLowerCase()}.`);
     },
     onError: (error) =>
@@ -313,7 +314,7 @@ function LeaveButton({ projectId }: { projectId: number }) {
   const leave = useMutation({
     mutationFn: () => leaveProject(projectId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success("You left the project.");
       setConfirming(false);
     },
@@ -368,7 +369,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
       updateTask(task.id, { state }),
     onSuccess: (updated) => {
       setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Invalid transition."),
@@ -510,8 +511,8 @@ function ShowcaseSection({ project }: { project: Project }) {
         state,
       }),
     onSuccess: (showcase) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["portfolio"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
       toast.success(
         showcase.state === "PUBLISHED" ? "Showcase published." : "Showcase saved as draft.",
       );

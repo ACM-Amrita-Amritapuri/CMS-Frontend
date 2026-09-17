@@ -24,16 +24,18 @@ export interface AdminMember {
   role_assignments: { role_code: string; sig_id: number | null }[];
 }
 
-export async function getDashboardSummary() {
+export async function getDashboardSummary(signal?: AbortSignal) {
   const { summary } = await apiRequest<{ summary: DashboardSummary }>(
     "/admin/dashboard",
+    { signal },
   );
   return summary;
 }
 
-export async function listSigs(limit = 100) {
+export async function listSigs(limit = 100, signal?: AbortSignal) {
   const { sigs } = await apiRequest<{ sigs: Sig[] }>(
     `/admin/sigs?limit=${limit}`,
+    { signal },
   );
   return sigs;
 }
@@ -60,13 +62,14 @@ export async function updateSig(
 export async function listAdminMembers(params: {
   limit?: number;
   is_active?: boolean;
-}) {
+}, signal?: AbortSignal) {
   const search = new URLSearchParams();
   if (params.limit) search.set("limit", String(params.limit));
   if (params.is_active !== undefined)
     search.set("is_active", String(params.is_active));
   const { members } = await apiRequest<{ members: AdminMember[] }>(
     `/admin/members?${search}`,
+    { signal },
   );
   return members;
 }

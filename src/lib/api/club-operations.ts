@@ -47,15 +47,16 @@ function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {
   return query ? `?${query}` : "";
 }
 
-export async function listEvents(params: { limit?: number; includeDrafts?: boolean } = {}) {
+export async function listEvents(params: { limit?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
   const { events } = await apiRequest<{ events: ClubEvent[] }>(
     `/operations/events${buildQuery(params)}`,
+    { signal },
   );
   return events;
 }
 
-export async function getEvent(eventId: number) {
-  const { event } = await apiRequest<{ event: ClubEvent }>(`/operations/events/${eventId}`);
+export async function getEvent(eventId: number, signal?: AbortSignal) {
+  const { event } = await apiRequest<{ event: ClubEvent }>(`/operations/events/${eventId}`, { signal });
   return event;
 }
 
@@ -83,17 +84,19 @@ export async function cancelEvent(eventId: number) {
   return event;
 }
 
-export async function getCalendarRange(start: string, end: string) {
+export async function getCalendarRange(start: string, end: string, signal?: AbortSignal) {
   const search = new URLSearchParams({ start, end, limit: "100" });
   const { calendar } = await apiRequest<{ calendar: ClubEvent[] }>(
     `/operations/calendar?${search}`,
+    { signal },
   );
   return calendar;
 }
 
-export async function listMeetings(params: { limit?: number; includeDrafts?: boolean } = {}) {
+export async function listMeetings(params: { limit?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
   const { meetings } = await apiRequest<{ meetings: Meeting[] }>(
     `/operations/meetings${buildQuery(params)}`,
+    { signal },
   );
   return meetings;
 }
@@ -133,16 +136,17 @@ export interface AttendanceSummary {
   attendance: AttendanceRecord[];
 }
 
-export async function listAttendance(eventId: number, limit = 100) {
+export async function listAttendance(eventId: number, limit = 100, signal?: AbortSignal) {
   return apiRequest<AttendanceSummary>(
     `/operations/events/${eventId}/attendance?limit=${limit}`,
+    { signal },
   );
 }
 
-export async function getMyAttendance(eventId: number) {
+export async function getMyAttendance(eventId: number, signal?: AbortSignal) {
   const { attendance } = await apiRequest<{
     attendance: { event_id: number; present: boolean; attendance: AttendanceRecord | null };
-  }>(`/operations/events/${eventId}/attendance/me`);
+  }>(`/operations/events/${eventId}/attendance/me`, { signal });
   return attendance;
 }
 
