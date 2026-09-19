@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+.worktrees/
 .bun-tmp/
 .env*
 !.env.example
