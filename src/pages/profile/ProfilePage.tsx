@@ -60,7 +60,7 @@ export default function ProfilePage() {
   const query = useQuery({ queryKey: queryKeys.profile.me, queryFn: ({ signal }) => getMyProfile(signal) });
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6">
       <PageHeader
         title="Profile"
         description="Keep your member details and external profiles up to date."
@@ -139,8 +139,8 @@ function ProfileEditForm({
         <CardTitle className="text-base">Edit profile</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-[1fr_100px]">
+        <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-5" noValidate>
+          <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />
             </Field>
@@ -162,7 +162,7 @@ function ProfileEditForm({
           >
             <Input id="skills" {...form.register("skills")} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-5 sm:grid-cols-2">
             <Field label="Interests" htmlFor="interests" error={errors.interests?.message}>
               <Input id="interests" {...form.register("interests")} />
             </Field>
@@ -171,10 +171,10 @@ function ProfileEditForm({
             </Field>
           </div>
           <div className="border-t pt-4">
-            <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground mb-4 text-xs font-medium uppercase leading-relaxed tracking-wide">
               Social & competitive profiles (optional)
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid items-start gap-5 sm:grid-cols-2">
               {socialFields.map(([key, label]) => (
                 <Field key={key} label={label} htmlFor={key} error={errors[key]?.message}>
                   <Input id={key} type="url" placeholder="https://" {...form.register(key)} />
@@ -182,7 +182,7 @@ function ProfileEditForm({
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:justify-end [&>button]:min-h-11">
             <Button type="submit" disabled={save.isPending}>
               Save changes
             </Button>

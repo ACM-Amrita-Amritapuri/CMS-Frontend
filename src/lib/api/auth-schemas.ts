@@ -6,6 +6,7 @@ export const authUserSchema = z.looseObject({
   username: z.string().min(1),
   roll_number: z.string(),
   must_change_password: z.boolean(),
+  profile_complete: z.boolean().optional(),
   role_assignments: z.array(z.looseObject({
     role_code: z.enum(["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"]),
     sig_id: z.number().int().positive().nullable(),

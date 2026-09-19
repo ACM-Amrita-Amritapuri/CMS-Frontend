@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { KeyRoundIcon, ShieldUserIcon } from "lucide-react";
+import {
+  CheckCircle2Icon,
+  KeyRoundIcon,
+  SearchIcon,
+  ShieldUserIcon,
+  XIcon,
+} from "lucide-react";
 
 import {
   changeRoles,
@@ -11,6 +17,7 @@ import {
   type AdminMember,
 } from "@/lib/api/admin";
 import { listSigs, type Sig } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
@@ -25,13 +32,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { NativeSelect } from "@/components/ui/native-select";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -44,36 +46,65 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { cn } from "@/lib/utils";
 
 const roleCodes = ["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"];
+const roleLabels: Record<string, string> = {
+  MEMBER: "Member",
+  SIG_CORE: "SIG core",
+  SIG_LEAD: "SIG lead",
+  WEBMASTER: "Webmaster",
+  ADMIN: "Admin",
+  SUPER_ADMIN: "Super admin",
+};
 
 export default function AdminMembersPage() {
   useDocumentTitle("Members");
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [sigFilter, setSigFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const query = useQuery({
-    queryKey: ["admin", "members", activeFilter],
-    queryFn: () =>
+    queryKey: queryKeys.admin.memberList(activeFilter),
+    queryFn: ({ signal }) =>
       listAdminMembers({
         is_active: activeFilter === "all" ? undefined : activeFilter === "true",
-      }),
+      }, signal),
+  });
+  const sigsQuery = useQuery({
+    queryKey: queryKeys.sigs.list(),
+    queryFn: ({ signal }) => listSigs(undefined, signal),
   });
 
   return (
     <AdminShell>
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
       <PageHeader
         title="Members"
         description="Manage account status, roles, and password resets."
         actions={
-          <div className="w-44">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <NativeSelect
               aria-label="Filter by status"
               value={activeFilter}
               onChange={(event) => setActiveFilter(event.target.value)}
+              className="w-full sm:w-44"
             >
               <option value="all">All members</option>
               <option value="true">Active only</option>
               <option value="false">Inactive only</option>
+            </NativeSelect>
+            <NativeSelect
+              aria-label="Filter by SIG"
+              value={sigFilter}
+              onChange={(event) => setSigFilter(event.target.value)}
+              className="w-full sm:w-44"
+            >
+              <option value="all">All SIGs</option>
+              {(sigsQuery.data ?? []).map((sig) => (
+                <option key={sig.id} value={sig.id}>
+                  {sig.name}
+                </option>
+              ))}
             </NativeSelect>
           </div>
         }
@@ -82,34 +113,99 @@ export default function AdminMembersPage() {
       <AsyncBoundary
         query={query}
         isEmpty={(members) => members.length === 0}
-        empty={{ title: "No members match this filter", description: "Try changing the active filter above." }}
+        empty={{
+          title: "No members match these filters",
+          description: "Try changing the status or SIG filter above.",
+        }}
       >
-        {(members) => (
-          <>
-            <div className="hidden border-y md:block">
-              <Table>
+        {(members) => {
+          const normalized = search.trim().toLowerCase();
+          const filtered = members.filter((member) =>
+            (sigFilter === "all" ||
+              member.role_assignments.some(
+                ({ sig_id }) => String(sig_id) === sigFilter,
+              )) &&
+            (!normalized ||
+              `${member.username} ${member.roll_number} ${member.role_assignments.map(({ role_code }) => role_code).join(" ")}`
+                .toLowerCase()
+                .includes(normalized)),
+          );
+
+          return (
+            <>
+              <div className="flex flex-col gap-3 border-y py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1 sm:max-w-xl">
+                  <SearchIcon aria-hidden className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+                  <Input
+                    type="search"
+                    aria-label="Search members"
+                    placeholder="Search by username, roll number, or role"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    className="h-9 pl-9 pr-9"
+                  />
+                  {search ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Clear member search"
+                      className="text-muted-foreground absolute right-1 top-1/2 -translate-y-1/2"
+                      onClick={() => setSearch("")}
+                    >
+                      <XIcon />
+                    </Button>
+                  ) : null}
+                </div>
+                <p className="text-muted-foreground text-sm" aria-live="polite">
+                  {filtered.length === members.length
+                    ? `${members.length} ${members.length === 1 ? "member" : "members"}`
+                    : `${filtered.length} of ${members.length} members`}
+                </p>
+              </div>
+              {filtered.length === 0 ? (
+                <div role="status" className="border-y border-dashed py-12 text-center">
+                  <p className="text-sm font-medium">No members match these filters</p>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="mt-1"
+                    onClick={() => {
+                      setSearch("");
+                      setActiveFilter("all");
+                      setSigFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              ) : null}
+              <div className={filtered.length === 0 ? "hidden" : "hidden min-w-0 border-y lg:block"}>
+               <Table className="min-w-[48rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Member</TableHead>
                     <TableHead>Roles</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-52 text-right"><span className="sr-only">Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {members.map((member) => (
+                  {filtered.map((member) => (
                     <MemberRow key={member.id} member={member} />
                   ))}
                 </TableBody>
               </Table>
-            </div>
-            <ul className="flex flex-col gap-2 md:hidden">
-              {members.map((member) => (
+              </div>
+              <ul className={filtered.length === 0 ? "hidden" : "grid min-w-0 gap-3 lg:hidden"}>
+              {filtered.map((member) => (
                 <MemberCard key={member.id} member={member} />
               ))}
-            </ul>
-          </>
-        )}
+              </ul>
+            </>
+          );
+        }}
       </AsyncBoundary>
       </div>
     </AdminShell>
@@ -125,7 +221,7 @@ function MemberRow({ member }: { member: AdminMember }) {
   const status = useMutation({
     mutationFn: (isActive: boolean) => setMemberStatus(member.id, isActive),
     onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.members });
       toast.success(`${updated.username} is now ${updated.is_active ? "active" : "inactive"}.`);
       setConfirmStatus(false);
     },
@@ -146,8 +242,8 @@ function MemberRow({ member }: { member: AdminMember }) {
   return (
     <TableRow>
       <TableCell>
-        <p className="text-sm font-medium">{member.username}</p>
-        <p className="text-muted-foreground font-mono text-xs">{member.roll_number}</p>
+        <p className="max-w-64 text-sm font-medium [overflow-wrap:anywhere]">{member.username}</p>
+        <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
@@ -173,22 +269,15 @@ function MemberRow({ member }: { member: AdminMember }) {
           />
         </div>
       </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${member.username}`}>
-              <ShieldUserIcon />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => reset.mutate()}>
-              <KeyRoundIcon /> Reset password
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setRolesOpen(true)}>
-              <ShieldUserIcon /> Manage roles
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => reset.mutate()} disabled={reset.isPending}>
+            <KeyRoundIcon /> Reset
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRolesOpen(true)}>
+            <ShieldUserIcon /> Roles
+          </Button>
+        </div>
       </TableCell>
 
       <ConfirmDialog
@@ -230,7 +319,7 @@ function MemberCard({ member }: { member: AdminMember }) {
   const status = useMutation({
     mutationFn: (isActive: boolean) => setMemberStatus(member.id, isActive),
     onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.members });
       toast.success(`${updated.username} is now ${updated.is_active ? "active" : "inactive"}.`);
       setConfirmStatus(false);
     },
@@ -253,7 +342,7 @@ function MemberCard({ member }: { member: AdminMember }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{member.username}</p>
-          <p className="text-muted-foreground font-mono text-xs">{member.roll_number}</p>
+          <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
         </div>
         <StatusBadge status={member.is_active ? "ACTIVE" : "INACTIVE"} />
       </div>
@@ -269,22 +358,25 @@ function MemberCard({ member }: { member: AdminMember }) {
           ))
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-        <Switch
-          checked={member.is_active}
-          onCheckedChange={() => setConfirmStatus(true)}
-          aria-label={`Toggle active state for ${member.username}`}
-        />
-        <span className="text-muted-foreground text-xs">
-          {member.is_active ? "Active" : "Inactive"}
-        </span>
-        <span className="flex-1" />
-        <Button variant="outline" size="sm" onClick={() => reset.mutate()} disabled={reset.isPending}>
-          <KeyRoundIcon /> Reset password
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setRolesOpen(true)}>
-          <ShieldUserIcon /> Roles
-        </Button>
+      <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={member.is_active}
+            onCheckedChange={() => setConfirmStatus(true)}
+            aria-label={`Toggle active state for ${member.username}`}
+          />
+          <span className="text-muted-foreground text-xs">
+            {member.is_active ? "Active" : "Inactive"}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
+          <Button variant="outline" size="sm" onClick={() => reset.mutate()} disabled={reset.isPending}>
+            <KeyRoundIcon /> Reset password
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setRolesOpen(true)}>
+            <ShieldUserIcon /> Roles
+          </Button>
+        </div>
       </div>
 
       <ConfirmDialog
@@ -324,18 +416,29 @@ export function TemporaryPasswordDialog({
     <Dialog open={password !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>One-time password for {username}</DialogTitle>
+          <DialogTitle className="pr-6 leading-snug [overflow-wrap:anywhere]">One-time password for {username}</DialogTitle>
           <DialogDescription>
             Copy it now — it is shown only this once and expires in 24 hours.
           </DialogDescription>
         </DialogHeader>
         <div className="bg-muted flex items-center justify-between gap-3 rounded-lg p-3">
-          <code className="text-sm font-semibold break-all">{password}</code>
+          <code className="min-w-0 flex-1 text-sm leading-6 font-semibold break-all">{password}</code>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => navigator.clipboard.writeText(password ?? "")}
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(password ?? "");
+                toast.success("Password copied", {
+                  description: "It’s ready to paste.",
+                });
+              } catch {
+                toast.error("Couldn’t copy the password", {
+                  description: "Please select it and copy it manually.",
+                });
+              }
+            }}
           >
             Copy
           </Button>
@@ -361,92 +464,199 @@ function RoleDialog({
   const [action, setAction] = useState<"assign" | "revoke">("assign");
   const [roleCode, setRoleCode] = useState("MEMBER");
   const [sigId, setSigId] = useState<string>("none");
+  const [revokeKey, setRevokeKey] = useState("");
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setAction("assign");
+      setRoleCode("MEMBER");
+      setSigId("none");
+      setRevokeKey("");
+    }
+    onOpenChange(nextOpen);
+  };
 
   const sigsQuery = useQuery({
-    queryKey: ["sigs"],
-    queryFn: () => listSigs(),
+    queryKey: queryKeys.sigs.list(),
+    queryFn: ({ signal }) => listSigs(undefined, signal),
     enabled: open,
   });
   const needsSig = ["SIG_CORE", "SIG_LEAD"].includes(roleCode);
+  const selectedAssignment = member.role_assignments.find(
+    (assignment) => `${assignment.role_code}:${assignment.sig_id ?? "none"}` === revokeKey,
+  );
+  const selectedAssignSigId = needsSig && sigId !== "none" ? Number(sigId) : null;
+  const alreadyAssigned = member.role_assignments.some(
+    (assignment) =>
+      assignment.role_code === roleCode && assignment.sig_id === selectedAssignSigId,
+  );
+  const canApply = action === "assign"
+    ? (!needsSig || sigId !== "none") && !alreadyAssigned
+    : Boolean(selectedAssignment);
 
   const save = useMutation({
-    mutationFn: () =>
-      changeRoles(member.id, {
+    mutationFn: () => {
+      if (action === "revoke") {
+        if (!selectedAssignment) {
+          throw new Error("Select a role to revoke.");
+        }
+        return changeRoles(member.id, {
+          action,
+          role_code: selectedAssignment.role_code,
+          sig_id: selectedAssignment.sig_id,
+        });
+      }
+      return changeRoles(member.id, {
         action,
         role_code: roleCode,
         sig_id: needsSig && sigId !== "none" ? Number(sigId) : null,
-      }),
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "members"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.members });
       toast.success("Roles updated.");
-      onOpenChange(false);
+      handleOpenChange(false);
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Could not update the roles."),
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Manage roles for {member.username}</DialogTitle>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg gap-0 overflow-y-auto p-0">
+        <DialogHeader className="border-b px-6 pt-6 pb-5 pr-14">
+          <DialogTitle className="leading-snug [overflow-wrap:anywhere]">Manage roles for {member.username}</DialogTitle>
           <DialogDescription>
-            Assignments take effect on the member&apos;s next sign-in.
+            Add or remove access for this account. Changes take effect on the next sign-in.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-2">
+        <div role="group" aria-label="Role action" className="flex border-b px-6">
             {(["assign", "revoke"] as const).map((option) => (
               <Button
                 key={option}
                 type="button"
-                variant={action === option ? "default" : "outline"}
-                onClick={() => setAction(option)}
-                className="capitalize"
+                variant="ghost"
+                aria-pressed={action === option}
+                onClick={() => {
+                  setAction(option);
+                  setRevokeKey("");
+                }}
+                className={cn(
+                  "h-11 flex-1 rounded-none border-b-2 border-transparent px-4 text-sm",
+                  action === option
+                    ? "border-primary text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
-                {option}
+                {option === "assign" ? "Assign role" : "Revoke role"}
               </Button>
             ))}
           </div>
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            Role
-            <Select value={roleCode} onValueChange={setRoleCode}>
-              <SelectTrigger aria-label="Role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {roleCodes.map((code) => (
-                  <SelectItem key={code} value={code}>
-                    {code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </label>
-          {needsSig ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              SIG
-              <Select value={sigId} onValueChange={setSigId}>
-                <SelectTrigger aria-label="SIG">
-                  <SelectValue placeholder="Choose a SIG" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(sigsQuery.data ?? []).map((sig: Sig) => (
-                    <SelectItem key={sig.id} value={String(sig.id)}>
-                      {sig.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-          ) : null}
+        <div className="flex flex-col gap-5 p-6">
+          <p className="text-muted-foreground text-sm">
+            {action === "assign"
+              ? "Choose the access level to give this member."
+              : "Choose one of this member's current assignments to remove."}
+          </p>
+          {action === "assign" ? (
+            <div className="flex flex-col gap-4">
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
+                Role
+                <Select value={roleCode} onValueChange={setRoleCode}>
+                  <SelectTrigger aria-label="Role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleCodes.map((code) => (
+                      <SelectItem key={code} value={code}>
+                        {roleLabels[code]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              {needsSig ? (
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  SIG
+                  <Select value={sigId} onValueChange={setSigId}>
+                    <SelectTrigger aria-label="SIG">
+                      <SelectValue placeholder="Choose a SIG" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(sigsQuery.data ?? []).map((sig: Sig) => (
+                        <SelectItem key={sig.id} value={String(sig.id)}>
+                          {sig.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+              ) : null}
+              <p className="text-muted-foreground text-xs">
+                {alreadyAssigned
+                  ? "This role is already assigned to the member."
+                  : needsSig
+                    ? "SIG roles apply only to the selected group."
+                    : "This role applies across the entire club."}
+              </p>
+            </div>
+          ) : member.role_assignments.length > 0 ? (
+            <div role="radiogroup" aria-label="Current role assignments" className="flex flex-col gap-2">
+              {member.role_assignments.map((assignment) => {
+                const key = `${assignment.role_code}:${assignment.sig_id ?? "none"}`;
+                const isSelected = key === revokeKey;
+                const sigName = sigsQuery.data?.find((sig) => sig.id === assignment.sig_id)?.name;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setRevokeKey(key)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-4 rounded-lg border p-3 text-left transition-colors",
+                      isSelected
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted",
+                    )}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">
+                        {roleLabels[assignment.role_code] ?? assignment.role_code}
+                      </span>
+                      <span className="text-muted-foreground mt-1 block text-xs">
+                        {assignment.sig_id !== null
+                          ? sigName ?? `SIG ${assignment.sig_id}`
+                          : "Club-wide access"}
+                      </span>
+                    </span>
+                    <CheckCircle2Icon
+                      aria-hidden
+                      className={cn(
+                        "size-5 shrink-0",
+                        isSelected ? "text-primary" : "text-muted-foreground/40",
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="border border-dashed p-4 text-sm">
+              This member has no assigned roles to revoke.
+            </p>
+          )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-4">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || (needsSig && sigId === "none")}>
-            Apply
+          <Button
+            variant={action === "revoke" ? "destructive" : "default"}
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !canApply}
+          >
+            {save.isPending ? "Saving…" : action === "assign" ? "Assign role" : "Revoke role"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -39,14 +39,14 @@ export default function DocumentDetailPage() {
 
   if (invalidId) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6">
         <EmptyState title="Document not found" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6">
       <Button asChild variant="ghost" size="sm" className="w-fit">
         <Link to="/documentation">
           <ArrowLeftIcon /> All documents
@@ -109,7 +109,7 @@ function DocumentReader({
   return editing ? (
     <DocumentEditor document={doc} onDone={() => setEditing(false)} />
   ) : (
-    <article className="flex flex-col gap-6">
+    <article className="flex min-w-0 flex-col gap-6 [overflow-wrap:anywhere]">
       <PageHeader
         title={doc.title}
         description={doc.summary}
@@ -155,7 +155,7 @@ function DocumentReader({
                 onChange={(event) => setReviewComment(event.target.value)}
               />
             </Field>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
                 disabled={review.isPending || !reviewComment.trim()}
                 onClick={() => review.mutate("APPROVE")}
@@ -208,7 +208,7 @@ function WorkflowActions({
   if (actions.length === 0 && !canManage) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+    <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
       {actions.map((item) =>
         item.action ? (
           <Button
@@ -226,7 +226,7 @@ function WorkflowActions({
           </Button>
         ),
       )}
-      <Button variant="ghost" size="sm" onClick={onToggleHistory} className="ml-auto">
+      <Button variant="ghost" size="sm" onClick={onToggleHistory} className="sm:ml-auto">
         <HistoryIcon /> {showHistory ? "Hide" : "Revision"} history
       </Button>
     </div>
@@ -245,16 +245,16 @@ function RevisionHistory({ documentId }: { documentId: number }) {
         <ol className="flex flex-col gap-3">
           {[...revisions].reverse().map((revision) => (
             <li key={revision.id} className="rounded-lg border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <p className="min-w-0 break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">
                   #{revision.revision_number} {revision.title}
                 </p>
-                <time className="text-muted-foreground text-xs">
+                <time className="text-muted-foreground shrink-0 text-xs leading-6">
                   {formatDateTime(revision.created_at)}
                 </time>
               </div>
               {revision.summary ? (
-                <p className="text-muted-foreground mt-1 text-xs">{revision.summary}</p>
+                <p className="text-muted-foreground mt-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{revision.summary}</p>
               ) : null}
             </li>
           ))}
@@ -291,7 +291,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
   });
 
   return (
-    <div className="bg-card flex flex-col gap-4 rounded-lg border p-6">
+    <div className="bg-card flex min-w-0 flex-col gap-5 rounded-xl border p-4 sm:p-6">
       <h2 className="text-lg font-semibold">Edit document</h2>
       <form
         className="flex flex-col gap-4"
@@ -310,7 +310,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
         <Field label="Body (Markdown)" htmlFor="edit-body">
           <Textarea id="edit-body" rows={12} value={body} onChange={(event) => setBody(event.target.value)} required />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Category" htmlFor="edit-category">
             <Input id="edit-category" value={category} onChange={(event) => setCategory(event.target.value)} />
           </Field>
@@ -318,7 +318,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
             <Input id="edit-tags" value={tags} onChange={(event) => setTags(event.target.value)} />
           </Field>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button type="submit" disabled={save.isPending}>
             Save changes
           </Button>

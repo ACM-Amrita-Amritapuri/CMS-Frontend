@@ -55,13 +55,13 @@ export default function PortfolioPage() {
         backTo={{ label: "Back to members", to: "/members" }}
       />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[380px_1fr]">
+      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
         <ProfileCard profile={profile} />
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <section aria-label="Learning achievements">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-start gap-2 text-base leading-snug [&>svg]:mt-0.5 [&>svg]:shrink-0">
                   <GraduationCapIcon className="size-4" /> Learning achievements
                 </CardTitle>
               </CardHeader>
@@ -75,14 +75,14 @@ export default function PortfolioPage() {
                 ) : (
                   <ul className="flex flex-col divide-y">
                     {learning_achievements.map((item) => (
-                      <li key={item.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <li key={item.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-4 first:pt-0 last:pb-0">
                         <Badge variant="success" className="shrink-0">
                           {contentTypeLabels[item.content_type]}
                         </Badge>
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-muted-foreground min-w-0 basis-full text-sm leading-relaxed [overflow-wrap:anywhere] sm:flex-1 sm:basis-0">
                           {item.path_title || "Learning path"} · {item.module_title || "Module"}
                         </span>
-                        <time className="text-muted-foreground ml-auto shrink-0 text-xs">
+                        <time className="text-muted-foreground shrink-0 text-xs leading-relaxed sm:ml-auto">
                           {formatDate(item.completed_at)}
                         </time>
                       </li>
@@ -96,7 +96,7 @@ export default function PortfolioPage() {
           <section aria-label="Project contributions">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-start gap-2 text-base leading-snug [&>svg]:mt-0.5 [&>svg]:shrink-0">
                   <FolderKanbanIcon className="size-4" /> Project contributions
                 </CardTitle>
               </CardHeader>
@@ -110,15 +110,15 @@ export default function PortfolioPage() {
                 ) : (
                   <ul className="flex flex-col divide-y">
                     {project_contributions.map((item) => (
-                      <li key={item.project_id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                      <li key={item.project_id} className="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
                         <div className="min-w-0">
                           <Link
                             to={`/projects/${item.project_id}`}
-                            className="text-sm font-medium hover:underline"
+                            className="text-sm font-medium leading-relaxed [overflow-wrap:anywhere] hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <p className="text-muted-foreground truncate text-xs">{item.summary}</p>
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed [overflow-wrap:anywhere]">{item.summary}</p>
                         </div>
                         {item.is_lead ? (
                           <Badge className="ml-auto shrink-0">Lead</Badge>
@@ -134,7 +134,7 @@ export default function PortfolioPage() {
           <section aria-label="Showcases">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-start gap-2 text-base leading-snug [&>svg]:mt-0.5 [&>svg]:shrink-0">
                   <TrophyIcon className="size-4" /> Showcases
                 </CardTitle>
               </CardHeader>

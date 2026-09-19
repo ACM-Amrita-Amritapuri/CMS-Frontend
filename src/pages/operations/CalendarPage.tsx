@@ -41,7 +41,7 @@ export default function CalendarPage() {
         title="Calendar"
         description="Events and meetings across the club, month by month."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="sm"
@@ -52,7 +52,7 @@ export default function CalendarPage() {
               )
             }
           ><ChevronLeftIcon /></Button>
-          <span className="min-w-36 text-center text-sm font-medium">{bounds.label}</span>
+          <span className="min-w-0 flex-1 text-center text-sm font-semibold tabular-nums sm:min-w-36">{bounds.label}</span>
           <Button
             variant="outline"
             size="sm"
@@ -84,26 +84,30 @@ export default function CalendarPage() {
                 <li key={event.id}>
                   <Link
                     to={`/operations/events/${event.id}`}
-                    className="hover:border-primary flex items-center gap-4 rounded-lg border p-4 transition-colors"
+                    className="hover:border-primary grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg border p-4 transition-colors sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:gap-4"
                   >
                     <div className="bg-primary/10 text-primary flex size-12 shrink-0 flex-col items-center justify-center rounded-lg text-xs font-bold">
                       <span>{parseUtc(event.starts_at)?.toLocaleDateString(undefined, { month: "short" }) ?? "—"}</span>
                       <span className="text-base leading-none">{parseUtc(event.starts_at)?.getDate() ?? "—"}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{event.title}</p>
-                      <p className="text-muted-foreground truncate text-xs">
+                      <p className="text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</p>
+                      <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
                         {formatDateTime(event.starts_at)}
                         {event.location ? (
-                          <span className="inline-flex items-center gap-1">
+                          <span className="ml-1 inline [overflow-wrap:anywhere]">
                             {" "}
-                            · <MapPinIcon className="size-3" /> {event.location}
+                            · <MapPinIcon className="inline size-3 align-middle" /> {event.location}
                           </span>
                         ) : null}
                       </p>
                     </div>
-                    {event.kind === "MEETING" ? <Badge variant="info">meeting</Badge> : null}
-                    {event.state === "CANCELLED" ? <StatusBadge status="CANCELLED" /> : null}
+                    {event.kind === "MEETING" || event.state === "CANCELLED" ? (
+                      <div className="col-start-2 flex flex-wrap gap-2 sm:col-start-auto sm:justify-end">
+                        {event.kind === "MEETING" ? <Badge variant="info">meeting</Badge> : null}
+                        {event.state === "CANCELLED" ? <StatusBadge status="CANCELLED" /> : null}
+                      </div>
+                    ) : null}
                   </Link>
                 </li>
               ))}

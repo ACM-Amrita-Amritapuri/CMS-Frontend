@@ -17,7 +17,7 @@ function ContentFrame({
       data-slot="content-frame"
       data-width={width}
       className={cn(
-        "mx-auto w-full px-4 py-6 sm:px-6 sm:py-8",
+        "mx-auto w-full min-w-0 px-4 py-6 sm:px-6 sm:py-8 xl:px-8",
         width === "reading" && "max-w-3xl",
         width === "standard" && "max-w-5xl",
         width === "wide" && "max-w-7xl",
@@ -34,7 +34,7 @@ function Breadcrumbs({
   items: Array<{ label: string; to?: string }>;
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="text-muted-foreground flex items-center gap-1 text-xs">
+    <nav aria-label="Breadcrumb" className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-1 text-xs leading-5 [overflow-wrap:anywhere]">
       {items.map((item, index) => (
         <React.Fragment key={`${item.label}-${index}`}>
           {index > 0 ? <ChevronRightIcon className="size-3.5" aria-hidden /> : null}
@@ -81,13 +81,13 @@ function PageHeader({
         </Button>
       ) : null}
       {eyebrow ? <div className="text-muted-foreground text-[10px] font-semibold uppercase tracking-[0.16em]">{eyebrow}</div> : null}
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-[2.15rem]">{title}</h1>
-          {description ? <div className="text-muted-foreground mt-1.5 max-w-2xl text-sm">{description}</div> : null}
+      <div className="flex min-w-0 flex-col items-start justify-between gap-4 sm:flex-row sm:flex-wrap sm:gap-x-6">
+        <div className="min-w-0 sm:flex-1 sm:basis-64">
+          <h1 className="text-3xl leading-tight font-semibold tracking-tight text-balance [overflow-wrap:anywhere] sm:text-[2.15rem]">{title}</h1>
+          {description ? <div className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6 [overflow-wrap:anywhere]">{description}</div> : null}
           {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
         </div>
-        {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:max-w-full">{actions}</div> : null}
       </div>
     </header>
   );
@@ -110,7 +110,7 @@ function SectionHeader({
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {description ? <p className="text-muted-foreground mt-1 text-sm">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:max-w-full">{actions}</div> : null}
     </div>
   );
 }

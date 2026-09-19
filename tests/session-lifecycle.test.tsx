@@ -22,7 +22,7 @@ vi.mock("@/components/theme", () => ({ ThemeProvider: ({ children }: { children:
 vi.mock("sonner", () => ({ Toaster: () => null, toast: { success: vi.fn(), error: vi.fn() } }));
 
 const user = {
-  id: 1, username: "member", roll_number: "M001", must_change_password: false, role_assignments: [],
+  id: 1, username: "member", roll_number: "M001", must_change_password: false, profile_complete: true, role_assignments: [],
 };
 const profile: ProfileView = {
   user_id: 1, roll_number: "M001", username: "member", real_name: "Member", year: 2,
@@ -100,10 +100,13 @@ function signedIn(mustChange = false) {
 }
 
 function submitPassword() {
-  fireEvent.change(screen.getByLabelText("Current password"), { target: { value: "temporary" } });
-  fireEvent.change(screen.getByLabelText("New password"), { target: { value: "new-password" } });
-  fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "new-password" } });
-  fireEvent.click(screen.getByRole("button", { name: "Update password" }));
+  const current = screen.queryByLabelText("Current password");
+  const resetLabel = current ? "New password" : "Reset Password";
+  const confirmLabel = current ? "Confirm new password" : "Confirm Reset Password";
+  if (current) fireEvent.change(current, { target: { value: "temporary" } });
+  fireEvent.change(screen.getByLabelText(resetLabel), { target: { value: "new-password" } });
+  fireEvent.change(screen.getByLabelText(confirmLabel), { target: { value: "new-password" } });
+  fireEvent.click(screen.getByRole("button", { name: current ? "Update password" : "Reset password" }));
 }
 
 describe("session generation", () => {
@@ -207,6 +210,13 @@ describe("bootstrap lifecycle", () => {
     expect(refreshSession).not.toHaveBeenCalled();
   });
 
+  it("detects profile setup required on an already cached user", () => {
+    sessionStore.setSession({ ...user, profile_complete: false }, "existing");
+    const view = renderHook(useSessionBootstrap);
+    expect(view.result.current.status).toBe("profile-incomplete");
+    expect(getMe).not.toHaveBeenCalled();
+  });
+
   it.each(["PASSWORD_CHANGE_REQUIRED", "PROFILE_INCOMPLETE"])("handles %s from the server", async (code) => {
     tokenSession();
     vi.mocked(getMe).mockRejectedValue(new ApiError(403, code, "Onboarding required"));
@@ -299,25 +309,31 @@ describe("onboarding lifecycle", () => {
     expect(await screen.findByText("Login destination")).toBeInTheDocument();
   });
 
-  it("renders required-password UI and clears session after a successful change", async () => {
+  it("renders reset UI and keeps the rotated session after a successful change", async () => {
     signedIn(true);
+    vi.mocked(changePassword).mockResolvedValue({ access_token: "rotated", token_type: "Bearer", user: { ...user, must_change_password: false, profile_complete: false } });
     renderPage(<ChangePasswordPage />);
     expect(screen.getByText("Set a new password")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Reset Password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Confirm Reset Password")).toBeInTheDocument();
     submitPassword();
-    expect(await screen.findByText("Login destination")).toBeInTheDocument();
-    expect(sessionStore.canBootstrap()).toBe(false);
+    expect(await screen.findByText("Profile destination")).toBeInTheDocument();
+    expect(changePassword).toHaveBeenCalledWith({ new_password: "new-password" });
+    expect(sessionStore.getSnapshot().accessToken).toBe("rotated");
+    expect(sessionStore.getSnapshot().user?.profile_complete).toBe(false);
     expect(refreshSession).not.toHaveBeenCalled();
   });
 
   it("does not clear a newer session after a stale password-change response", async () => {
     signedIn(true);
-    const pending = deferred<{ message: string }>();
+    const pending = deferred<{ access_token: string; token_type: string; user: typeof user }>();
     vi.mocked(changePassword).mockReturnValue(pending.promise);
     renderPage(<ChangePasswordPage />);
     submitPassword();
     await waitFor(() => expect(changePassword).toHaveBeenCalledTimes(1));
     act(() => sessionStore.setSession({ ...user, id: 2 }, "new-session"));
-    await act(async () => pending.resolve({ message: "Updated" }));
+    await act(async () => pending.resolve({ access_token: "rotated", token_type: "Bearer", user }));
     expect(sessionStore.getSnapshot().user?.id).toBe(2);
   });
 });

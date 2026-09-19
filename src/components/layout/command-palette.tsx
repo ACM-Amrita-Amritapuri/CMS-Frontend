@@ -7,7 +7,6 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   MoonIcon,
-  SettingsIcon,
   SunIcon,
   TrophyIcon,
   UsersIcon,
@@ -25,7 +24,6 @@ const destinations = [
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
   { href: "/operations", label: "Operations", icon: CalendarDaysIcon, capability: "manage_operations" as const },
-  { href: "/admin", label: "Administration", icon: SettingsIcon, capability: "administer" as const },
 ];
 
 export function CommandPalette({

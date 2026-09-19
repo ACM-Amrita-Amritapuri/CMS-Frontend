@@ -193,11 +193,11 @@ function EventDetail({ event, meeting }: { event: ClubEvent; meeting?: Meeting }
           <p className="whitespace-pre-wrap text-sm">{meeting.agenda}</p>
           {meeting.minutes_document_id ? <Link className="text-primary hover:underline" to={`/documentation/${meeting.minutes_document_id}`}>View minutes</Link> : <p className="text-muted-foreground text-sm">No minutes attached.</p>}
           {manage && event.state !== "CANCELLED" ? (
-            <form className="flex items-end gap-3" onSubmit={(event) => { event.preventDefault(); minutes.mutate(); }}>
-              <Field label="Minutes document ID" htmlFor="minutes-id" hint="Use a published document in the meeting's scope.">
+            <form className="grid min-w-0 gap-3 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start" onSubmit={(event) => { event.preventDefault(); minutes.mutate(); }}>
+              <Field className="min-w-0" label="Minutes document ID" htmlFor="minutes-id" hint="Use a published document in the meeting's scope.">
                 <Input id="minutes-id" value={minutesValue} onChange={(event) => setMinutesId(event.target.value)} disabled={minutes.isPending} />
               </Field>
-              <Button type="submit" disabled={minutes.isPending || normalizeId(minutesValue.trim()) === null}>Attach minutes</Button>
+              <Button className="sm:mt-5" type="submit" disabled={minutes.isPending || normalizeId(minutesValue.trim()) === null}>Attach minutes</Button>
             </form>
           ) : null}
         </section>
@@ -292,7 +292,7 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
       />
 
       <form
-        className="flex flex-col gap-2 sm:flex-row sm:items-end"
+        className="grid min-w-0 gap-4 rounded-lg border p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start"
         onSubmit={(e) => {
           e.preventDefault();
           try {
@@ -305,8 +305,8 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
         }}
         noValidate
       >
-        <fieldset className="flex gap-3" disabled={mark.isPending}>
-          <legend className="text-sm font-medium">Identity type</legend>
+        <fieldset className="flex min-w-0 flex-wrap gap-x-4 gap-y-2 sm:col-span-2" disabled={mark.isPending}>
+          <legend className="mb-2 text-sm font-medium">Identity type</legend>
           {([ ["user", "User ID"], ["username", "Username"], ["roll", "Roll number"] ] as const).map(([type, label]) => (
             <label key={type} className="flex items-center gap-1 text-sm">
               <input type="radio" name="identity-type" value={type} checked={identityType === type} onChange={() => { setIdentityType(type); setFormError(null); }} />
@@ -325,7 +325,7 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
             />
           </Field>
         </div>
-        <Button type="submit" disabled={mark.isPending || !identifier.trim()}>
+        <Button className="sm:mt-5" type="submit" disabled={mark.isPending || !identifier.trim()}>
           <ClipboardCheckIcon /> Mark present
         </Button>
       </form>

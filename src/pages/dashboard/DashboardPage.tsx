@@ -8,9 +8,10 @@ import {
 } from "lucide-react";
 
 import { getMyProfile } from "@/lib/api/members";
+import { queryKeys } from "@/lib/query-keys";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { AdminShell } from "@/components/admin/admin-shell";
+import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,25 +34,7 @@ export default function DashboardPage() {
   const isAdmin = hasCapability("administer");
 
   if (isAdmin) {
-    return (
-      <AdminShell>
-        <div className="flex flex-col gap-6">
-          <section className="rounded-2xl border border-[#1f1f1f] bg-[#0a0a0a] px-6 py-8 sm:px-8 sm:py-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#71717a]">Admin workspace</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl">Welcome back, {user?.username ?? "admin"}</h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[#a1a1aa]">Manage accounts, SIGs, roles, events, and club operations.</p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Button asChild variant="outline" size="sm" className="rounded-full border-[#333333] text-white hover:bg-[#111111]">
-                <Link to="/admin">Administration</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="rounded-full border-[#333333] text-white hover:bg-[#111111]">
-                <Link to="/operations">Operations</Link>
-              </Button>
-            </div>
-          </section>
-        </div>
-      </AdminShell>
-    );
+    return <AdminDashboardPage />;
   }
 
   return (
@@ -61,13 +44,13 @@ export default function DashboardPage() {
           <p className="text-primary-foreground/65 text-[10px] font-semibold uppercase tracking-[0.18em] dark:text-white/65">
             ACM member workspace
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h1 className="mt-3 text-3xl leading-tight font-semibold tracking-tight text-balance [overflow-wrap:anywhere] sm:text-4xl">
             Welcome back, {user?.username ?? "member"}
           </h1>
           <p className="text-primary-foreground/70 mt-3 max-w-xl text-sm leading-6 sm:text-base dark:text-white/70">
             Pick up where you left off, find a project to join, or catch up on what the club is running this week.
           </p>
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button asChild variant="secondary" className="rounded-full">
               <Link to="/learning">Continue learning</Link>
             </Button>
@@ -87,7 +70,7 @@ export default function DashboardPage() {
             <Link
               key={to}
               to={to}
-              className="group flex min-h-28 items-start gap-3 border-b px-1 py-5 transition-colors hover:bg-muted/50 sm:border-r sm:px-4 lg:border-b-0 lg:last:border-r-0"
+              className="group flex min-h-28 min-w-0 items-start gap-3 border-b px-1 py-5 transition-colors hover:bg-muted/50 last:border-b-0 sm:border-r sm:px-4 sm:[&:nth-child(2n)]:border-r-0 sm:[&:nth-last-child(-n+2)]:border-b-0 lg:border-b-0 lg:[&:nth-child(2)]:border-r lg:last:border-r-0"
             >
               <div className="bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors">
                 <Icon className="size-4" />
@@ -115,7 +98,7 @@ export default function DashboardPage() {
 }
 
 function ProfilePanel() {
-  const query = useQuery({ queryKey: ["profile", "me"], queryFn: getMyProfile });
+  const query = useQuery({ queryKey: queryKeys.profile.me, queryFn: ({ signal }) => getMyProfile(signal) });
 
   return (
     <AsyncBoundary
@@ -129,7 +112,7 @@ function ProfilePanel() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <span className="bg-primary/15 text-primary flex size-11 items-center justify-center rounded-full text-base font-bold">
+              <span className="bg-primary/15 text-primary flex size-11 shrink-0 items-center justify-center rounded-full text-base font-bold">
                 {(profile.real_name || profile.username).slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">

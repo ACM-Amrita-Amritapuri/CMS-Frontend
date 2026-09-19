@@ -16,6 +16,7 @@ export interface AuthUser {
   username: string;
   roll_number: string;
   must_change_password: boolean;
+  profile_complete?: boolean;
   role_assignments: RoleAssignment[];
 }
 

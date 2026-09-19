@@ -64,12 +64,12 @@ export default function OperationsPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
       <PageHeader
         title="Operations"
         description="Plan events and meetings for the club."
         actions={manage ? (
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 [&>button]:flex-1 sm:w-auto sm:[&>button]:flex-none">
             <Button onClick={() => setCreatingEvent(true)}>
               <PlusIcon /> New event
             </Button>
@@ -100,19 +100,19 @@ export default function OperationsPage() {
             empty={{ icon: CalendarDaysIcon, title: "No events yet" }}
           >
             {(events) => (
-              <ul className="divide-border overflow-hidden rounded-md border">
+              <ul className="divide-border divide-y overflow-hidden rounded-lg border">
                 {events.map((event) => (
                   <li key={event.id}>
                     <Link
                       to={`/operations/events/${event.id}`}
-                      className="hover:bg-muted/30 flex items-center gap-4 p-4 transition-colors"
+                      className="hover:bg-muted/30 flex items-start gap-3 p-4 transition-colors sm:items-center sm:gap-4 sm:p-5"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-sm font-semibold">{event.title}</h2>
+                          <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</h2>
                           <EventStateBadge state={event.state} />
                         </div>
-                        <p className="text-muted-foreground mt-1 text-xs">
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
                           {formatDateTime(event.starts_at)}
                           {event.location ? ` · ${event.location}` : ""}
                         </p>
@@ -135,14 +135,14 @@ export default function OperationsPage() {
             empty={{ icon: UsersIcon, title: "No meetings scheduled" }}
           >
             {(meetings) => (
-              <ul className="divide-border overflow-hidden rounded-md border">
+              <ul className="divide-border divide-y overflow-hidden rounded-lg border">
                 {meetings.map((meeting) => (
                   <li key={meeting.id}>
-                    <Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <h2 className="text-sm font-semibold">{meeting.event.title}</h2>
-                        <p className="text-muted-foreground text-xs">
+<Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors sm:p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{meeting.event.title}</h2>
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
                           {formatDateTime(meeting.event.starts_at)}
                           {meeting.event.location ? ` · ${meeting.event.location}` : ""}
                         </p>
@@ -150,7 +150,7 @@ export default function OperationsPage() {
                       <EventStateBadge state={meeting.event.state} />
                     </div>
                     {meeting.agenda ? (
-                      <p className="text-muted-foreground mt-2 text-sm">{meeting.agenda}</p>
+                      <p className="text-muted-foreground mt-3 text-sm leading-6 [overflow-wrap:anywhere]">{meeting.agenda}</p>
                     ) : null}
                     </Link>
                   </li>
@@ -231,7 +231,7 @@ function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New event</DialogTitle>
           <DialogDescription>Drafts are visible only to managers until published.</DialogDescription>
@@ -250,7 +250,7 @@ function EventDialog({
           <Field label="Description" htmlFor="ev-description">
             <Textarea id="ev-description" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Starts" htmlFor="ev-start">
               <Input id="ev-start" type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} />
             </Field>
@@ -258,7 +258,7 @@ function EventDialog({
               <Input id="ev-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Type" htmlFor="ev-kind">
               <NativeSelect
                 id="ev-kind"
@@ -280,7 +280,7 @@ function EventDialog({
               />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Location" htmlFor="ev-location">
               <Input id="ev-location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Lab 3" />
             </Field>
@@ -298,7 +298,7 @@ function EventDialog({
               ))}
             </NativeSelect>
           </Field>
-          <DialogFooter>
+          <DialogFooter className="mt-2 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -381,7 +381,7 @@ function MeetingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New meeting</DialogTitle>
           <DialogDescription>Meetings start as drafts until published.</DialogDescription>
@@ -403,7 +403,7 @@ function MeetingDialog({
           <Field label="Description" htmlFor="meeting-description">
             <Textarea id="meeting-description" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Starts" htmlFor="meeting-start">
               <Input id="meeting-start" type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} />
             </Field>
@@ -411,7 +411,7 @@ function MeetingDialog({
               <Input id="meeting-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Location" htmlFor="meeting-location">
               <Input id="meeting-location" value={location} onChange={(event) => setLocation(event.target.value)} />
             </Field>
@@ -424,7 +424,7 @@ function MeetingDialog({
               </NativeSelect>
             </Field>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-2 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={create.isPending}>Create meeting</Button>
           </DialogFooter>

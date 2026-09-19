@@ -17,13 +17,13 @@ export async function getMe(signal?: AbortSignal) {
 }
 
 export async function changePassword(input: {
-  current_password: string;
+  current_password?: string;
   new_password: string;
 }) {
-  return apiRequest<{ message: string }>("/auth/change-password", {
+  return validateAuthResponse(authLoginSchema, await apiRequest<unknown>("/auth/change-password", {
     method: "POST",
     body: input,
-  });
+  }));
 }
 
 export async function refreshSession() {

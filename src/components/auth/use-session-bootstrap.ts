@@ -38,7 +38,11 @@ async function bootstrap(generation: number): Promise<BootstrapOutcome> {
     sessionStore.setSession(user, token);
     return {
       generation: sessionStore.getGeneration(),
-      kind: user.must_change_password ? "password-change-required" : "ready",
+      kind: user.must_change_password
+        ? "password-change-required"
+        : user.profile_complete === false
+          ? "profile-incomplete"
+          : "ready",
     };
   } catch (error) {
     if (!current()) return { generation, kind: "signed-out" };
@@ -82,7 +86,11 @@ export function useSessionBootstrap() {
 
   const currentOutcome = outcome?.generation === generation ? outcome : null;
   const status: SessionStatus = user && accessToken
-    ? user.must_change_password ? "password-change-required" : "ready"
+    ? user.must_change_password
+      ? "password-change-required"
+      : user.profile_complete === false
+        ? "profile-incomplete"
+        : "ready"
     : !canBootstrap
       ? "signed-out"
       : currentOutcome?.kind === "ready"

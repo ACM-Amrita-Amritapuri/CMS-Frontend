@@ -89,7 +89,7 @@ function Field({
   const describedBy = [control?.props["aria-describedby"], descriptionId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)} data-slot="field">
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)} data-slot="field">
       <Label htmlFor={controlId}>{label}</Label>
       {childNodes.map((child) =>
         React.isValidElement<React.HTMLAttributes<HTMLElement>>(child) && child === control

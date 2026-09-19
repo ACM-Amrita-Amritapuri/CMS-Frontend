@@ -63,14 +63,14 @@ export default function DocumentationListPage() {
       />
 
       <form
-        className="flex gap-2"
+        className="flex flex-wrap items-center gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           setSearchParams(input.trim() ? { q: input.trim() } : {});
         }}
       >
-        <div className="relative flex-1">
-          <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+        <div className="relative min-w-0 basis-full sm:flex-1">
+          <SearchIcon aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -106,15 +106,15 @@ export default function DocumentationListPage() {
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
-                  className="hover:bg-muted/40 flex items-start justify-between gap-4 px-1 py-4 transition-colors sm:px-2"
+                  className="hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 items-start gap-4 rounded-lg px-3 py-5 transition-colors focus-visible:ring-2 focus-visible:ring-inset sm:px-4"
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
-                      <h2 className="text-sm font-semibold">{doc.title}</h2>
+                      <h2 className="min-w-0 break-words text-base font-semibold leading-6 [overflow-wrap:anywhere]">{doc.title}</h2>
                       {doc.state ? <StatusBadge status={doc.state} /> : null}
                     </div>
-                    {doc.summary ? <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{doc.summary}</p> : null}
+                    {doc.summary ? <p className="text-muted-foreground mt-2 line-clamp-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{doc.summary}</p> : null}
                     <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-xs">
                     {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
                     {doc.tags.slice(0, 3).map((tag) => (
@@ -193,7 +193,7 @@ function CreateDocumentButton({
         <FileTextIcon /> New document
       </Button>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>New document</DialogTitle>
             <DialogDescription>
@@ -217,7 +217,7 @@ function CreateDocumentButton({
             <Field label="Body (Markdown)" htmlFor="doc-body">
               <Textarea id="doc-body" rows={7} value={body} onChange={(event) => setBody(event.target.value)} />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Category" htmlFor="doc-category">
                 <Input id="doc-category" value={category} onChange={(event) => setCategory(event.target.value)} />
               </Field>

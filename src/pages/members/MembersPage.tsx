@@ -26,26 +26,27 @@ export default function MembersPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6">
       <PageHeader
         title="Members"
         description="Look up a club member by their roll number."
       />
 
       <form
-        className="flex gap-2"
+        className="bg-card flex flex-col gap-3 rounded-xl border p-4 shadow-sm sm:flex-row sm:items-center sm:p-5"
         onSubmit={(event) => {
           event.preventDefault();
           setSubmitted(rollNumber.trim() || null);
         }}
       >
         <Input
+          className="h-11 sm:flex-1"
           value={rollNumber}
           onChange={(event) => setRollNumber(event.target.value)}
           placeholder="Roll number, e.g. B123"
           aria-label="Roll number"
         />
-        <Button type="submit" disabled={!rollNumber.trim()}>
+        <Button type="submit" disabled={!rollNumber.trim()} className="min-h-11 w-full sm:w-auto">
           <SearchIcon /> Search
         </Button>
       </form>

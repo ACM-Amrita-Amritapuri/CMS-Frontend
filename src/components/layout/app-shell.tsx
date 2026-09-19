@@ -9,18 +9,25 @@ import {
   FolderKanbanIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
+  LayersIcon,
   LogOutIcon,
   MenuIcon,
   MoonIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
   SearchIcon,
   SettingsIcon,
   SunIcon,
   TrophyIcon,
+  UserPlusIcon,
   UsersIcon,
   XIcon,
 } from "lucide-react";
 
 import { logout, logoutAll } from "@/lib/api/auth";
+import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.png";
+import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.png";
+import logoUrl from "@/assets/acm-student-chapter-mark.png";
 import { useSession } from "@/app/providers";
 import type { Capability } from "@/lib/auth/session-store";
 import { UserAvatar } from "@/components/ui/select";
@@ -51,18 +58,33 @@ const navigation = [
   {
     label: "Manage",
     items: [
+      { href: "/admin/members", label: "Manage members", icon: UsersIcon, capability: "administer" as const },
+      { href: "/admin/sigs", label: "Manage SIGs", icon: LayersIcon, capability: "administer" as const },
+      { href: "/admin/accounts", label: "Accounts", icon: UserPlusIcon, capability: "administer" as const },
       { href: "/operations", label: "Operations", icon: CalendarDaysIcon, capability: "manage_operations" as const },
-      { href: "/admin", label: "Administration", icon: SettingsIcon, capability: "administer" as const },
     ],
   },
 ];
+
+const SIDEBAR_STORAGE_KEY = "cms-sidebar-collapsed";
 
 import { roleLabels } from "@/lib/auth/permissions";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true",
+  );
   const { pathname } = useLocation();
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((collapsed) => {
+      const next = !collapsed;
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -93,7 +115,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-svh bg-background">
-      <Sidebar className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex" />
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={toggleSidebar}
+        className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex"
+      />
 
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -102,7 +128,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
 
-      <div className="flex min-h-svh min-w-0 flex-col lg:ml-[260px]">
+      <div className={`flex min-h-svh min-w-0 flex-col ${sidebarCollapsed ? "lg:ml-[76px]" : "lg:ml-[260px]"}`}>
         <header className="bg-background/90 sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4 backdrop-blur-xl sm:px-6">
           <Button
             variant="ghost"
@@ -116,7 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Button
             variant="outline"
             size="sm"
-            className="text-muted-foreground h-9 w-56 justify-start gap-2 rounded-md border-border/80 bg-secondary/40 sm:w-64"
+            className="text-muted-foreground h-9 min-w-0 flex-1 justify-start gap-2 rounded-md border-border/80 bg-secondary/40 sm:w-64 sm:flex-none"
             onClick={() => setPaletteOpen(true)}
             aria-label="Open quick switcher"
           >
@@ -143,26 +169,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 function Sidebar({
   className,
+  collapsed = false,
   onNavigate,
+  onToggle,
 }: {
   className?: string;
+  collapsed?: boolean;
   onNavigate?: () => void;
+  onToggle?: () => void;
 }) {
   const { pathname } = useLocation();
   const { user, hasCapability } = useSession();
+  const { resolvedTheme } = useTheme();
 
   return (
     <aside
-      className={`bg-sidebar flex w-[260px] shrink-0 flex-col border-r ${className ?? ""}`}
+      className={`bg-sidebar flex shrink-0 flex-col border-r transition-[width] duration-200 ${collapsed ? "w-[76px]" : "w-[260px]"} ${className ?? ""}`}
     >
-      <Link to="/dashboard" className="flex h-14 items-center gap-2.5 border-b px-4 font-semibold tracking-tight">
-        <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded text-sm font-bold">
-          A
-        </span>
-        ACM CMS
-      </Link>
+      <div className={`flex border-b ${collapsed ? "h-20 flex-col justify-center gap-0.5 px-2" : "h-20 items-center gap-2 px-3"}`}>
+        <Link to="/dashboard" className={`flex min-w-0 items-center font-semibold tracking-tight ${collapsed ? "justify-center" : "flex-1"}`}>
+          <img
+            src={collapsed ? logoUrl : resolvedTheme === "dark" ? darkLogoUrl : fullLogoUrl}
+            alt="ACM Student Chapter"
+            className={collapsed ? "size-9 object-contain" : "h-14 w-full object-contain object-left"}
+          />
+        </Link>
+        {onToggle ? (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={collapsed ? "size-6 self-center" : "size-8"}
+            aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+            title={collapsed ? "Expand navigation" : "Collapse navigation"}
+            onClick={onToggle}
+          >
+            {collapsed ? <PanelLeftOpenIcon /> : <PanelLeftCloseIcon />}
+          </Button>
+        ) : null}
+      </div>
 
-      <nav className="flex-1 overflow-y-auto p-4" aria-label="Primary">
+      <nav className={collapsed ? "flex-1 overflow-y-auto p-2" : "flex-1 overflow-y-auto p-4"} aria-label="Primary">
         <div className="flex flex-col gap-6">
           {navigation.map((group) => {
             const items = group.items.filter(
@@ -172,9 +218,11 @@ function Sidebar({
             if (items.length === 0) return null;
             return (
               <div key={group.label}>
-                <p className="text-muted-foreground mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                  {group.label}
-                </p>
+                {!collapsed ? (
+                  <p className="text-muted-foreground mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                    {group.label}
+                  </p>
+                ) : null}
                 <ul className="flex flex-col gap-0.5">
                   {items.map(({ href, label, icon: Icon }) => {
                     const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -184,14 +232,16 @@ function Sidebar({
                           to={href}
                           onClick={onNavigate}
                           aria-current={active ? "page" : undefined}
-                          className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                          aria-label={collapsed ? label : undefined}
+                          title={collapsed ? label : undefined}
+                          className={`flex items-center rounded-lg border py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-2" : "gap-3 px-3"} ${
                             active
                               ? "border-sidebar-border bg-sidebar-accent text-sidebar-foreground"
                               : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
                           }`}
                         >
-                          <Icon className="size-4" />
-                          {label}
+                          <Icon className="size-4 shrink-0" />
+                          {!collapsed ? label : null}
                         </Link>
                       </li>
                     );
@@ -204,19 +254,21 @@ function Sidebar({
       </nav>
 
       {user ? (
-        <div className="border-t p-3">
+        <div className={collapsed ? "border-t p-2" : "border-t p-3"}>
           <Link
             to="/profile"
             onClick={onNavigate}
-            className="hover:bg-sidebar-accent/60 flex items-center gap-2.5 rounded-lg p-2 transition-colors"
+            aria-label="Profile"
+            title={collapsed ? "Profile" : undefined}
+            className={`hover:bg-sidebar-accent/60 flex items-center rounded-lg p-2 transition-colors ${collapsed ? "justify-center" : "gap-2.5"}`}
           >
             <UserAvatar name={user.username} className="size-8" />
-            <span className="min-w-0">
+            {!collapsed ? <span className="min-w-0">
               <span className="block truncate text-sm font-medium">{user.username}</span>
               <span className="text-muted-foreground block truncate text-xs">
                 {topRole(user.role_assignments.map((a) => a.role_code))}
               </span>
-            </span>
+            </span> : null}
           </Link>
         </div>
       ) : null}
@@ -256,7 +308,7 @@ function UserMenu() {
 
   const signOut = (fn: typeof logout) =>
     fn()
-      .catch(() => undefined) // Clear local state regardless of server outcome.
+      .catch(() => undefined)
       .finally(() => {
         queryClient.clear();
         navigate("/login", { replace: true });
@@ -266,7 +318,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Account menu">
-          <UserAvatar name={user.username} className="size-7" />
+          <SettingsIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
@@ -287,10 +339,7 @@ function UserMenu() {
         <DropdownMenuItem onClick={() => signOut(logout)}>
           <LogOutIcon /> Log out
         </DropdownMenuItem>
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => signOut(logoutAll)}
-        >
+        <DropdownMenuItem variant="destructive" onClick={() => signOut(logoutAll)}>
           <XIcon /> Log out everywhere
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import type { IncomingMessage } from "node:http";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -46,7 +47,11 @@ export default defineConfig(({ mode }) => {
   const proxy = Object.fromEntries(
     BACKEND_PREFIXES.map((prefix) => [
       `/${prefix}`,
-      { target: backendTarget, changeOrigin: true },
+      {
+        target: backendTarget,
+        changeOrigin: true,
+        bypass: (req: IncomingMessage) => req.headers["x-cms-api"] === "1" ? undefined : req.url,
+      },
     ]),
   );
 

@@ -93,7 +93,7 @@ export default function LearningPathPage() {
           description="Authors add modules to structure the path."
         />
       ) : (
-        <div className="grid items-start gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] xl:gap-8">
           <nav aria-label="Path contents" className="flex flex-col gap-3">
             {modules.map((module) => (
               <ModuleCard
@@ -183,7 +183,7 @@ function ModuleCard({
           aria-expanded={open}
         >
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{module.title}</p>
+            <p className="break-words text-sm font-semibold leading-5 [overflow-wrap:anywhere]">{module.title}</p>
             <p className="text-muted-foreground text-xs">
               {module.lessons.length} lessons · {module.assignments.length} assignments
             </p>
@@ -194,7 +194,7 @@ function ModuleCard({
           <button
             type="button"
             onClick={() => void publish(() => setModuleState(module.id, "PUBLISHED"), module.title)}
-            className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
+            className="text-primary focus-visible:ring-ring min-h-8 shrink-0 rounded px-2 py-1 text-xs font-semibold hover:underline focus-visible:ring-2"
           >
             Publish
           </button>
@@ -252,15 +252,15 @@ function TreeItem({
 }) {
   return (
     <li>
-      <div className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"}`}>
+      <div className={`flex flex-wrap items-center gap-2 px-4 py-2 text-sm transition-colors ${active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"}`}>
         <button
           type="button"
           onClick={onClick}
           aria-current={active ? "page" : undefined}
-          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+          className="focus-visible:ring-ring flex min-h-9 min-w-0 flex-1 basis-28 items-start gap-2.5 rounded py-1.5 text-left focus-visible:ring-2"
         >
           <Icon className="size-4 shrink-0" />
-          <span className="truncate">{label}</span>
+          <span className="min-w-0 break-words leading-5 [overflow-wrap:anywhere]">{label}</span>
         </button>
         {draft ? <Badge variant="warning" className="shrink-0 text-[10px]">Draft</Badge> : null}
         {draft && onPublish ? (
@@ -319,16 +319,16 @@ function LessonPanel({
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-xl border p-5 sm:p-7">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">{lesson.title}</h2>
+    <article className="bg-card flex min-w-0 flex-col gap-6 rounded-xl border p-4 sm:p-6">
+      <div className="flex flex-col items-start gap-3 border-b pb-4 xl:flex-row xl:justify-between">
+        <h2 className="min-w-0 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
       </div>
       {lesson.resources.length === 0 ? (
         <p className="text-muted-foreground text-sm">No materials in this lesson yet.</p>
       ) : (
         lesson.resources.map((resource) => (
-          <section key={resource.id} className="flex flex-col gap-2">
+          <section key={resource.id} className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
             <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
               {resource.title}
             </h3>
@@ -342,10 +342,10 @@ function LessonPanel({
                 href={resource.external_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-input hover:bg-accent inline-flex w-fit items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                className="border-input hover:bg-accent focus-visible:ring-ring inline-flex w-fit max-w-full items-start gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2"
               >
-                <ExternalLinkIcon className="size-4" />
-                {resource.external_url}
+                <ExternalLinkIcon className="mt-0.5 size-4 shrink-0" />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{resource.external_url}</span>
               </a>
             )}
           </section>
@@ -418,8 +418,8 @@ function AuthorTools({ pathId, modules }: { pathId: number; modules: LearningMod
 
   return (
     <section aria-label="Author tools" className="border-t pt-4">
-      <div className="flex flex-wrap gap-2">
-        <span className="text-muted-foreground mr-2 self-center text-xs font-medium uppercase tracking-wide">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <span className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide sm:mr-2 sm:mb-0 sm:self-center">
           Author tools
         </span>
         {actions.map((action) => (

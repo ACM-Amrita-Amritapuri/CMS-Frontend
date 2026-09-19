@@ -221,8 +221,8 @@ export default function ProfileSetupPage() {
   const { errors } = form.formState;
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center px-4 py-10">
-      <div className="bg-card rounded-lg border p-6 sm:p-8">
+    <div className="mx-auto flex min-h-svh w-full min-w-0 max-w-3xl flex-col justify-center px-4 py-6 sm:px-6 sm:py-10">
+      <div className="bg-card rounded-2xl border p-5 shadow-sm sm:p-8">
         <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-md">
           <IdCardIcon className="size-5" />
         </div>
@@ -231,8 +231,8 @@ export default function ProfileSetupPage() {
           description="Introduce yourself to the club. You can update this any time."
         />
 
-        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-[1fr_100px]">
+        <form onSubmit={onSubmit} className="mt-6 flex min-w-0 flex-col gap-5" noValidate>
+          <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />
             </Field>
@@ -259,7 +259,7 @@ export default function ProfileSetupPage() {
           >
             <Input id="skills" {...form.register("skills")} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-5 sm:grid-cols-2">
             <Field label="Interests" htmlFor="interests" error={errors.interests?.message}>
               <Input id="interests" {...form.register("interests")} />
             </Field>
@@ -269,10 +269,10 @@ export default function ProfileSetupPage() {
           </div>
 
           <div className="mt-2 border-t pt-4">
-            <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground mb-4 text-xs font-medium uppercase leading-relaxed tracking-wide">
               Social & competitive profiles (optional)
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid items-start gap-5 sm:grid-cols-2">
               {socialFields.map(({ key, label }) => (
                 <Field key={key} label={label} htmlFor={key} error={errors[key]?.message}>
                   <Input
@@ -289,7 +289,7 @@ export default function ProfileSetupPage() {
           <Button
             type="submit"
             disabled={saveMutation.isPending}
-            className="mt-2 self-start"
+            className="mt-2 min-h-11 w-full sm:w-auto sm:self-end"
           >
             {saveMutation.isPending ? <Loader2Icon className="animate-spin" /> : null}
             Save profile

@@ -45,18 +45,18 @@ export function ProfileCard({
   });
 
   return (
-    <div className="bg-card rounded-lg border">
-      <div className="bg-primary/10 h-20 rounded-t-lg" />
-      <div className="flex flex-col gap-4 px-6 pb-6">
+    <div className="bg-card min-w-0 rounded-xl border shadow-sm">
+      <div className="bg-primary/10 h-20 rounded-t-xl" />
+      <div className="flex min-w-0 flex-col gap-5 px-4 pb-5 sm:px-6 sm:pb-6">
         <div className="-mt-8 flex flex-wrap items-end justify-between gap-3">
-          <div className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-lg border-4 border-card text-xl font-bold">
-            {profile.real_name.slice(0, 1).toUpperCase()}
+          <div className="bg-primary text-primary-foreground flex size-16 shrink-0 items-center justify-center rounded-xl border-4 border-card text-xl font-bold">
+            {(profile.real_name || profile.username).slice(0, 1).toUpperCase()}
           </div>
-          {actions}
+          {actions ? <div className="flex w-full flex-wrap gap-2 [&>*]:w-full sm:w-auto sm:[&>*]:w-auto">{actions}</div> : null}
         </div>
-        <div>
-          <h2 className="text-xl font-semibold">{profile.real_name || profile.username}</h2>
-          <p className="text-muted-foreground text-sm">
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]">{profile.real_name || profile.username}</h2>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed [overflow-wrap:anywhere]">
             @{profile.username} · {profile.roll_number}
             {profile.year ? ` · Year ${profile.year}` : ""}
             {profile.branch ? ` · ${profile.branch}` : ""}
@@ -64,7 +64,7 @@ export function ProfileCard({
           {roles.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {roles.map((role) => (
-                <Badge key={role} variant="secondary">
+                <Badge key={role} variant="secondary" className="max-w-full whitespace-normal text-left leading-relaxed [overflow-wrap:anywhere]">
                   {role}
                 </Badge>
               ))}
@@ -72,34 +72,34 @@ export function ProfileCard({
           ) : null}
         </div>
         {profile.about ? (
-          <p className="text-muted-foreground text-sm leading-relaxed">{profile.about}</p>
+          <p className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed [overflow-wrap:anywhere]">{profile.about}</p>
         ) : null}
         {profile.skills.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {profile.skills.map((skill) => (
-              <Badge key={skill} variant="outline">
+              <Badge key={skill} variant="outline" className="max-w-full whitespace-normal text-left leading-relaxed [overflow-wrap:anywhere]">
                 {skill}
               </Badge>
             ))}
           </div>
         ) : null}
         {profile.interests || profile.hobbies ? (
-          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="grid gap-4 text-sm leading-relaxed [overflow-wrap:anywhere] sm:grid-cols-2">
             {profile.interests ? (
               <div>
-                <dt className="text-muted-foreground text-xs font-medium uppercase">Interests</dt>
+                <dt className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">Interests</dt>
                 <dd>{profile.interests}</dd>
               </div>
             ) : null}
             {profile.hobbies ? (
               <div>
-                <dt className="text-muted-foreground text-xs font-medium uppercase">Hobbies</dt>
+                <dt className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">Hobbies</dt>
                 <dd>{profile.hobbies}</dd>
               </div>
             ) : null}
           </dl>
         ) : null}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 empty:hidden">
           {socialLinks.map(({ key, label, icon: Icon }) => {
             const url = profile[key];
             if (!url) return null;
@@ -109,7 +109,7 @@ export function ProfileCard({
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                className="border-input hover:bg-accent hover:text-accent-foreground focus-visible:ring-ring/50 inline-flex min-h-10 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-[3px]"
               >
                 <Icon className="size-3.5" />
                 {label}

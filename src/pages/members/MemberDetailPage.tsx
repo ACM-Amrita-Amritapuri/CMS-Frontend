@@ -22,10 +22,10 @@ export default function MemberDetailPage() {
     <QueryState
       query={query}
       notFound="Member not found"
-      skeleton={<Skeleton className="h-72 w-full max-w-2xl" />}
+      skeleton={<Skeleton className="mx-auto h-72 w-full max-w-2xl" />}
     >
       {(profile) => (
-        <div className="flex max-w-2xl flex-col gap-6">
+        <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6">
           <PageHeader
             title={profile.real_name || profile.username}
             description="Member profile and club details."

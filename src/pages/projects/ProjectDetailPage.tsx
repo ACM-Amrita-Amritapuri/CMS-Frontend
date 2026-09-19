@@ -98,8 +98,9 @@ function ProjectDetail({ project }: { project: Project }) {
         <span className="text-muted-foreground text-xs tabular-nums">{project.progress}%</span>
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
+
+      <Tabs defaultValue="overview" className="min-w-0">
+        <TabsList className="h-auto min-h-10 w-full flex-wrap sm:w-fit">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="team">
             Team ({activeMemberships.length}/{project.team_capacity})
@@ -183,8 +184,8 @@ function RolesSection({
     project.team_memberships.filter((membership) => membership.role_id === roleId && !membership.left_at).length;
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Open roles</h2>
         {isLead ? (
           <Button variant="outline" size="sm" onClick={() => setCreating((value) => !value)}>
@@ -228,9 +229,9 @@ function RolesSection({
             const canApply = !isLead && !myMembership && !myApplication && filled < role.capacity;
             return (
               <li key={role.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{role.title}</p>
-                  <p className="text-muted-foreground text-xs">{role.description}</p>
+                <div className="min-w-0 flex-1 basis-full sm:basis-48">
+                  <p className="break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">{role.title}</p>
+                  <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{role.description}</p>
                   {role.required_skills.length > 0 ? (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {role.required_skills.map((skill) => (
@@ -280,12 +281,12 @@ function ApplicationsSection({ project, isLead }: { project: Project; isLead: bo
   if (!isLead || pending.length === 0) return null;
 
   return (
-    <section className="bg-card rounded-lg border p-5">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wide">Pending applications</h2>
       <ul className="mt-3 flex flex-col gap-2">
         {pending.map((application) => (
           <li key={application.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-full sm:basis-48">
               <p className="text-sm font-medium">Applicant #{application.applicant_user_id}</p>
               {application.note ? (
                 <p className="text-muted-foreground truncate text-xs">{application.note}</p>
@@ -326,10 +327,10 @@ function LeaveButton({ projectId }: { projectId: number }) {
   });
 
   return (
-    <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-5">
+    <div className="bg-card flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
       <p className="text-sm">You are a member of this project.</p>
       {confirming ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="destructive" onClick={() => leave.mutate()}>
             Confirm leave
           </Button>
@@ -382,8 +383,8 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
   });
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Tasks</h2>
         {canWork ? (
           <Button variant="outline" size="sm" onClick={() => setCreating((value) => !value)}>
@@ -393,7 +394,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
       </div>
       {creating ? (
         <form
-          className="mt-3 flex gap-2"
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -413,8 +414,8 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
         <ul className="mt-4 flex flex-col gap-2">
           {allTasks.map((task) => (
             <li key={task.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-              <p className="min-w-0 flex-1 truncate text-sm font-medium">{task.title}</p>
-              <div className="flex gap-1">
+              <p className="min-w-0 flex-1 basis-full break-words text-sm font-medium leading-6 [overflow-wrap:anywhere] sm:basis-48">{task.title}</p>
+              <div className="flex max-w-full flex-wrap gap-1">
                 {canWork ? taskStates
                   .filter((state) => state !== task.state)
                   .map((state) => (
@@ -471,8 +472,8 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
   const scoped = query.data ?? [];
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">
           <FlagIcon className="mr-1 inline size-3.5" /> Milestones
         </h2>
@@ -484,7 +485,7 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
       </div>
       {creating ? (
         <form
-          className="mt-3 flex gap-2"
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -503,9 +504,11 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {scoped.map((milestone) => (
-            <li key={milestone.id} className="flex items-center gap-3 rounded-lg border p-3 text-sm">
-              <FlagIcon className="text-primary size-4 shrink-0" />
-              {milestone.title}
+            <li key={milestone.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm">
+              <div className="flex min-w-0 flex-1 basis-full items-start gap-2 sm:basis-48">
+                <FlagIcon className="text-primary mt-1 size-4 shrink-0" />
+                <span className="min-w-0 break-words font-medium leading-6 [overflow-wrap:anywhere]">{milestone.title}</span>
+              </div>
               {canWork ? (["PLANNED", "IN_PROGRESS", "DONE"] as const).filter((state) => state !== milestone.state).map((state) => (
                 <Button key={state} size="sm" variant="ghost" disabled={move.isPending} onClick={() => move.mutate({ id: milestone.id, state })}>
                   {state.toLowerCase()}
@@ -550,7 +553,7 @@ function ShowcaseSection({ project }: { project: Project }) {
   });
 
   return (
-    <section className="bg-card rounded-lg border p-5">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
         <UsersIcon className="size-4" /> Project showcase
       </h2>

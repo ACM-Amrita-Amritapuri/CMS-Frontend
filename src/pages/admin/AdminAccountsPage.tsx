@@ -9,7 +9,7 @@ import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -55,61 +55,66 @@ export default function AdminAccountsPage() {
 
   return (
     <AdminShell>
-      <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <PageHeader
-        title="Accounts"
-        description="Create club accounts. Members change their temporary password at first sign-in."
-      />
+      <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
+        <PageHeader
+          title="Accounts"
+        />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserPlusIcon className="size-4" /> New account
-          </CardTitle>
-          <CardDescription>
-            A one-time temporary password is generated on creation.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              create.mutate();
-            }}
-            noValidate
-          >
-            <Field label="Username" htmlFor="new-username" error={formError ?? undefined}>
-              <Input
-                id="new-username"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="e.g. aarav.rao"
-                autoComplete="off"
-              />
-            </Field>
-            <Field label="Roll number" htmlFor="new-roll-number">
-              <Input
-                id="new-roll-number"
-                value={rollNumber}
-                onChange={(event) => setRollNumber(event.target.value)}
-                placeholder="e.g. B24110"
-                className="font-mono"
-                autoComplete="off"
-              />
-            </Field>
-            <Button type="submit" disabled={create.isPending} className="self-start">
-              Create account
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        <Card className="w-full max-w-3xl overflow-hidden shadow-sm">
+          <CardHeader className="gap-4 border-b bg-muted/20 px-6 py-6 sm:px-8">
+            <div className="flex items-start gap-3">
+              <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
+                <UserPlusIcon className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <CardTitle className="text-base">New account</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6 py-6 sm:px-8">
+            <form
+              className="flex flex-col gap-6"
+              onSubmit={(event) => {
+                event.preventDefault();
+                create.mutate();
+              }}
+              noValidate
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Username" htmlFor="new-username" error={formError ?? undefined}>
+                  <Input
+                    id="new-username"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="e.g. aarav.rao"
+                    autoComplete="off"
+                  />
+                </Field>
+                <Field label="Roll number" htmlFor="new-roll-number">
+                  <Input
+                    id="new-roll-number"
+                    value={rollNumber}
+                    onChange={(event) => setRollNumber(event.target.value)}
+                    placeholder="e.g. B24110"
+                    className="font-mono"
+                    autoComplete="off"
+                  />
+                </Field>
+              </div>
+              <div className="flex justify-end border-t pt-5">
+                <Button type="submit" disabled={create.isPending} className="w-full shrink-0 sm:w-auto">
+                  Create account
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-      <TemporaryPasswordDialog
-        username={secret?.username ?? ""}
-        password={secret?.password ?? null}
-        onClose={() => setSecret(null)}
-      />
+        <TemporaryPasswordDialog
+          username={secret?.username ?? ""}
+          password={secret?.password ?? null}
+          onClose={() => setSecret(null)}
+        />
       </div>
     </AdminShell>
   );

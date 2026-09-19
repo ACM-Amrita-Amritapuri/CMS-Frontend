@@ -11,6 +11,9 @@ import { sessionStore } from "@/lib/auth/session-store";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
+import { useTheme } from "@/components/theme";
+import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.png";
+import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.png";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Enter your username or roll number."),
@@ -22,6 +25,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   useDocumentTitle("Login");
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<LoginForm>({ defaultValues: { login: "", password: "" } });
 
@@ -35,7 +39,11 @@ export default function LoginPage() {
       (response) => {
         sessionStore.setSession(response.user, response.access_token);
         navigate(
-          response.user.must_change_password ? "/change-password" : "/dashboard",
+          response.user.must_change_password
+            ? "/change-password"
+            : response.user.profile_complete === false
+              ? "/profile/setup"
+              : "/dashboard",
           { replace: true },
         );
       },
@@ -48,22 +56,20 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8 sm:px-6">
-      <div className="flex w-full max-w-md flex-col items-center gap-8">
-        <Link to="/login" className="flex flex-col items-center gap-2 font-semibold">
-          <span className="bg-primary text-primary-foreground flex size-16 items-center justify-center rounded-2xl text-3xl font-extrabold shadow-lg" aria-label="ACM logo">
-            A
-          </span>
-          <span className="text-2xl tracking-tight">ACM CMS</span>
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-6 sm:px-6">
+      <div className="flex w-full max-w-sm flex-col items-center gap-6">
+        <Link to="/login" className="flex w-full justify-center font-semibold">
+          <img
+            src={resolvedTheme === "dark" ? darkLogoUrl : fullLogoUrl}
+            alt="ACM Student Chapter"
+            className="h-auto w-full max-w-[20rem] object-contain"
+          />
         </Link>
 
-        <section className="w-full rounded-2xl border bg-card p-6 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)] sm:p-8">
-          <h2 className="text-center text-2xl font-semibold tracking-tight">Sign in</h2>
-          <p className="text-muted-foreground mt-1 text-center text-sm">
-            Accounts are created by club administrators.
-          </p>
+        <section className="w-full rounded-xl border bg-card p-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)] sm:p-6">
+          <h1 className="text-center text-xl font-semibold tracking-tight">Sign in</h1>
 
-          <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+          <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4" noValidate>
             <Field
               label="Username or roll number"
               htmlFor="login"
@@ -88,7 +94,7 @@ export default function LoginPage() {
                 {formError}
               </p>
             ) : null}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 h-10 w-full rounded-full">
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-full">
               {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
               <span>Sign in</span>
               {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}
