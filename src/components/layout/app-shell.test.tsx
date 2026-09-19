@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
@@ -13,6 +13,12 @@ afterEach(() => {
 
 beforeEach(() => {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  vi.stubGlobal("ResizeObserver", class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 function renderShell() {
@@ -45,5 +51,15 @@ describe("AppShell navigation", () => {
     renderShell();
 
     expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
+  });
+
+  it("loads the quick switcher only when opened", async () => {
+    renderShell();
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open quick switcher" }));
+
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Quick switcher" })).toBeInTheDocument());
+    expect(screen.getByPlaceholderText("Go to…")).toBeInTheDocument();
   });
 });
