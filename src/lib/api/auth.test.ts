@@ -78,6 +78,31 @@ it.each([false, true])("does not restore an obsolete session after refresh (new 
   expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
+it("logs API success and failure outcomes without request credentials", async () => {
+  const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+  const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+  fetchMock.mockResolvedValueOnce(Response.json({ path: { id: 1 } }));
+  await apiRequest("/learning/paths", {
+    method: "POST",
+    body: { title: "fdf", slug: "fdf" },
+  });
+  expect(info).toHaveBeenCalledWith(expect.stringMatching(/^\[cms api\] POST \/learning\/paths -> 200 \(\d+ms\)$/));
+
+  fetchMock.mockResolvedValueOnce(Response.json(
+    { error: { code: "CONFLICT", message: "A learning path already exists." } },
+    { status: 409 },
+  ));
+  await expect(apiRequest("/learning/paths", { method: "POST" })).rejects.toMatchObject({ status: 409 });
+  expect(error).toHaveBeenCalledWith(
+    "[cms api] POST /learning/paths failed",
+    expect.objectContaining({ status: 409, code: "CONFLICT" }),
+  );
+
+  info.mockRestore();
+  error.mockRestore();
+});
+
 it("authenticates logout-all with the current bearer token", async () => {
   fetchMock.mockResolvedValueOnce(Response.json({ message: "Logged out" }));
 

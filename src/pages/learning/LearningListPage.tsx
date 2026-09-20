@@ -196,12 +196,18 @@ function CreatePathDialog({
           }}
           noValidate
         >
-          <Field label="Title" htmlFor="path-title" error={formError ?? undefined}>
+          {formError ? (
+            <p role="alert" className="text-destructive rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm">
+              {formError}
+            </p>
+          ) : null}
+          <Field label="Title" htmlFor="path-title">
             <Input
               id="path-title"
               value={title}
               onChange={(event) => {
                 setTitle(event.target.value);
+                setFormError(null);
                 if (!slug) setSlug(slugify(event.target.value));
               }}
               placeholder="e.g. Web Foundations"
@@ -211,7 +217,10 @@ function CreatePathDialog({
             <Input
               id="path-slug"
               value={slug}
-              onChange={(event) => setSlug(event.target.value)}
+              onChange={(event) => {
+                setSlug(event.target.value);
+                setFormError(null);
+              }}
               className="font-mono"
               placeholder="web-foundations"
             />
