@@ -35,7 +35,7 @@ export interface LearningLesson {
 export interface LearningResource {
   id: number;
   title: string;
-  resource_type: "MARKDOWN" | "EXTERNAL_LINK";
+  resource_type: "MARKDOWN" | "EXTERNAL_LINK" | "YOUTUBE" | "WEBSITE" | "DOCUMENT";
   content: string | null;
   external_url: string | null;
   position: number;
@@ -154,7 +154,7 @@ export async function createResource(
   lessonId: number,
   input: {
     title: string;
-    resource_type: "MARKDOWN" | "EXTERNAL_LINK";
+    resource_type: LearningResource["resource_type"];
     position: number;
     content?: string;
     external_url?: string;
