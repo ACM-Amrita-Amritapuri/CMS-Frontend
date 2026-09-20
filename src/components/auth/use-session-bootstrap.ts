@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiError } from "@/lib/api/errors";
 import { getMe, refreshSession } from "@/lib/api/auth";
 import { sessionStore } from "@/lib/auth/session-store";
@@ -12,72 +12,101 @@ type SessionStatus =
   | "signed-out"
   | "error";
 
-type BootstrapOutcome =
-  | { kind: "ready" | "password-change-required" | "profile-incomplete" | "signed-out" }
-  | { kind: "error"; error: unknown };
+type BootstrapOutcome = {
+  generation: number;
+  kind: Exclude<SessionStatus, "loading">;
+  error?: unknown;
+};
 
-/**
- * One session bootstrap per page load: restore the access token from the
- * refresh cookie, then resolve the user (or which onboarding gate applies).
- * Single-flight so parallel mounts share one round trip.
- */
-let bootstrapPromise: Promise<BootstrapOutcome> | null = null;
+let bootstrapFlight: {
+  generation: number;
+  promise: Promise<BootstrapOutcome>;
+} | null = null;
 
-async function bootstrap(): Promise<BootstrapOutcome> {
-  let token: string;
+async function bootstrap(generation: number): Promise<BootstrapOutcome> {
+  const current = () => sessionStore.isCurrentGeneration(generation);
   try {
-    const refreshed = await refreshSession();
-    token = refreshed.access_token;
-    sessionStore.setAccessToken(token);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      return { kind: "signed-out" };
+    if (!sessionStore.getSnapshot().accessToken) {
+      const refreshed = await refreshSession();
+      if (!current()) return { generation, kind: "signed-out" };
+      sessionStore.setAccessToken(refreshed.access_token);
     }
-    return { kind: "error", error };
-  }
-
-  try {
     const user = await getMe();
+    if (!current()) return { generation, kind: "signed-out" };
+    const token = sessionStore.getSnapshot().accessToken;
+    if (!token) return { generation, kind: "signed-out" };
     sessionStore.setSession(user, token);
-    return { kind: "ready" };
+    return {
+      generation: sessionStore.getGeneration(),
+      kind: user.must_change_password
+        ? "password-change-required"
+        : user.profile_complete === false
+          ? "profile-incomplete"
+          : "ready",
+    };
   } catch (error) {
-    if (error instanceof ApiError && error.status === 403) {
-      if (error.code === "PASSWORD_CHANGE_REQUIRED") {
-        return { kind: "password-change-required" };
+    if (!current()) return { generation, kind: "signed-out" };
+    if (error instanceof ApiError) {
+      if (error.status === 401) {
+        sessionStore.clearSession();
+        return { generation: sessionStore.getGeneration(), kind: "signed-out" };
       }
-      if (error.code === "PROFILE_INCOMPLETE") {
-        return { kind: "profile-incomplete" };
+      if (error.status === 403) {
+        if (error.code === "PASSWORD_CHANGE_REQUIRED") {
+          return { generation, kind: "password-change-required" };
+        }
+        if (error.code === "PROFILE_INCOMPLETE") {
+          return { generation, kind: "profile-incomplete" };
+        }
       }
     }
-    return { kind: "error", error };
+    return { generation, kind: "error", error };
   }
 }
 
 export function useSessionBootstrap() {
-  const { user } = useSession();
+  const { user, accessToken, generation } = useSession();
   const [outcome, setOutcome] = useState<BootstrapOutcome | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const canBootstrap = sessionStore.canBootstrap();
 
   useEffect(() => {
-    if (user || outcome) return;
-    bootstrapPromise ??= bootstrap();
-    void bootstrapPromise.then(setOutcome);
-  }, [user, outcome]);
+    if (user || !canBootstrap) return;
+    if (!bootstrapFlight || bootstrapFlight.generation !== generation) {
+      bootstrapFlight = { generation, promise: bootstrap(generation) };
+    }
+    let active = true;
+    void bootstrapFlight.promise.then((result) => {
+      if (active && sessionStore.isCurrentGeneration(result.generation)) setOutcome(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [user, generation, canBootstrap, attempt]);
 
-  const status = useMemo<SessionStatus>(() => {
-    if (user) return "ready";
-    if (!outcome) return "loading";
-    if (outcome.kind === "ready") return "signed-out";
-    return outcome.kind === "error" ? "error" : outcome.kind;
-  }, [user, outcome]);
+  const currentOutcome = outcome?.generation === generation ? outcome : null;
+  const status: SessionStatus = user && accessToken
+    ? user.must_change_password
+      ? "password-change-required"
+      : user.profile_complete === false
+        ? "profile-incomplete"
+        : "ready"
+    : !canBootstrap
+      ? "signed-out"
+      : currentOutcome?.kind === "ready"
+        ? "signed-out"
+        : currentOutcome?.kind ?? "loading";
 
   const retry = () => {
-    bootstrapPromise = null;
+    if (!sessionStore.canBootstrap()) return;
+    bootstrapFlight = null;
     setOutcome(null);
+    setAttempt((value) => value + 1);
   };
 
   return {
     status,
-    error: outcome?.kind === "error" ? outcome.error : undefined,
+    error: status === "error" ? currentOutcome?.error : undefined,
     retry,
   };
 }

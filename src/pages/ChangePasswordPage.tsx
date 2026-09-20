@@ -13,10 +13,12 @@ import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
+import { QueryErrorState } from "@/components/ui/async";
 
 const passwordSchema = z
   .object({
-    current_password: z.string().min(1, "Enter your current password."),
+    current_password: z.string().optional(),
     new_password: z.string().min(8, "Use at least 8 characters."),
     confirm_password: z.string(),
   })
@@ -30,7 +32,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 export default function ChangePasswordPage() {
   useDocumentTitle("Change password");
   const navigate = useNavigate();
-  const { status } = useSessionBootstrap();
+  const { status, error, retry } = useSessionBootstrap();
   const form = useForm<PasswordForm>({
     defaultValues: { current_password: "", new_password: "", confirm_password: "" },
   });
@@ -45,20 +47,28 @@ export default function ChangePasswordPage() {
       form.setError(field as keyof PasswordForm, { message }),
     );
     if (!data) return;
+    if (!mustChange && !data.current_password) {
+      form.setError("current_password", { message: "Enter your current password." });
+      return;
+    }
 
+    const generation = sessionStore.getGeneration();
     return changePassword({
-      current_password: data.current_password,
+      ...(mustChange ? {} : { current_password: data.current_password }),
       new_password: data.new_password,
     }).then(
-      () => {
-        // The backend invalidates every session after a password change,
-        // so the in-memory access token is dropped and re-login is required.
-        sessionStore.clearSession();
-        toast.success("Password updated. Please sign in with your new password.");
-        navigate("/login", { replace: true });
+      (response) => {
+        if (!sessionStore.isCurrentGeneration(generation)) return;
+        sessionStore.setSession(response.user, response.access_token);
+        toast.success("Password updated.");
+        navigate(
+          response.user.profile_complete === false ? "/profile/setup" : "/dashboard",
+          { replace: true },
+        );
       },
       (error: unknown) => {
-        if (error instanceof ApiError && error.status === 401) {
+        if (!sessionStore.isCurrentGeneration(generation)) return;
+        if (!mustChange && error instanceof ApiError && error.status === 401) {
           form.setError("current_password", { message: error.message });
         } else if (error instanceof ApiError && error.status === 422) {
           form.setError("new_password", { message: error.message });
@@ -71,6 +81,14 @@ export default function ChangePasswordPage() {
     );
   });
 
+  if (status === "error") {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4 py-8 sm:px-6">
+        <QueryErrorState error={error} retry={retry} />
+      </div>
+    );
+  }
+
   if (status !== "ready" && status !== "password-change-required") {
     return <OnboardingSplash />;
   }
@@ -78,36 +96,38 @@ export default function ChangePasswordPage() {
   const mustChange = status === "password-change-required";
 
   return (
-    <div className="flex min-h-svh items-center justify-center px-4">
-      <div className="bg-card w-full max-w-md rounded-lg border p-6 sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
+    <div className="flex min-h-svh items-center justify-center px-4 py-8 sm:px-6">
+      <div className="bg-card w-full min-w-0 max-w-md rounded-2xl border p-5 shadow-sm sm:p-8">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-md">
           <LockIcon className="size-5" />
         </div>
-        <h1 className="text-xl font-semibold">
-          {mustChange ? "Set a new password" : "Change your password"}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {mustChange
-            ? "Your account has a temporary password. Choose a new one to continue."
-            : "After changing your password you'll be signed out and need to log in again."}
-        </p>
+        <PageHeader
+          title={mustChange ? "Set a new password" : "Change your password"}
+          description={
+            mustChange
+              ? "Your account has a temporary password. Choose a new one to continue."
+              : "After changing your password you'll be signed out and need to log in again."
+          }
+        />
 
-        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-5" noValidate>
+          {!mustChange ? (
+            <Field
+              label="Current password"
+              htmlFor="current_password"
+              error={form.formState.errors.current_password?.message}
+            >
+              <Input
+                id="current_password"
+                type="password"
+                autoComplete="current-password"
+                autoFocus
+                {...form.register("current_password")}
+              />
+            </Field>
+          ) : null}
           <Field
-            label="Current password"
-            htmlFor="current_password"
-            error={form.formState.errors.current_password?.message}
-          >
-            <Input
-              id="current_password"
-              type="password"
-              autoComplete="current-password"
-              autoFocus
-              {...form.register("current_password")}
-            />
-          </Field>
-          <Field
-            label="New password"
+            label={mustChange ? "Reset Password" : "New password"}
             htmlFor="new_password"
             hint="At least 8 characters."
             error={form.formState.errors.new_password?.message}
@@ -120,7 +140,7 @@ export default function ChangePasswordPage() {
             />
           </Field>
           <Field
-            label="Confirm new password"
+            label={mustChange ? "Confirm Reset Password" : "Confirm new password"}
             htmlFor="confirm_password"
             error={form.formState.errors.confirm_password?.message}
           >
@@ -131,9 +151,9 @@ export default function ChangePasswordPage() {
               {...form.register("confirm_password")}
             />
           </Field>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-11 w-full">
             {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
-            Update password
+            {mustChange ? "Reset password" : "Update password"}
           </Button>
         </form>
       </div>

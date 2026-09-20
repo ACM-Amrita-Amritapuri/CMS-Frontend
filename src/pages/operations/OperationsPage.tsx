@@ -17,15 +17,18 @@ import {
   type PublicEventKind,
 } from "@/lib/api/club-operations";
 import { listSigs } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { localInputToIso } from "@/lib/formatters/date";
 import { parseForm } from "@/lib/form-validation";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   Dialog,
   DialogContent,
@@ -52,25 +55,21 @@ export default function OperationsPage() {
   const [creatingMeeting, setCreatingMeeting] = useState(false);
 
   const eventsQuery = useQuery({
-    queryKey: ["operations", "events", manage],
-    queryFn: () => listEvents({ includeDrafts: manage }),
+    queryKey: queryKeys.operations.events(manage),
+    queryFn: ({ signal }) => listEvents({ includeDrafts: manage }, signal),
   });
   const meetingsQuery = useQuery({
-    queryKey: ["operations", "meetings", manage],
-    queryFn: () => listMeetings({ includeDrafts: manage }),
+    queryKey: queryKeys.operations.meetings(manage),
+    queryFn: ({ signal }) => listMeetings({ includeDrafts: manage }, signal),
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Operations</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Plan events and meetings for the club.
-          </p>
-        </div>
-        {manage ? (
-          <div className="flex gap-2">
+    <div className="flex min-w-0 flex-col gap-6 sm:gap-8">
+      <PageHeader
+        title="Operations"
+        description="Plan events and meetings for the club."
+        actions={manage ? (
+          <div className="flex w-full flex-wrap gap-2 [&>button]:flex-1 sm:w-auto sm:[&>button]:flex-none">
             <Button onClick={() => setCreatingEvent(true)}>
               <PlusIcon /> New event
             </Button>
@@ -79,13 +78,20 @@ export default function OperationsPage() {
             </Button>
           </div>
         ) : null}
-      </header>
+      />
 
       <Tabs defaultValue="events">
-        <TabsList>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="meetings">Meetings</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="meetings">Meetings</TabsTrigger>
+          </TabsList>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/operations/calendar">
+              <CalendarDaysIcon /> Calendar
+            </Link>
+          </Button>
+        </div>
 
         <TabsContent value="events">
           <AsyncBoundary
@@ -94,25 +100,25 @@ export default function OperationsPage() {
             empty={{ icon: CalendarDaysIcon, title: "No events yet" }}
           >
             {(events) => (
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="divide-border divide-y overflow-hidden rounded-lg border">
                 {events.map((event) => (
                   <li key={event.id}>
                     <Link
                       to={`/operations/events/${event.id}`}
-                      className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
+                      className="hover:bg-muted/30 flex items-start gap-3 p-4 transition-colors sm:items-center sm:gap-4 sm:p-5"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <h2 className="text-sm font-semibold">{event.title}</h2>
-                        <EventStateBadge state={event.state} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</h2>
+                          <EventStateBadge state={event.state} />
+                        </div>
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                          {formatDateTime(event.starts_at)}
+                          {event.location ? ` · ${event.location}` : ""}
+                        </p>
                       </div>
-                      <p className="text-muted-foreground text-xs">
-                        {formatDateTime(event.starts_at)}
-                        {event.location ? ` · ${event.location}` : ""}
-                      </p>
-                      <div className="mt-auto flex items-center gap-2 text-xs">
-                        <Badge variant="outline">
-                          <UsersIcon className="size-3" /> {event.capacity} capacity
-                        </Badge>
+                      <div className="text-muted-foreground flex shrink-0 items-center gap-1 text-xs">
+                        <UsersIcon className="size-3.5" /> {event.capacity}
                       </div>
                     </Link>
                   </li>
@@ -129,13 +135,14 @@ export default function OperationsPage() {
             empty={{ icon: UsersIcon, title: "No meetings scheduled" }}
           >
             {(meetings) => (
-              <ul className="flex flex-col gap-3">
+              <ul className="divide-border divide-y overflow-hidden rounded-lg border">
                 {meetings.map((meeting) => (
-                  <li key={meeting.id} className="bg-card rounded-lg border p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h2 className="text-sm font-semibold">{meeting.event.title}</h2>
-                        <p className="text-muted-foreground text-xs">
+                  <li key={meeting.id}>
+<Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors sm:p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{meeting.event.title}</h2>
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
                           {formatDateTime(meeting.event.starts_at)}
                           {meeting.event.location ? ` · ${meeting.event.location}` : ""}
                         </p>
@@ -143,8 +150,9 @@ export default function OperationsPage() {
                       <EventStateBadge state={meeting.event.state} />
                     </div>
                     {meeting.agenda ? (
-                      <p className="text-muted-foreground mt-2 text-sm">{meeting.agenda}</p>
+                      <p className="text-muted-foreground mt-3 text-sm leading-6 [overflow-wrap:anywhere]">{meeting.agenda}</p>
                     ) : null}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -160,9 +168,7 @@ export default function OperationsPage() {
 }
 
 function EventStateBadge({ state }: { state: string }) {
-  const variant =
-    state === "PUBLISHED" ? "success" : state === "CANCELLED" ? "destructive" : "warning";
-  return <Badge variant={variant}>{state.toLowerCase()}</Badge>;
+  return <StatusBadge status={state} />;
 }
 
 function EventDialog({
@@ -184,7 +190,7 @@ function EventDialog({
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -215,7 +221,7 @@ function EventDialog({
     },
     onSuccess: (event) => {
       if (!event) return;
-      queryClient.invalidateQueries({ queryKey: ["operations"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
       toast.success("Event created as a draft — publish it from its page.");
       onOpenChange(false);
     },
@@ -225,7 +231,7 @@ function EventDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New event</DialogTitle>
           <DialogDescription>Drafts are visible only to managers until published.</DialogDescription>
@@ -244,7 +250,7 @@ function EventDialog({
           <Field label="Description" htmlFor="ev-description">
             <Textarea id="ev-description" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Starts" htmlFor="ev-start">
               <Input id="ev-start" type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} />
             </Field>
@@ -252,18 +258,17 @@ function EventDialog({
               <Input id="ev-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Type" htmlFor="ev-kind">
-              <select
+              <NativeSelect
                 id="ev-kind"
                 value={kind}
                 onChange={(event) => setKind(event.target.value as PublicEventKind)}
-                className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
               >
                 <option value="EVENT">Event</option>
                 <option value="HACKATHON">Hackathon</option>
                 <option value="CTF">CTF</option>
-              </select>
+              </NativeSelect>
             </Field>
             <Field label="Registration URL" htmlFor="ev-url">
               <Input
@@ -275,7 +280,7 @@ function EventDialog({
               />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Location" htmlFor="ev-location">
               <Input id="ev-location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Lab 3" />
             </Field>
@@ -284,16 +289,16 @@ function EventDialog({
             </Field>
           </div>
           <Field label="SIG (optional)" htmlFor="ev-sig">
-            <select id="ev-sig" value={sigId} onChange={(event) => setSigId(event.target.value)} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+            <NativeSelect id="ev-sig" value={sigId} onChange={(event) => setSigId(event.target.value)}>
               <option value="none">Global</option>
               {(sigs.data ?? []).map((sig) => (
                 <option key={sig.id} value={String(sig.id)}>
                   {sig.name}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </Field>
-          <DialogFooter>
+          <DialogFooter className="mt-2 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
@@ -330,7 +335,7 @@ function MeetingDialog({
   const [location, setLocation] = useState("");
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const create = useMutation({
     mutationFn: async () => {
@@ -359,7 +364,7 @@ function MeetingDialog({
     },
     onSuccess: (meeting) => {
       if (!meeting) return;
-      queryClient.invalidateQueries({ queryKey: ["operations"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
       toast.success("Meeting created as a draft.");
       onOpenChange(false);
       setTitle("");
@@ -376,7 +381,7 @@ function MeetingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New meeting</DialogTitle>
           <DialogDescription>Meetings start as drafts until published.</DialogDescription>
@@ -398,7 +403,7 @@ function MeetingDialog({
           <Field label="Description" htmlFor="meeting-description">
             <Textarea id="meeting-description" rows={2} value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Starts" htmlFor="meeting-start">
               <Input id="meeting-start" type="datetime-local" value={start} onChange={(event) => setStart(event.target.value)} />
             </Field>
@@ -406,20 +411,20 @@ function MeetingDialog({
               <Input id="meeting-end" type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <Field label="Location" htmlFor="meeting-location">
               <Input id="meeting-location" value={location} onChange={(event) => setLocation(event.target.value)} />
             </Field>
             <Field label="SIG (optional)" htmlFor="meeting-sig">
-              <select id="meeting-sig" value={sigId} onChange={(event) => setSigId(event.target.value)} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+              <NativeSelect id="meeting-sig" value={sigId} onChange={(event) => setSigId(event.target.value)}>
                 <option value="none">Global</option>
                 {(sigs.data ?? []).map((sig) => (
                   <option key={sig.id} value={String(sig.id)}>{sig.name}</option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-2 border-t pt-4">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={create.isPending}>Create meeting</Button>
           </DialogFooter>

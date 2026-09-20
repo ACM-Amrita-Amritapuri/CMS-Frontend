@@ -1,5 +1,5 @@
 import { ApiError } from "@/lib/api/errors";
-import type { AuthRefreshResponse } from "@/lib/api/types";
+import { authRefreshSchema, validateAuthResponse } from "@/lib/api/auth-schemas";
 import { sessionStore } from "@/lib/auth/session-store";
 
 export type ApiRequestOptions = Omit<RequestInit, "body"> & {
@@ -11,7 +11,7 @@ let refreshPromise: Promise<void> | null = null;
 
 function isAuthPath(path: string) {
   const pathname = path.split("?", 1)[0].replace(/\/+$/, "") || "/";
-  return ["/auth/login", "/auth/refresh", "/auth/logout", "/auth/logout-all"].includes(pathname);
+  return ["/auth/login", "/auth/refresh", "/auth/logout"].includes(pathname);
 }
 
 function resolveUrl(path: string) {
@@ -93,19 +93,20 @@ async function send(path: string, options: ApiRequestOptions) {
   return fetch(resolveUrl(path), init);
 }
 
-async function performRefresh() {
+async function performRefresh(generation: number) {
   const response = await send("/auth/refresh", { method: "POST", retryOn401: false });
-  const payload = await parseResponse<AuthRefreshResponse>(response);
-  if (!payload?.access_token) {
-    throw new ApiError(500, "INTERNAL_ERROR", "The session refresh response was invalid.");
+  const payload = validateAuthResponse(authRefreshSchema, await parseResponse<unknown>(response));
+  if (!sessionStore.isCurrentGeneration(generation)) {
+    throw new ApiError(401, "SESSION_CHANGED", "The session changed during the request.");
   }
   sessionStore.setAccessToken(payload.access_token);
 }
 
 async function refreshOnce() {
   if (!refreshPromise) {
-    const pending = performRefresh().catch((error: unknown) => {
-      sessionStore.clearSession();
+    const generation = sessionStore.getGeneration();
+    const pending = performRefresh(generation).catch((error: unknown) => {
+      if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession();
       throw error;
     });
     refreshPromise = pending;
@@ -122,7 +123,9 @@ async function refreshOnce() {
 }
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
+  options.signal?.throwIfAborted();
   const response = await send(path, options);
+  options.signal?.throwIfAborted();
   const shouldRefresh =
     response.status === 401 &&
     options.retryOn401 !== false &&
@@ -134,6 +137,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   await refreshOnce();
+  options.signal?.throwIfAborted();
   return parseResponse<T>(
     await send(path, { ...options, retryOn401: false }),
   );

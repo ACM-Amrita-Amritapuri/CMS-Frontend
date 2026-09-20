@@ -11,8 +11,8 @@ import {
   runDocumentAction,
   updateDocument,
   type ClubDocument,
-  type DocumentState,
 } from "@/lib/api/documentation";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -22,38 +22,31 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/ui/markdown";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { DetailRow, EmptyState } from "@/components/ui/table";
-
-const stateVariants: Record<DocumentState, "success" | "info" | "warning" | "destructive" | "secondary"> = {
-  PUBLISHED: "success",
-  APPROVED: "info",
-  SUBMITTED: "info",
-  DRAFT: "warning",
-  REJECTED: "destructive",
-  ARCHIVED: "secondary",
-};
 
 export default function DocumentDetailPage() {
   useDocumentTitle("Document");
   const { documentId } = useParams();
   const id = Number(documentId);
-  const invalidId = !documentId || Number.isNaN(id);
+  const invalidId = normalizeId(documentId) === null;
   const query = useQuery({
-    queryKey: ["documentation", "document", invalidId ? documentId : id],
-    queryFn: () => getDocument(id),
+    queryKey: queryKeys.documentation.detail(documentId),
+    queryFn: ({ signal }) => getDocument(id, signal),
     enabled: !invalidId,
   });
 
   if (invalidId) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6">
         <EmptyState title="Document not found" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-3xl flex-col gap-6">
       <Button asChild variant="ghost" size="sm" className="w-fit">
         <Link to="/documentation">
           <ArrowLeftIcon /> All documents
@@ -80,7 +73,7 @@ function DocumentReader({
   const [showHistory, setShowHistory] = useState(false);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["documentation"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
   };
 
   const act = useMutation({
@@ -116,26 +109,22 @@ function DocumentReader({
   return editing ? (
     <DocumentEditor document={doc} onDone={() => setEditing(false)} />
   ) : (
-    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
-          <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge>
-        </div>
-        {doc.summary ? <p className="text-muted-foreground text-sm">{doc.summary}</p> : null}
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
-          {doc.tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="text-[10px]">
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-      </header>
+    <article className="flex min-w-0 flex-col gap-6 [overflow-wrap:anywhere]">
+      <PageHeader
+        title={doc.title}
+        description={doc.summary}
+        meta={
+          <>
+            <StatusBadge status={doc.state} />
+            {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
+            {doc.tags.map((tag) => <Badge key={tag} variant="secondary">#{tag}</Badge>)}
+          </>
+        }
+      />
 
       <Markdown source={doc.body ?? ""} />
 
-      <dl className="border-t flex flex-col gap-2 pt-4">
+      <dl className="flex flex-col gap-2 border-t pt-4">
         <DetailRow label="State">{doc.state}</DetailRow>
         {doc.review_comment ? <DetailRow label="Review note">{doc.review_comment}</DetailRow> : null}
         {doc.reviewed_at ? <DetailRow label="Reviewed">{formatDateTime(doc.reviewed_at)}</DetailRow> : null}
@@ -166,7 +155,7 @@ function DocumentReader({
                 onChange={(event) => setReviewComment(event.target.value)}
               />
             </Field>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
                 disabled={review.isPending || !reviewComment.trim()}
                 onClick={() => review.mutate("APPROVE")}
@@ -219,7 +208,7 @@ function WorkflowActions({
   if (actions.length === 0 && !canManage) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+    <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center">
       {actions.map((item) =>
         item.action ? (
           <Button
@@ -237,7 +226,7 @@ function WorkflowActions({
           </Button>
         ),
       )}
-      <Button variant="ghost" size="sm" onClick={onToggleHistory} className="ml-auto">
+      <Button variant="ghost" size="sm" onClick={onToggleHistory} className="sm:ml-auto">
         <HistoryIcon /> {showHistory ? "Hide" : "Revision"} history
       </Button>
     </div>
@@ -246,8 +235,8 @@ function WorkflowActions({
 
 function RevisionHistory({ documentId }: { documentId: number }) {
   const query = useQuery({
-    queryKey: ["documentation", "revisions", documentId],
-    queryFn: () => listRevisions(documentId),
+    queryKey: queryKeys.documentation.revisions(documentId),
+    queryFn: ({ signal }) => listRevisions(documentId, signal),
   });
 
   return (
@@ -256,16 +245,16 @@ function RevisionHistory({ documentId }: { documentId: number }) {
         <ol className="flex flex-col gap-3">
           {[...revisions].reverse().map((revision) => (
             <li key={revision.id} className="rounded-lg border p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <p className="min-w-0 break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">
                   #{revision.revision_number} {revision.title}
                 </p>
-                <time className="text-muted-foreground text-xs">
+                <time className="text-muted-foreground shrink-0 text-xs leading-6">
                   {formatDateTime(revision.created_at)}
                 </time>
               </div>
               {revision.summary ? (
-                <p className="text-muted-foreground mt-1 text-xs">{revision.summary}</p>
+                <p className="text-muted-foreground mt-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{revision.summary}</p>
               ) : null}
             </li>
           ))}
@@ -293,7 +282,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
         tags: tags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documentation"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
       toast.success("Document updated (new revision saved).");
       onDone();
     },
@@ -302,7 +291,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
   });
 
   return (
-    <div className="bg-card flex flex-col gap-4 rounded-lg border p-6">
+    <div className="bg-card flex min-w-0 flex-col gap-5 rounded-xl border p-4 sm:p-6">
       <h2 className="text-lg font-semibold">Edit document</h2>
       <form
         className="flex flex-col gap-4"
@@ -321,7 +310,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
         <Field label="Body (Markdown)" htmlFor="edit-body">
           <Textarea id="edit-body" rows={12} value={body} onChange={(event) => setBody(event.target.value)} required />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           <Field label="Category" htmlFor="edit-category">
             <Input id="edit-category" value={category} onChange={(event) => setCategory(event.target.value)} />
           </Field>
@@ -329,7 +318,7 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
             <Input id="edit-tags" value={tags} onChange={(event) => setTags(event.target.value)} />
           </Field>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button type="submit" disabled={save.isPending}>
             Save changes
           </Button>

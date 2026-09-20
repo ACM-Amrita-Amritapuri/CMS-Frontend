@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowLeftIcon,
   CheckCircle2Icon,
   CircleIcon,
   ExternalLinkIcon,
@@ -24,6 +23,7 @@ import {
   type LearningLesson,
   type LearningModule,
 } from "@/lib/api/learning";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
 import { Progress } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
 import { EmptyState } from "@/components/ui/table";
 import { AssignmentPanel } from "@/components/learning/assignment-panel";
 import { AuthorDialog, useAuthorActions, type DialogKind } from "@/components/learning/author-dialogs";
@@ -40,15 +41,15 @@ export default function LearningPathPage() {
   useDocumentTitle("Learning path");
   const { pathId } = useParams();
   const id = Number(pathId);
-  const invalidId = !pathId || Number.isNaN(id);
+  const invalidId = normalizeId(pathId) === null;
   const pathQuery = useQuery({
-    queryKey: ["learning", "path", pathId],
-    queryFn: () => getPath(id),
+    queryKey: queryKeys.learning.path(pathId),
+    queryFn: ({ signal }) => getPath(id, signal),
     enabled: !invalidId,
   });
   const progressQuery = useQuery({
-    queryKey: ["learning", "progress", pathId],
-    queryFn: () => getPathProgress(id),
+    queryKey: queryKeys.learning.progress(pathId),
+    queryFn: ({ signal }) => getPathProgress(id, signal),
     enabled: !invalidId,
   });
 
@@ -70,30 +71,21 @@ export default function LearningPathPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <Button asChild variant="ghost" size="sm" className="w-fit">
-          <Link to="/learning">
-            <ArrowLeftIcon /> All paths
-          </Link>
-        </Button>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{path.title}</h1>
-            {path.description ? (
-              <p className="text-muted-foreground mt-1 max-w-2xl text-sm">{path.description}</p>
-            ) : null}
-          </div>
-          <PublishPathButton pathId={path.id} state={path.publication_state} />
+      <PageHeader
+        title={path.title}
+        description={path.description}
+        eyebrow="Learning path"
+        backTo={{ label: "All paths", to: "/learning" }}
+        actions={<PublishPathButton pathId={path.id} state={path.publication_state} />}
+      />
+      {progress ? (
+        <div className="flex flex-col gap-2 border-y py-4 sm:flex-row sm:items-center sm:gap-3">
+          <Progress value={progress.percent_complete} className="max-w-sm" />
+          <span className="text-muted-foreground shrink-0 text-xs">
+            {progress.completed_items}/{progress.total_items} items · {progress.percent_complete}%
+          </span>
         </div>
-        {progress ? (
-          <div className="flex items-center gap-3">
-            <Progress value={progress.percent_complete} className="max-w-sm" />
-            <span className="text-muted-foreground shrink-0 text-xs">
-              {progress.completed_items}/{progress.total_items} items · {progress.percent_complete}%
-            </span>
-          </div>
-        ) : null}
-      </header>
+      ) : null}
 
       {modules.length === 0 ? (
         <EmptyState
@@ -101,7 +93,7 @@ export default function LearningPathPage() {
           description="Authors add modules to structure the path."
         />
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-[340px_1fr]">
+        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] xl:gap-8">
           <nav aria-label="Path contents" className="flex flex-col gap-3">
             {modules.map((module) => (
               <ModuleCard
@@ -143,7 +135,7 @@ function PublishPathButton({ pathId, state }: { pathId: number; state: string })
   const publish = useMutation({
     mutationFn: () => setPathState(pathId, "PUBLISHED"),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["learning"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
       toast.success("Path published.");
     },
     onError: (error) =>
@@ -174,7 +166,7 @@ function ModuleCard({
   const publish = async (fn: () => Promise<unknown>, label: string) => {
     try {
       await fn();
-      queryClient.invalidateQueries({ queryKey: ["learning"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
       toast.success(`${label} published.`);
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Could not publish.");
@@ -182,43 +174,32 @@ function ModuleCard({
   };
 
   return (
-    <div className="bg-card overflow-hidden rounded-lg border">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="hover:bg-accent/50 flex w-full items-center gap-3 p-4 text-left transition-colors"
-        aria-expanded={open}
-      >
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold">{module.title}</p>
-          <p className="text-muted-foreground text-xs">
-            {module.lessons.length} lessons · {module.assignments.length} assignments
-          </p>
-        </div>
-        {module.publication_state === "DRAFT" ? (
-          canManage ? (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                void publish(() => setModuleState(module.id, "PUBLISHED"), module.title);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.stopPropagation();
-                  void publish(() => setModuleState(module.id, "PUBLISHED"), module.title);
-                }
-              }}
-              className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
-            >
-              Publish
-            </span>
-          ) : (
-            <Badge variant="warning">Draft</Badge>
-          )
+    <div className="bg-card overflow-hidden rounded-xl border">
+      <div className="flex items-start gap-2 p-4">
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="hover:bg-accent/50 -m-1 flex min-w-0 flex-1 items-start gap-3 rounded-lg p-1 text-left transition-colors"
+          aria-expanded={open}
+        >
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-sm font-semibold leading-5 [overflow-wrap:anywhere]">{module.title}</p>
+            <p className="text-muted-foreground text-xs">
+              {module.lessons.length} lessons · {module.assignments.length} assignments
+            </p>
+          </div>
+          {module.publication_state === "DRAFT" && !canManage ? <Badge variant="warning">Draft</Badge> : null}
+        </button>
+        {module.publication_state === "DRAFT" && canManage ? (
+          <button
+            type="button"
+            onClick={() => void publish(() => setModuleState(module.id, "PUBLISHED"), module.title)}
+            className="text-primary focus-visible:ring-ring min-h-8 shrink-0 rounded px-2 py-1 text-xs font-semibold hover:underline focus-visible:ring-2"
+          >
+            Publish
+          </button>
         ) : null}
-      </button>
+      </div>
       {open ? (
         <ul className="border-t">
           {module.lessons.map((lesson) => (
@@ -271,39 +252,23 @@ function TreeItem({
 }) {
   return (
     <li>
-      <button
-        type="button"
-        onClick={onClick}
-        aria-current={active ? "true" : undefined}
-        className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors ${
-          active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"
-        }`}
-      >
-        <Icon className="size-4 shrink-0" />
-        <span className="truncate">{label}</span>
-        <span className="ml-auto flex shrink-0 items-center gap-1">
-          {draft ? <Badge variant="warning" className="text-[10px]">Draft</Badge> : null}
-          {draft && onPublish ? (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(event) => {
-                event.stopPropagation();
-                onPublish();
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.stopPropagation();
-                  onPublish();
-                }
-              }}
-              className="text-primary rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline"
-            >
-              Publish
-            </span>
-          ) : null}
-        </span>
-      </button>
+      <div className={`flex flex-wrap items-center gap-2 px-4 py-2 text-sm transition-colors ${active ? "bg-sidebar-accent font-medium" : "hover:bg-accent/50 text-muted-foreground"}`}>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-current={active ? "page" : undefined}
+          className="focus-visible:ring-ring flex min-h-9 min-w-0 flex-1 basis-28 items-start gap-2.5 rounded py-1.5 text-left focus-visible:ring-2"
+        >
+          <Icon className="size-4 shrink-0" />
+          <span className="min-w-0 break-words leading-5 [overflow-wrap:anywhere]">{label}</span>
+        </button>
+        {draft ? <Badge variant="warning" className="shrink-0 text-[10px]">Draft</Badge> : null}
+        {draft && onPublish ? (
+          <button type="button" onClick={onPublish} className="text-primary shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold hover:underline">
+            Publish
+          </button>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -345,8 +310,8 @@ function LessonPanel({
   const complete = useMutation({
     mutationFn: () => completeLesson(lesson.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["learning", "progress", String(pathId)] });
-      queryClient.invalidateQueries({ queryKey: ["learning", "path", pathId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.progress(pathId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.learning.path(pathId) });
       toast.success("Lesson completed.");
     },
     onError: (error) =>
@@ -354,16 +319,16 @@ function LessonPanel({
   });
 
   return (
-    <article className="bg-card flex flex-col gap-5 rounded-lg border p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">{lesson.title}</h2>
+    <article className="bg-card flex min-w-0 flex-col gap-6 rounded-xl border p-4 sm:p-6">
+      <div className="flex flex-col items-start gap-3 border-b pb-4 xl:flex-row xl:justify-between">
+        <h2 className="min-w-0 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
       </div>
       {lesson.resources.length === 0 ? (
         <p className="text-muted-foreground text-sm">No materials in this lesson yet.</p>
       ) : (
         lesson.resources.map((resource) => (
-          <section key={resource.id} className="flex flex-col gap-2">
+          <section key={resource.id} className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
             <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
               {resource.title}
             </h3>
@@ -377,10 +342,10 @@ function LessonPanel({
                 href={resource.external_url ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-input hover:bg-accent inline-flex w-fit items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
+                className="border-input hover:bg-accent focus-visible:ring-ring inline-flex w-fit max-w-full items-start gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2"
               >
-                <ExternalLinkIcon className="size-4" />
-                {resource.external_url}
+                <ExternalLinkIcon className="mt-0.5 size-4 shrink-0" />
+                <span className="min-w-0 [overflow-wrap:anywhere]">{resource.external_url}</span>
               </a>
             )}
           </section>
@@ -402,7 +367,7 @@ function ResourcePublishButton({ resource }: { resource: LearningLesson["resourc
       onClick={async () => {
         try {
           await setResourceState(resource.id, "PUBLISHED");
-          queryClient.invalidateQueries({ queryKey: ["learning"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
           toast.success("Resource published.");
         } catch (error) {
           toast.error(error instanceof ApiError ? error.message : "Could not publish.");
@@ -431,7 +396,7 @@ function CompleteButton({
     );
   }
   return (
-    <Button size="sm" onClick={onClick} disabled={disabled}>
+      <Button size="sm" className="rounded-full" onClick={onClick} disabled={disabled}>
       <CircleIcon className="size-3.5" /> Mark complete
     </Button>
   );
@@ -453,8 +418,8 @@ function AuthorTools({ pathId, modules }: { pathId: number; modules: LearningMod
 
   return (
     <section aria-label="Author tools" className="border-t pt-4">
-      <div className="flex flex-wrap gap-2">
-        <span className="text-muted-foreground mr-2 self-center text-xs font-medium uppercase tracking-wide">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <span className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide sm:mr-2 sm:mb-0 sm:self-center">
           Author tools
         </span>
         {actions.map((action) => (

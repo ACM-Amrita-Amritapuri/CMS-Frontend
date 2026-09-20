@@ -9,9 +9,9 @@ import {
   createDocument,
   listDocuments,
   searchDocuments,
-  type DocumentState,
 } from "@/lib/api/documentation";
 import { listSigs } from "@/lib/api/admin";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
 import { useSession } from "@/app/providers";
@@ -19,6 +19,9 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
   Dialog,
@@ -28,15 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const stateVariants: Record<DocumentState, "success" | "info" | "warning" | "destructive" | "secondary"> = {
-  PUBLISHED: "success",
-  APPROVED: "info",
-  SUBMITTED: "info",
-  DRAFT: "warning",
-  REJECTED: "destructive",
-  ARCHIVED: "secondary",
-};
 
 export default function DocumentationListPage() {
   useDocumentTitle("Documentation");
@@ -48,13 +42,13 @@ export default function DocumentationListPage() {
   // q in the URL uses the search endpoint (published only); the bare list is
   // the manager/recent view that also includes the caller's drafts.
   const searchQuery = useQuery({
-    queryKey: ["documentation", "search", q],
-    queryFn: () => searchDocuments({ q }),
+    queryKey: queryKeys.documentation.search(q),
+    queryFn: ({ signal }) => searchDocuments({ q }, signal),
     enabled: q !== "",
   });
   const listQuery = useQuery({
-    queryKey: ["documentation", "list"],
-    queryFn: () => listDocuments(),
+    queryKey: queryKeys.documentation.list(),
+    queryFn: ({ signal }) => listDocuments(undefined, signal),
     enabled: q === "",
   });
 
@@ -62,25 +56,21 @@ export default function DocumentationListPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Documentation</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            The club knowledge base — search published documents and manage drafts.
-          </p>
-        </div>
-        <CreateDocumentButton open={creating} onOpenChange={setCreating} />
-      </header>
+      <PageHeader
+        title="Knowledge"
+        description="Search published documents and manage drafts in the club knowledge base."
+        actions={<CreateDocumentButton open={creating} onOpenChange={setCreating} />}
+      />
 
       <form
-        className="flex gap-2"
+        className="flex flex-wrap items-center gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           setSearchParams(input.trim() ? { q: input.trim() } : {});
         }}
       >
-        <div className="relative flex-1">
-          <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+        <div className="relative min-w-0 basis-full sm:flex-1">
+          <SearchIcon aria-hidden className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -111,29 +101,28 @@ export default function DocumentationListPage() {
         }
       >
         {(items) => (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="divide-y border-y">
             {items.map((doc) => (
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
-                  className="bg-card hover:border-primary flex h-full flex-col gap-2 rounded-lg border p-4 transition-colors"
+                  className="hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 items-start gap-4 rounded-lg px-3 py-5 transition-colors focus-visible:ring-2 focus-visible:ring-inset sm:px-4"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <h2 className="text-sm font-semibold">{doc.title}</h2>
-                    {doc.state ? (
-                      <Badge variant={stateVariants[doc.state]}>{doc.state.toLowerCase()}</Badge>
-                    ) : null}
-                  </div>
-                  {doc.summary ? (
-                    <p className="text-muted-foreground line-clamp-2 text-sm">{doc.summary}</p>
-                  ) : null}
-                  <div className="text-muted-foreground mt-auto flex flex-wrap gap-1.5 text-xs">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
+                      <h2 className="min-w-0 break-words text-base font-semibold leading-6 [overflow-wrap:anywhere]">{doc.title}</h2>
+                      {doc.state ? <StatusBadge status={doc.state} /> : null}
+                    </div>
+                    {doc.summary ? <p className="text-muted-foreground mt-2 line-clamp-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{doc.summary}</p> : null}
+                    <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-xs">
                     {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
                     {doc.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[10px]">
+                      <Badge key={tag} variant="secondary">
                         #{tag}
                       </Badge>
                     ))}
+                    </div>
                   </div>
                 </Link>
               </li>
@@ -163,7 +152,7 @@ function CreateDocumentButton({
   const [sigId, setSigId] = useState("none");
   const [formError, setFormError] = useState<string | null>(null);
 
-  const sigs = useQuery({ queryKey: ["sigs"], queryFn: () => listSigs(), enabled: open });
+  const sigs = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal), enabled: open });
 
   const docSchema = z.object({
     title: z.string().min(1, "Enter a title."),
@@ -187,7 +176,7 @@ function CreateDocumentButton({
     },
     onSuccess: (doc) => {
       if (!doc) return;
-      queryClient.invalidateQueries({ queryKey: ["documentation"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
       toast.success("Document created as a draft.");
       onOpenChange(false);
       navigate(`/documentation/${doc.id}`);
@@ -204,7 +193,7 @@ function CreateDocumentButton({
         <FileTextIcon /> New document
       </Button>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>New document</DialogTitle>
             <DialogDescription>
@@ -228,7 +217,7 @@ function CreateDocumentButton({
             <Field label="Body (Markdown)" htmlFor="doc-body">
               <Textarea id="doc-body" rows={7} value={body} onChange={(event) => setBody(event.target.value)} />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field label="Category" htmlFor="doc-category">
                 <Input id="doc-category" value={category} onChange={(event) => setCategory(event.target.value)} />
               </Field>
@@ -237,11 +226,10 @@ function CreateDocumentButton({
               </Field>
             </div>
             <Field label="SIG (optional)" htmlFor="doc-sig">
-              <select
+              <NativeSelect
                 id="doc-sig"
                 value={sigId}
                 onChange={(event) => setSigId(event.target.value)}
-                className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
               >
                 <option value="none">Global</option>
                 {(sigs.data ?? []).map((sig) => (
@@ -249,7 +237,7 @@ function CreateDocumentButton({
                     {sig.name}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </Field>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

@@ -80,13 +80,13 @@ export interface Project {
   applications: ProjectApplication[];
 }
 
-export async function listProjects(limit = 100) {
-  const { projects } = await apiRequest<{ projects: Project[] }>(`/projects?limit=${limit}`);
+export async function listProjects(limit = 100, signal?: AbortSignal) {
+  const { projects } = await apiRequest<{ projects: Project[] }>(`/projects?limit=${limit}`, { signal });
   return projects;
 }
 
-export async function getProject(projectId: number) {
-  const { project } = await apiRequest<{ project: Project }>(`/projects/${projectId}`);
+export async function getProject(projectId: number, signal?: AbortSignal) {
+  const { project } = await apiRequest<{ project: Project }>(`/projects/${projectId}`, { signal });
   return project;
 }
 
@@ -118,6 +118,24 @@ export async function reviewApplication(
     { method: "POST", body: { decision } },
   );
   return application;
+}
+
+export async function listTasks(projectId: number, signal?: AbortSignal) {
+  const { tasks } = await apiRequest<{ tasks: ProjectTask[] }>(`/projects/${projectId}/tasks`, { signal });
+  return tasks;
+}
+
+export async function listMilestones(projectId: number, signal?: AbortSignal) {
+  const { milestones } = await apiRequest<{ milestones: ProjectMilestone[] }>(`/projects/${projectId}/milestones`, { signal });
+  return milestones;
+}
+
+export async function updateMilestone(milestoneId: number, state: ProjectMilestone["state"]) {
+  const { milestone } = await apiRequest<{ milestone: ProjectMilestone }>(`/projects/milestones/${milestoneId}`, {
+    method: "PATCH",
+    body: { state },
+  });
+  return milestone;
 }
 
 export async function createTask(

@@ -36,9 +36,10 @@ export interface DocumentRevision {
 
 type WorkflowAction = "submit" | "publish" | "archive" | "restore";
 
-export async function listDocuments(limit = 100) {
+export async function listDocuments(limit = 100, signal?: AbortSignal) {
   const { documents } = await apiRequest<{ documents: ClubDocument[] }>(
     `/documentation/documents?limit=${limit}`,
+    { signal },
   );
   return documents;
 }
@@ -48,7 +49,7 @@ export async function searchDocuments(params: {
   tag?: string;
   category?: string;
   limit?: number;
-}) {
+}, signal?: AbortSignal) {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.tag) search.set("tag", params.tag);
@@ -56,13 +57,15 @@ export async function searchDocuments(params: {
   if (params.limit) search.set("limit", String(params.limit));
   const { documents } = await apiRequest<{ documents: ClubDocument[] }>(
     `/documentation/search?${search}`,
+    { signal },
   );
   return documents;
 }
 
-export async function getDocument(documentId: number) {
+export async function getDocument(documentId: number, signal?: AbortSignal) {
   const { document } = await apiRequest<{ document: ClubDocument }>(
     `/documentation/documents/${documentId}`,
+    { signal },
   );
   return document;
 }
@@ -119,9 +122,10 @@ export async function reviewDocument(
   return document;
 }
 
-export async function listRevisions(documentId: number) {
+export async function listRevisions(documentId: number, signal?: AbortSignal) {
   const { revisions } = await apiRequest<{ revisions: DocumentRevision[] }>(
     `/documentation/documents/${documentId}/revisions`,
+    { signal },
   );
   return revisions;
 }

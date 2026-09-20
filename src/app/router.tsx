@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { RootLayout } from "./layouts/RootLayout";
 import { AccountLayout } from "./layouts/AccountLayout";
 import { AppLayout } from "./layouts/AppLayout";
@@ -99,7 +99,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/admin",
-            lazy: lazyPage(() => import("../pages/admin/AdminDashboardPage")),
+            element: <Navigate to="/dashboard" replace />,
           },
           {
             path: "/admin/sigs",
@@ -118,7 +118,9 @@ export const router = createBrowserRouter([
       { path: "*", lazy: lazyPage(() => import("../pages/NotFoundPage")) },
     ],
   },
-]);
+], {
+  basename: import.meta.env.BASE_URL,
+});
 
 function RouterFallback() {
   return <div className="min-h-svh" />;

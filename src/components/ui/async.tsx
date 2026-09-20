@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import type { UseQueryResult } from "@tanstack/react-query";
 
 import { EmptyState } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/primitives";
@@ -8,54 +8,64 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/errors";
 import { RefreshCwIcon } from "lucide-react";
 
-interface AsyncBoundaryProps<T> {
-  query: ReturnType<typeof useQuery<T>>;
+interface QueryStateProps<T> {
+  query: Pick<UseQueryResult<T>, "data" | "isPending" | "isError" | "error" | "refetch">;
   children: (data: T) => React.ReactNode;
   empty?: {
     title: string;
     description?: string;
     icon?: React.ComponentType<{ className?: string }>;
   };
-  /** Normalize a non-empty check (e.g. lists return `{ items: [] }`). */
+  notFound?: string;
   isEmpty?: (data: T) => boolean;
   skeleton?: React.ReactNode;
 }
 
-/**
- * Single loading/error/empty/success renderer for every data-backed screen so
- * all pages have consistent async states without repeating logic.
- */
-export function AsyncBoundary<T>({
+export function QueryState<T>({
   query,
   children,
   empty,
+  notFound,
   isEmpty,
   skeleton,
-}: AsyncBoundaryProps<T>) {
-  if (query.isPending) {
+}: QueryStateProps<T>) {
+  if (query.data === undefined) {
+    if (query.isError) {
+      return <QueryErrorState error={query.error} retry={() => query.refetch()} notFound={notFound} />;
+    }
     return <>{skeleton ?? <DefaultSkeleton />}</>;
   }
-  if (query.isError) {
-    return <QueryErrorState error={query.error} retry={() => query.refetch()} />;
+  const accessError = query.error instanceof ApiError && [401, 403].includes(query.error.status);
+  if (query.isError && accessError) {
+    return <QueryErrorState error={query.error} retry={() => query.refetch()} notFound={notFound} />;
   }
-  if (isEmpty?.(query.data)) {
-    return (
-      <EmptyState
-        icon={empty?.icon}
-        title={empty?.title ?? "Nothing here yet"}
-        description={empty?.description}
-      />
-    );
-  }
-  return <>{children(query.data)}</>;
+  return (
+    <>
+      {query.isError ? (
+        <QueryErrorState error={query.error} retry={() => query.refetch()} cached />
+      ) : null}
+      {isEmpty?.(query.data) ? (
+        <EmptyState
+          icon={empty?.icon}
+          title={empty?.title ?? "Nothing here yet"}
+          description={empty?.description}
+        />
+      ) : children(query.data)}
+    </>
+  );
 }
 
+export const AsyncBoundary = QueryState;
+
 function DefaultSkeleton() {
+  const labelId = useId();
+
   return (
-    <div className="flex flex-col gap-3">
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-40 w-full" />
-      <Skeleton className="h-40 w-full" />
+    <div role="status" aria-labelledby={labelId} className="flex flex-col gap-3">
+      <span id={labelId} className="sr-only">Loading content…</span>
+      <Skeleton aria-hidden="true" className="h-24 w-full" />
+      <Skeleton aria-hidden="true" className="h-40 w-full" />
+      <Skeleton aria-hidden="true" className="h-40 w-full" />
     </div>
   );
 }
@@ -63,9 +73,13 @@ function DefaultSkeleton() {
 export function QueryErrorState({
   error,
   retry,
+  notFound = "Content not found",
+  cached = false,
 }: {
   error: unknown;
   retry: () => void;
+  notFound?: string;
+  cached?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -84,16 +98,25 @@ export function QueryErrorState({
     return <DefaultSkeleton />;
   }
 
-  const message =
-    error instanceof Error ? error.message : "Something went wrong. Please try again.";
-  const forbidden = error instanceof ApiError && error.status === 403;
+  const status = error instanceof ApiError ? error.status : undefined;
+  const title = cached ? "Couldn't refresh this content" :
+    status === 401 ? "Sign in required" :
+    status === 403 ? "Access denied" :
+    status === 404 ? notFound :
+    error instanceof TypeError ? "Connection problem" : "Couldn't load this content";
+  const description = cached ? "Showing previously loaded data. Try again to get the latest changes." :
+    status === 401 ? "Your session has expired. Sign in again to continue." :
+    status === 403 ? "You do not have permission to view this content." :
+    status === 404 ? "The requested content does not exist or is no longer available." :
+    error instanceof TypeError ? "Check your connection and try again." :
+    error instanceof Error ? error.message : "The request failed. Please try again.";
   return (
     <EmptyState
-      title={forbidden ? "Access denied" : "Couldn't load this content"}
-      description={forbidden ? "You do not have permission to view this content." : message}
+      title={title}
+      description={description}
       action={
-        <Button variant="outline" size="sm" onClick={retry}>
-          <RefreshCwIcon /> Retry
+        <Button variant="outline" size="sm" onClick={status === 401 ? () => navigate("/login") : retry}>
+          <RefreshCwIcon /> {status === 401 ? "Sign in" : "Retry"}
         </Button>
       }
     />

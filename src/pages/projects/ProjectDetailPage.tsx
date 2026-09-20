@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowLeftIcon,
   CheckIcon,
   FlagIcon,
   PlusIcon,
@@ -18,6 +17,9 @@ import {
   createTask,
   getProject,
   leaveProject,
+  listTasks,
+  listMilestones,
+  updateMilestone,
   reviewApplication,
   updateTask,
   upsertShowcase,
@@ -28,6 +30,7 @@ import {
   type ProjectRole,
   type ProjectTask,
 } from "@/lib/api/projects";
+import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -38,6 +41,8 @@ import { Field, Input, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/ui/markdown";
 import { Progress } from "@/components/ui/primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
+import { PageHeader } from "@/components/ui/page";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/table";
 
 const taskStates = ["TODO", "IN_PROGRESS", "BLOCKED", "DONE"] as const;
@@ -46,21 +51,16 @@ export default function ProjectDetailPage() {
   useDocumentTitle("Project");
   const { projectId } = useParams();
   const id = Number(projectId);
-  const invalidId = !projectId || Number.isNaN(id);
+  const invalidId = normalizeId(projectId) === null;
   const query = useQuery({
-    queryKey: ["projects", "detail", invalidId ? projectId : id],
-    queryFn: () => getProject(id),
+    queryKey: queryKeys.projects.detail(projectId),
+    queryFn: ({ signal }) => getProject(id, signal),
     retry: false,
     enabled: !invalidId,
   });
 
   return (
     <div className="flex flex-col gap-6">
-      <Button asChild variant="ghost" size="sm" className="w-fit">
-        <Link to="/projects">
-          <ArrowLeftIcon /> All projects
-        </Link>
-      </Button>
       {invalidId ? (
         <EmptyState title="Project not found" description="This project does not exist." />
       ) : query.isPending ? (
@@ -87,37 +87,28 @@ function ProjectDetail({ project }: { project: Project }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{project.title}</h1>
-            <p className="text-muted-foreground mt-1 max-w-2xl text-sm">{project.summary}</p>
-          </div>
-          <div className="text-right">
-            <Badge variant={project.state === "PUBLISHED" ? "success" : "secondary"}>
-              {project.state.toLowerCase()}
-            </Badge>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Lead: user #{project.lead_user_id}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Progress value={project.progress} className="max-w-xs" />
-          <span className="text-muted-foreground text-xs tabular-nums">{project.progress}%</span>
-        </div>
-      </header>
+      <PageHeader
+        title={project.title}
+        description={project.summary}
+        backTo={{ label: "All projects", to: "/projects" }}
+        meta={<><StatusBadge status={project.state} /><span className="text-muted-foreground text-xs">Lead: user #{project.lead_user_id}</span></>}
+      />
+      <div className="flex items-center gap-3 border-b pb-4">
+        <Progress value={project.progress} className="max-w-xs" />
+        <span className="text-muted-foreground text-xs tabular-nums">{project.progress}%</span>
+      </div>
 
-      <Tabs defaultValue="about">
-        <TabsList>
-          <TabsTrigger value="about">About</TabsTrigger>
+
+      <Tabs defaultValue="overview" className="min-w-0">
+        <TabsList className="h-auto min-h-10 w-full flex-wrap sm:w-fit">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="team">
             Team ({activeMemberships.length}/{project.team_capacity})
           </TabsTrigger>
           <TabsTrigger value="work">Work</TabsTrigger>
         </TabsList>
 
-      <TabsContent value="about" className="bg-card rounded-lg border p-6">
+        <TabsContent value="overview" className="max-w-3xl py-2">
           <Markdown source={project.description} />
         </TabsContent>
 
@@ -164,8 +155,8 @@ function RolesSection({
   const apply = useMutation({
     mutationFn: (roleId: number) => applyToRole(project.id, { role_id: roleId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["projects", "detail", project.id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(project.id) });
       toast.success("Application sent.");
     },
     onError: (error) =>
@@ -181,7 +172,7 @@ function RolesSection({
         required_skills: skills.split(",").map((skill) => skill.trim().toLowerCase()).filter(Boolean),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       setCreating(false);
       toast.success("Role added.");
     },
@@ -193,8 +184,8 @@ function RolesSection({
     project.team_memberships.filter((membership) => membership.role_id === roleId && !membership.left_at).length;
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Open roles</h2>
         {isLead ? (
           <Button variant="outline" size="sm" onClick={() => setCreating((value) => !value)}>
@@ -238,9 +229,9 @@ function RolesSection({
             const canApply = !isLead && !myMembership && !myApplication && filled < role.capacity;
             return (
               <li key={role.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{role.title}</p>
-                  <p className="text-muted-foreground text-xs">{role.description}</p>
+                <div className="min-w-0 flex-1 basis-full sm:basis-48">
+                  <p className="break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">{role.title}</p>
+                  <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{role.description}</p>
                   {role.required_skills.length > 0 ? (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {role.required_skills.map((skill) => (
@@ -279,7 +270,7 @@ function ApplicationsSection({ project, isLead }: { project: Project; isLead: bo
     mutationFn: ({ applicationId, decision }: { applicationId: number; decision: "ACCEPT" | "REJECT" }) =>
       reviewApplication(applicationId, decision),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success(`Application ${result.state.toLowerCase()}.`);
     },
     onError: (error) =>
@@ -290,12 +281,12 @@ function ApplicationsSection({ project, isLead }: { project: Project; isLead: bo
   if (!isLead || pending.length === 0) return null;
 
   return (
-    <section className="bg-card rounded-lg border p-5">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wide">Pending applications</h2>
       <ul className="mt-3 flex flex-col gap-2">
         {pending.map((application) => (
           <li key={application.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-full sm:basis-48">
               <p className="text-sm font-medium">Applicant #{application.applicant_user_id}</p>
               {application.note ? (
                 <p className="text-muted-foreground truncate text-xs">{application.note}</p>
@@ -327,7 +318,7 @@ function LeaveButton({ projectId }: { projectId: number }) {
   const leave = useMutation({
     mutationFn: () => leaveProject(projectId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
       toast.success("You left the project.");
       setConfirming(false);
     },
@@ -336,10 +327,10 @@ function LeaveButton({ projectId }: { projectId: number }) {
   });
 
   return (
-    <div className="bg-card flex items-center justify-between gap-3 rounded-lg border p-5">
+    <div className="bg-card flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
       <p className="text-sm">You are a member of this project.</p>
       {confirming ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="destructive" onClick={() => leave.mutate()}>
             Confirm leave
           </Button>
@@ -360,15 +351,17 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
-  const [tasks, setTasks] = useState<ProjectTask[]>([]);
-  // The project payload does not embed tasks; created tasks accumulate here
-  // within the session.
-  const allTasks = tasks.filter((task) => task.project_id === project.id);
+  const key = queryKeys.projects.tasks(project.id);
+  const query = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => listTasks(project.id, signal),
+  });
+  const allTasks = query.data ?? [];
 
   const create = useMutation({
     mutationFn: () => createTask(project.id, { title }),
     onSuccess: (task) => {
-      setTasks((current) => [...current, task]);
+      queryClient.setQueryData<ProjectTask[]>(key, (current = []) => [...current.filter((item) => item.id !== task.id), task]);
       setCreating(false);
       setTitle("");
       toast.success("Task created.");
@@ -381,16 +374,17 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
     mutationFn: ({ task, state }: { task: ProjectTask; state: ProjectTask["state"] }) =>
       updateTask(task.id, { state }),
     onSuccess: (updated) => {
-      setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.setQueryData<ProjectTask[]>(key, (current = []) => current.map((task) => (task.id === updated.id ? updated : task)));
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(project.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.list() });
     },
     onError: (error) =>
       toast.error(error instanceof ApiError ? error.message : "Invalid transition."),
   });
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">Tasks</h2>
         {canWork ? (
           <Button variant="outline" size="sm" onClick={() => setCreating((value) => !value)}>
@@ -400,7 +394,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
       </div>
       {creating ? (
         <form
-          className="mt-3 flex gap-2"
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -410,17 +404,19 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
           <Button type="submit">Add</Button>
         </form>
       ) : null}
-      {allTasks.length === 0 ? (
+      {query.isPending ? <p role="status">Loading tasks…</p> : query.isError ? (
+        <QueryErrorState error={query.error} retry={() => query.refetch()} />
+      ) : allTasks.length === 0 ? (
         <p className="text-muted-foreground mt-3 text-sm">
-          Tasks created in this session appear here.
+          No tasks yet.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {allTasks.map((task) => (
             <li key={task.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-              <p className="min-w-0 flex-1 truncate text-sm font-medium">{task.title}</p>
-              <div className="flex gap-1">
-                {taskStates
+              <p className="min-w-0 flex-1 basis-full break-words text-sm font-medium leading-6 [overflow-wrap:anywhere] sm:basis-48">{task.title}</p>
+              <div className="flex max-w-full flex-wrap gap-1">
+                {canWork ? taskStates
                   .filter((state) => state !== task.state)
                   .map((state) => (
                     <Button
@@ -432,7 +428,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
                     >
                       {state.toLowerCase()}
                     </Button>
-                  ))}
+                  )) : null}
               </div>
               <Badge variant="secondary">{task.state.toLowerCase()}</Badge>
             </li>
@@ -444,14 +440,19 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
 }
 
 function MilestonesSection({ projectId, canWork }: { projectId: number; canWork: boolean }) {
-  const [milestones, setMilestones] = useState<ProjectMilestone[]>([]);
+  const queryClient = useQueryClient();
+  const key = queryKeys.projects.milestones(projectId);
+  const query = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => listMilestones(projectId, signal),
+  });
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
   const create = useMutation({
     mutationFn: () => createMilestone(projectId, { title }),
     onSuccess: (milestone) => {
-      setMilestones((current) => [...current, milestone]);
+      queryClient.setQueryData<ProjectMilestone[]>(key, (current = []) => [...current.filter((item) => item.id !== milestone.id), milestone]);
       setCreating(false);
       setTitle("");
       toast.success("Milestone added.");
@@ -460,11 +461,19 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
       toast.error(error instanceof ApiError ? error.message : "Could not add the milestone."),
   });
 
-  const scoped = milestones.filter((milestone) => milestone.project_id === projectId);
+  const move = useMutation({
+    mutationFn: ({ id, state }: { id: number; state: ProjectMilestone["state"] }) => updateMilestone(id, state),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ProjectMilestone[]>(key, (current = []) => current.map((item) => item.id === updated.id ? updated : item));
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) });
+    },
+    onError: (error) => toast.error(error instanceof ApiError ? error.message : "Could not update the milestone."),
+  });
+  const scoped = query.data ?? [];
 
   return (
-    <section className="bg-card rounded-lg border p-5">
-      <div className="flex items-center justify-between gap-3">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide">
           <FlagIcon className="mr-1 inline size-3.5" /> Milestones
         </h2>
@@ -476,7 +485,7 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
       </div>
       {creating ? (
         <form
-          className="mt-3 flex gap-2"
+          className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate();
@@ -486,16 +495,25 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
           <Button type="submit">Add</Button>
         </form>
       ) : null}
-      {scoped.length === 0 ? (
+      {query.isPending ? <p role="status">Loading milestones…</p> : query.isError ? (
+        <QueryErrorState error={query.error} retry={() => query.refetch()} />
+      ) : scoped.length === 0 ? (
         <p className="text-muted-foreground mt-3 text-sm">
-          Milestones added in this session appear here.
+          No milestones yet.
         </p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {scoped.map((milestone) => (
-            <li key={milestone.id} className="flex items-center gap-3 rounded-lg border p-3 text-sm">
-              <FlagIcon className="text-primary size-4 shrink-0" />
-              {milestone.title}
+            <li key={milestone.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm">
+              <div className="flex min-w-0 flex-1 basis-full items-start gap-2 sm:basis-48">
+                <FlagIcon className="text-primary mt-1 size-4 shrink-0" />
+                <span className="min-w-0 break-words font-medium leading-6 [overflow-wrap:anywhere]">{milestone.title}</span>
+              </div>
+              {canWork ? (["PLANNED", "IN_PROGRESS", "DONE"] as const).filter((state) => state !== milestone.state).map((state) => (
+                <Button key={state} size="sm" variant="ghost" disabled={move.isPending} onClick={() => move.mutate({ id: milestone.id, state })}>
+                  {state.toLowerCase()}
+                </Button>
+              )) : null}
               <Badge variant="secondary" className="ml-auto">
                 {milestone.state.toLowerCase()}
               </Badge>
@@ -524,8 +542,8 @@ function ShowcaseSection({ project }: { project: Project }) {
         state,
       }),
     onSuccess: (showcase) => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["portfolio"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
       toast.success(
         showcase.state === "PUBLISHED" ? "Showcase published." : "Showcase saved as draft.",
       );
@@ -535,7 +553,7 @@ function ShowcaseSection({ project }: { project: Project }) {
   });
 
   return (
-    <section className="bg-card rounded-lg border p-5">
+    <section className="bg-card min-w-0 rounded-xl border p-4 sm:p-5">
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
         <UsersIcon className="size-4" /> Project showcase
       </h2>

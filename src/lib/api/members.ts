@@ -41,8 +41,8 @@ export interface ProfileInput {
   hackerrank_url?: string | null;
 }
 
-export async function getMyProfile() {
-  const { profile } = await apiRequest<{ profile: ProfileView }>("/members/me");
+export async function getMyProfile(signal?: AbortSignal) {
+  const { profile } = await apiRequest<{ profile: ProfileView }>("/members/me", { signal });
   return profile;
 }
 
@@ -51,9 +51,10 @@ export async function getMyProfile() {
  * profile; this covers genuinely missing ones (e.g. the bootstrapped super
  * admin), targeting self by username.
  */
-export async function initializeMyProfile(username: string) {
+export async function initializeMyProfile(username: string, signal?: AbortSignal) {
   const { profile } = await apiRequest<{ profile: ProfileView }>("/members", {
     method: "POST",
+    signal,
     body: { username },
   });
   return profile;
@@ -67,16 +68,18 @@ export async function updateMyProfile(input: ProfileInput) {
   return profile;
 }
 
-export async function getMemberByRoll(rollNumber: string) {
+export async function getMemberByRoll(rollNumber: string, signal?: AbortSignal) {
   const { profile } = await apiRequest<{ profile: ProfileView }>(
     `/members/${encodeURIComponent(rollNumber)}`,
+    { signal },
   );
   return profile;
 }
 
-export async function getPortfolio(userId: number) {
+export async function getPortfolio(userId: number, signal?: AbortSignal) {
   const { portfolio } = await apiRequest<{ portfolio: PortfolioView }>(
     `/members/${userId}/portfolio`,
+    { signal },
   );
   return portfolio;
 }
@@ -87,6 +90,8 @@ export interface PortfolioView {
     id: number;
     path_id: number;
     module_id: number;
+    path_title?: string | null;
+    module_title?: string | null;
     content_type: "LESSON" | "ASSIGNMENT";
     content_id: number;
     completed_at: string | null;

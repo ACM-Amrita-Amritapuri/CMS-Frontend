@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { IdCardIcon, Loader2Icon } from "lucide-react";
@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/members";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
+import { queryKeys } from "@/lib/query-keys";
 import { sessionStore } from "@/lib/auth/session-store";
 import { useSession } from "@/app/providers";
 import { useSessionBootstrap } from "@/components/auth/use-session-bootstrap";
@@ -22,6 +23,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import { QueryErrorState } from "@/components/ui/async";
+import { PageHeader } from "@/components/ui/page";
 
 const urlField = z
   .string()
@@ -101,7 +103,10 @@ function formToProfileInput(data: z.output<typeof profileSchema>): ProfileInput 
 export default function ProfileSetupPage() {
   useDocumentTitle("Profile setup");
   const navigate = useNavigate();
-  const { status } = useSessionBootstrap();
+  const { status, error: bootstrapError, retry: retryBootstrap } = useSessionBootstrap();
+  const queryClient = useQueryClient();
+  const { user, generation } = useSession();
+  const canLoadProfile = status === "ready" || status === "profile-incomplete";
 
   useEffect(() => {
     if (status === "signed-out") navigate("/login", { replace: true });
@@ -109,35 +114,27 @@ export default function ProfileSetupPage() {
   }, [status, navigate]);
 
   const profileQuery = useQuery({
-    queryKey: ["profile", "me"],
-    queryFn: getMyProfile,
-    enabled: status === "ready" || status === "profile-incomplete",
+    queryKey: queryKeys.profile.me,
+    queryFn: async ({ signal }) => {
+      try {
+        return await getMyProfile(signal);
+      } catch (error) {
+        if (
+          error instanceof ApiError && error.status === 404 && user &&
+          sessionStore.isCurrentGeneration(generation)
+        ) {
+          signal.throwIfAborted();
+          return initializeMyProfile(user.username, signal);
+        }
+        throw error;
+      }
+    },
+    enabled: canLoadProfile,
+    retry: false,
+    retryOnMount: false,
   });
-
-  const { user } = useSession();
-  const initMutation = useMutation({
-    mutationFn: (username: string) => initializeMyProfile(username),
-    onSuccess: () => profileQuery.refetch(),
-  });
-
-  // A genuinely missing profile (no record at all) passes every gate but
-  // 404s here; create it once so the member can onboard.
-  useEffect(() => {
-    if (
-      profileQuery.error instanceof ApiError &&
-      profileQuery.error.status === 404 &&
-      user &&
-      !initMutation.isPending
-    ) {
-      initMutation.mutate(user.username);
-    }
-  }, [profileQuery.error, user, initMutation]);
 
   const isComplete = profileQuery.data?.is_complete === true;
-
-  useEffect(() => {
-    if (isComplete) navigate("/dashboard", { replace: true });
-  }, [isComplete, navigate]);
 
   const form = useForm<ProfileForm>();
 
@@ -149,19 +146,26 @@ export default function ProfileSetupPage() {
 
   const saveMutation = useMutation({
     mutationFn: (input: ProfileInput) => updateMyProfile(input),
-    onSuccess: async (profile) => {
+    onMutate: () => sessionStore.getGeneration(),
+    onSuccess: async (profile, _input, startedGeneration) => {
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
+      await queryClient.cancelQueries({ queryKey: queryKeys.profile.me });
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
+      queryClient.setQueryData(queryKeys.profile.me, profile);
       if (!profile.is_complete) {
         toast.error("The profile is still incomplete — check the required fields.");
         return;
       }
-      // Re-sync the user now that /auth/me passes the profile gate.
       const user = await getMe();
+      if (!sessionStore.isCurrentGeneration(startedGeneration)) return;
       const token = sessionStore.getSnapshot().accessToken;
-      if (user && token) sessionStore.setSession(user, token);
+      if (!token) return;
+      sessionStore.setSession(user, token);
       toast.success("Profile saved.");
       navigate("/dashboard", { replace: true });
     },
-    onError: (error) => {
+    onError: (error, _input, startedGeneration) => {
+      if (startedGeneration === undefined || !sessionStore.isCurrentGeneration(startedGeneration)) return;
       if (error instanceof ApiError && error.status === 422) {
         toast.error(error.message);
       } else {
@@ -172,6 +176,12 @@ export default function ProfileSetupPage() {
     },
   });
 
+  useEffect(() => {
+    if (isComplete && canLoadProfile && !saveMutation.isPending && !saveMutation.isError) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isComplete, canLoadProfile, saveMutation.isPending, saveMutation.isError, navigate]);
+
   const onSubmit = form.handleSubmit((values) => {
     const data = parseForm(profileSchema, values, (field, message) =>
       form.setError(field as keyof ProfileForm, { message }),
@@ -180,17 +190,29 @@ export default function ProfileSetupPage() {
     saveMutation.mutate(formToProfileInput(data));
   });
 
-  if (status === "loading" || profileQuery.isPending || initMutation.isPending) {
-    return <div className="min-h-svh" />;
-  }
-  if (status === "error" || profileQuery.isError) {
-    const error =
-      status === "error"
-        ? new Error("The session could not be verified.")
-        : profileQuery.error;
+  if (status === "error") {
     return (
       <div className="flex min-h-svh items-center justify-center px-4">
-        <QueryErrorState error={error} retry={() => window.location.reload()} />
+        <QueryErrorState error={bootstrapError} retry={retryBootstrap} />
+      </div>
+    );
+  }
+  if (!canLoadProfile || profileQuery.isPending) {
+    return <div className="min-h-svh" />;
+  }
+  if (profileQuery.isError) {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4">
+        <QueryErrorState error={profileQuery.error} retry={() => void profileQuery.refetch()} />
+      </div>
+    );
+  }
+  if (isComplete && saveMutation.isError) {
+    return (
+      <div className="flex min-h-svh items-center justify-center px-4">
+        <QueryErrorState error={saveMutation.error} retry={() => {
+          if (saveMutation.variables) saveMutation.mutate(saveMutation.variables);
+        }} />
       </div>
     );
   }
@@ -199,18 +221,18 @@ export default function ProfileSetupPage() {
   const { errors } = form.formState;
 
   return (
-    <div className="mx-auto flex min-h-svh w-full max-w-3xl flex-col justify-center px-4 py-10">
-      <div className="bg-card rounded-lg border p-6 sm:p-8">
-        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-lg">
+    <div className="mx-auto flex min-h-svh w-full min-w-0 max-w-3xl flex-col justify-center px-4 py-6 sm:px-6 sm:py-10">
+      <div className="bg-card rounded-2xl border p-5 shadow-sm sm:p-8">
+        <div className="bg-primary/10 text-primary mb-4 flex size-11 items-center justify-center rounded-md">
           <IdCardIcon className="size-5" />
         </div>
-        <h1 className="text-xl font-semibold">Complete your profile</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Introduce yourself to the club. You can update this any time.
-        </p>
+        <PageHeader
+          title="Complete your profile"
+          description="Introduce yourself to the club. You can update this any time."
+        />
 
-        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-[1fr_100px]">
+        <form onSubmit={onSubmit} className="mt-6 flex min-w-0 flex-col gap-5" noValidate>
+          <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />
             </Field>
@@ -237,7 +259,7 @@ export default function ProfileSetupPage() {
           >
             <Input id="skills" {...form.register("skills")} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-5 sm:grid-cols-2">
             <Field label="Interests" htmlFor="interests" error={errors.interests?.message}>
               <Input id="interests" {...form.register("interests")} />
             </Field>
@@ -247,10 +269,10 @@ export default function ProfileSetupPage() {
           </div>
 
           <div className="mt-2 border-t pt-4">
-            <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground mb-4 text-xs font-medium uppercase leading-relaxed tracking-wide">
               Social & competitive profiles (optional)
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid items-start gap-5 sm:grid-cols-2">
               {socialFields.map(({ key, label }) => (
                 <Field key={key} label={label} htmlFor={key} error={errors[key]?.message}>
                   <Input
@@ -267,7 +289,7 @@ export default function ProfileSetupPage() {
           <Button
             type="submit"
             disabled={saveMutation.isPending}
-            className="mt-2 self-start"
+            className="mt-2 min-h-11 w-full sm:w-auto sm:self-end"
           >
             {saveMutation.isPending ? <Loader2Icon className="animate-spin" /> : null}
             Save profile

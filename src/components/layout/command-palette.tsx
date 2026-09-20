@@ -2,11 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import {
   BookOpenIcon,
+  CalendarDaysIcon,
   FolderKanbanIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
   MoonIcon,
-  SettingsIcon,
   SunIcon,
   TrophyIcon,
   UsersIcon,
@@ -17,13 +17,13 @@ import { useTheme } from "@/components/theme";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const destinations = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { href: "/hackathons", label: "Hackathons", icon: TrophyIcon },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboardIcon },
+  { href: "/hackathons", label: "Events", icon: TrophyIcon },
   { href: "/learning", label: "Learning", icon: GraduationCapIcon },
-  { href: "/documentation", label: "Documentation", icon: BookOpenIcon },
+  { href: "/documentation", label: "Knowledge", icon: BookOpenIcon },
   { href: "/projects", label: "Projects", icon: FolderKanbanIcon },
   { href: "/members", label: "Members", icon: UsersIcon },
-  { href: "/admin", label: "Admin", icon: SettingsIcon, capability: "administer" as const },
+  { href: "/operations", label: "Operations", icon: CalendarDaysIcon, capability: "manage_operations" as const },
 ];
 
 export function CommandPalette({
@@ -45,8 +45,8 @@ export function CommandPalette({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="top-[20%] max-w-lg translate-y-0 gap-0 overflow-hidden p-0">
-        <DialogTitle className="sr-only">Search</DialogTitle>
-        <Command label="Search" className="[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium">
+        <DialogTitle className="sr-only">Quick switcher</DialogTitle>
+        <Command label="Quick switcher" className="[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium">
           <Command.Input
             autoFocus
             placeholder="Go to…"
@@ -56,7 +56,7 @@ export function CommandPalette({
             <Command.Empty className="text-muted-foreground py-6 text-center text-sm">
               No results.
             </Command.Empty>
-            <Command.Group heading="Navigate">
+            <Command.Group heading="Go to">
               {destinations
                 .filter((item) => !item.capability || hasCapability(item.capability))
                 .map(({ href, label, icon: Icon }) => (

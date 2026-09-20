@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { GraduationCapIcon, Loader2Icon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
+import { ArrowRightIcon, Loader2Icon } from "lucide-react";
 import { z } from "zod";
 
 import { login } from "@/lib/api/auth";
@@ -11,6 +11,9 @@ import { sessionStore } from "@/lib/auth/session-store";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
+import { useTheme } from "@/components/theme";
+import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.png";
+import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.png";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Enter your username or roll number."),
@@ -19,15 +22,10 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-const highlights = [
-  { icon: GraduationCapIcon, text: "Structured learning paths for every SIG" },
-  { icon: SparklesIcon, text: "Showcase projects and grow your portfolio" },
-  { icon: ShieldCheckIcon, text: "One workspace for the whole club" },
-];
-
 export default function LoginPage() {
   useDocumentTitle("Login");
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [formError, setFormError] = useState<string | null>(null);
   const form = useForm<LoginForm>({ defaultValues: { login: "", password: "" } });
 
@@ -37,55 +35,41 @@ export default function LoginPage() {
       form.setError(field as keyof LoginForm, { message }),
     );
     if (!data) return;
-
     return login(data).then(
       (response) => {
         sessionStore.setSession(response.user, response.access_token);
         navigate(
-          response.user.must_change_password ? "/change-password" : "/dashboard",
+          response.user.must_change_password
+            ? "/change-password"
+            : response.user.profile_complete === false
+              ? "/profile/setup"
+              : "/dashboard",
           { replace: true },
         );
       },
       (error: unknown) => {
         setFormError(
-          error instanceof ApiError
-            ? error.message
-            : "Could not sign in. Please try again.",
+          error instanceof ApiError ? error.message : "Could not sign in. Please try again.",
         );
       },
     );
   });
 
   return (
-    <div className="flex min-h-svh items-center justify-center px-4">
-      <div className="relative grid w-full max-w-4xl gap-10 lg:grid-cols-[1fr_400px] lg:items-center">
-        <section className="hidden flex-col gap-6 lg:flex">
-          <Brand />
-          <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance">
-            The club workspace for learning, building, and running ACM.
-          </h1>
-          <ul className="flex flex-col gap-3">
-            {highlights.map(({ icon: Icon, text }) => (
-              <li key={text} className="text-muted-foreground flex items-center gap-3 text-sm">
-                <span className="bg-primary/10 text-primary flex size-7 items-center justify-center rounded-lg">
-                  <Icon className="size-4" />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
-        </section>
+    <div className="flex min-h-svh items-center justify-center bg-background px-4 py-6 sm:px-6">
+      <div className="flex w-full max-w-sm flex-col items-center gap-6">
+        <Link to="/login" className="flex w-full justify-center font-semibold">
+          <img
+            src={resolvedTheme === "dark" ? darkLogoUrl : fullLogoUrl}
+            alt="ACM Student Chapter"
+            className="h-auto w-full max-w-[20rem] object-contain"
+          />
+        </Link>
 
-        <section className="bg-card rounded-lg border p-6 sm:p-8">
-          <div className="mb-6 lg:hidden">
-            <Brand />
-          </div>
-          <h2 className="text-xl font-semibold">Sign in</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Accounts are created by club administrators.
-          </p>
+        <section className="w-full rounded-xl border bg-card p-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.35)] sm:p-6">
+          <h1 className="text-center text-xl font-semibold tracking-tight">Sign in</h1>
 
-          <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4" noValidate>
+          <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4" noValidate>
             <Field
               label="Username or roll number"
               htmlFor="login"
@@ -110,28 +94,14 @@ export default function LoginPage() {
                 {formError}
               </p>
             ) : null}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 w-full">
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-full">
               {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
-              Sign in
+              <span>Sign in</span>
+              {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}
             </Button>
           </form>
-
-          <p className="text-muted-foreground mt-6 text-center text-xs">
-            Trouble signing in? Ask an administrator to reset your password.
-          </p>
         </section>
       </div>
     </div>
-  );
-}
-
-function Brand() {
-  return (
-    <Link to="/login" className="flex items-center gap-2.5 font-semibold">
-      <span className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md text-base font-bold">
-        A
-      </span>
-      <span className="text-lg">ACM CMS</span>
-    </Link>
   );
 }

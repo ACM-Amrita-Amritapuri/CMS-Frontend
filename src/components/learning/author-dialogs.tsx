@@ -10,11 +10,13 @@ import {
   type LearningLesson,
   type LearningModule,
 } from "@/lib/api/learning";
+import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { slugify } from "@/lib/formatters/slug";
 import { localInputToIso } from "@/lib/formatters/date";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +32,7 @@ import {
 export function useAuthorActions(onDone: () => void) {
   const queryClient = useQueryClient();
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["learning"] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all });
     onDone();
   };
 
@@ -67,7 +69,7 @@ export function AuthorDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="capitalize">Add {kind}</DialogTitle>
         </DialogHeader>
@@ -82,7 +84,7 @@ export function AuthorDialog({
 
 function DialogActions({ pending }: { pending: boolean }) {
   return (
-    <DialogFooter>
+    <DialogFooter className="mt-1 border-t pt-4">
       <Button type="submit" disabled={pending}>
         Save
       </Button>
@@ -110,7 +112,7 @@ function ModuleForm({
     onError: author.fail,
   });
   return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+    <form className="flex min-w-0 flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <Field label="Title" htmlFor="m-title">
         <Input id="m-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </Field>
@@ -137,7 +139,7 @@ function LessonForm({ modules, author }: { modules: LearningModule[]; author: Re
     onError: author.fail,
   });
   return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+    <form className="flex min-w-0 flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <ModuleSelect modules={modules} moduleId={moduleId} onModuleChange={setModuleId} />
       <Field label="Title" htmlFor="l-title">
         <Input id="l-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -175,22 +177,21 @@ function ResourceForm({ modules, author }: { modules: LearningModule[]; author: 
   });
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+    <form className="flex min-w-0 flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <ModuleSelect modules={modules} moduleId={moduleId} onModuleChange={(value) => { setModuleId(value); setLessonId(""); }} />
       <LessonSelect lessons={lessons} lessonId={effectiveLessonId} onLessonChange={setLessonId} />
       <Field label="Title" htmlFor="r-title">
         <Input id="r-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
       </Field>
       <Field label="Type" htmlFor="r-type">
-        <select
+        <NativeSelect
           id="r-type"
           value={type}
           onChange={(e) => setType(e.target.value as "MARKDOWN" | "EXTERNAL_LINK")}
-          className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
         >
           <option value="MARKDOWN">Markdown</option>
           <option value="EXTERNAL_LINK">External link</option>
-        </select>
+        </NativeSelect>
       </Field>
       {type === "MARKDOWN" ? (
         <Field label="Content" htmlFor="r-content">
@@ -231,7 +232,7 @@ function AssignmentForm({ modules, author }: { modules: LearningModule[]; author
   });
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+    <form className="flex min-w-0 flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
       <ModuleSelect modules={modules} moduleId={moduleId} onModuleChange={setModuleId} />
       <Field label="Title" htmlFor="a-title">
         <Input id="a-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
@@ -239,12 +240,12 @@ function AssignmentForm({ modules, author }: { modules: LearningModule[]; author
       <Field label="Instructions" htmlFor="a-instructions">
         <Textarea id="a-instructions" rows={4} value={instructions} onChange={(e) => setInstructions(e.target.value)} required />
       </Field>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2">
         <Field label="Submission type" htmlFor="a-type">
-          <select id="a-type" value={type} onChange={(e) => setType(e.target.value as "TEXT" | "LINK")} className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm">
+          <NativeSelect id="a-type" value={type} onChange={(e) => setType(e.target.value as "TEXT" | "LINK")}>
             <option value="TEXT">Text</option>
             <option value="LINK">Link</option>
-          </select>
+          </NativeSelect>
         </Field>
         <Field label="Deadline (optional)" htmlFor="a-deadline">
           <Input id="a-deadline" type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
@@ -266,18 +267,17 @@ function ModuleSelect({
 }) {
   return (
     <Field label="Module" htmlFor="sel-module">
-      <select
+      <NativeSelect
         id="sel-module"
         value={moduleId}
         onChange={(e) => onModuleChange(e.target.value)}
-        className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
       >
         {modules.map((module) => (
           <option key={module.id} value={String(module.id)}>
             {module.title}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </Field>
   );
 }
@@ -293,18 +293,17 @@ function LessonSelect({
 }) {
   return (
     <Field label="Lesson" htmlFor="sel-lesson">
-      <select
+      <NativeSelect
         id="sel-lesson"
         value={lessonId}
         onChange={(e) => onLessonChange(e.target.value)}
-        className="border-input h-9 w-full rounded-lg border bg-transparent px-3 text-sm"
       >
         {lessons.map((lesson) => (
           <option key={lesson.id} value={String(lesson.id)}>
             {lesson.title}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </Field>
   );
 }

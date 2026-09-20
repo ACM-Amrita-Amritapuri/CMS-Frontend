@@ -29,9 +29,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    return sessionStore.subscribe(() => {
-      if (!sessionStore.getSnapshot().accessToken) queryClient.clear();
-    });
+    let previousUserId = sessionStore.getSnapshot().user?.id;
+    const synchronize = () => {
+      const { accessToken, user } = sessionStore.getSnapshot();
+      if (!accessToken || (previousUserId !== undefined && previousUserId !== user?.id)) {
+        queryClient.clear();
+      }
+      previousUserId = user?.id;
+    };
+    const unsubscribe = sessionStore.subscribe(synchronize);
+    synchronize();
+    return unsubscribe;
   }, [queryClient]);
 
   return (
@@ -56,6 +64,7 @@ export function useSession() {
 
   return {
     ...state,
+    generation: store.getGeneration(),
     hasCapability: store.hasCapability.bind(store),
   };
 }

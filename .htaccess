@@ -1,0 +1,31 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # 1. Stop any global Passenger app from hijacking the frontend folder.
+  #    The Flask API at /cms_backend keeps its own Passenger config —
+  #    place this file INSIDE the frontend folder only, never above it.
+  <IfModule mod_passenger.c>
+    PassengerEnabled off
+  </IfModule>
+
+  # 2. Never touch the backend API — let its own Passenger app handle it.
+  RewriteRule ^cms_backend(/|$) - [L]
+
+  # 3. Restrict the frontend /admin route to known IPs.
+  #    Update this list if your office IPs change.
+  RewriteCond %{REQUEST_URI} ^/admin [NC]
+  RewriteCond %{REMOTE_ADDR} !=117.193.77.254
+  RewriteCond %{REMOTE_ADDR} !=115.245.158.70
+  RewriteCond %{REMOTE_ADDR} !=106.194.34.226
+  RewriteCond %{REMOTE_ADDR} !=157.51.231.245
+  RewriteCond %{REMOTE_ADDR} !=10.113.20.46
+  RewriteRule ^ - [F,L]
+
+  # 4. React Router fallback: real files/dirs are served directly,
+  #    everything else goes to index.html so the router can handle it.
+  RewriteBase /cms/
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ index.html [L]
+</IfModule>

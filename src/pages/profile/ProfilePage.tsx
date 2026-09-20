@@ -12,12 +12,14 @@ import {
 } from "@/lib/api/members";
 import { ApiError } from "@/lib/api/errors";
 import { parseForm } from "@/lib/form-validation";
+import { queryKeys } from "@/lib/query-keys";
 import { ProfileCard } from "@/components/member/profile-card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Textarea } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 
 const urlField = z
   .string()
@@ -55,10 +57,21 @@ type EditableForm = z.input<typeof editableSchema>;
 export default function ProfilePage() {
   useDocumentTitle("Profile");
   const [editing, setEditing] = useState(false);
-  const query = useQuery({ queryKey: ["profile", "me"], queryFn: getMyProfile });
+  const query = useQuery({ queryKey: queryKeys.profile.me, queryFn: ({ signal }) => getMyProfile(signal) });
 
   return (
-    <div className="flex max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6">
+      <PageHeader
+        title="Profile"
+        description="Keep your member details and external profiles up to date."
+        actions={
+          !editing ? (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <PencilIcon /> Edit profile
+            </Button>
+          ) : null
+        }
+      />
       <AsyncBoundary query={query} empty={{ title: "No profile found" }}>
         {(profile) =>
           editing ? (
@@ -67,16 +80,7 @@ export default function ProfilePage() {
               onDone={() => setEditing(false)}
             />
           ) : (
-            <>
-              <ProfileCard
-                profile={profile}
-                actions={
-                  <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-                    <PencilIcon /> Edit
-                  </Button>
-                }
-              />
-            </>
+            <ProfileCard profile={profile} />
           )
         }
       </AsyncBoundary>
@@ -97,7 +101,7 @@ function ProfileEditForm({
   const save = useMutation({
     mutationFn: (input: ProfileInput) => updateMyProfile(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.all });
       toast.success("Profile updated.");
       onDone();
     },
@@ -135,8 +139,8 @@ function ProfileEditForm({
         <CardTitle className="text-base">Edit profile</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-[1fr_100px]">
+        <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-5" noValidate>
+          <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />
             </Field>
@@ -158,7 +162,7 @@ function ProfileEditForm({
           >
             <Input id="skills" {...form.register("skills")} />
           </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-5 sm:grid-cols-2">
             <Field label="Interests" htmlFor="interests" error={errors.interests?.message}>
               <Input id="interests" {...form.register("interests")} />
             </Field>
@@ -167,10 +171,10 @@ function ProfileEditForm({
             </Field>
           </div>
           <div className="border-t pt-4">
-            <p className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground mb-4 text-xs font-medium uppercase leading-relaxed tracking-wide">
               Social & competitive profiles (optional)
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid items-start gap-5 sm:grid-cols-2">
               {socialFields.map(([key, label]) => (
                 <Field key={key} label={label} htmlFor={key} error={errors[key]?.message}>
                   <Input id={key} type="url" placeholder="https://" {...form.register(key)} />
@@ -178,7 +182,7 @@ function ProfileEditForm({
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:justify-end [&>button]:min-h-11">
             <Button type="submit" disabled={save.isPending}>
               Save changes
             </Button>

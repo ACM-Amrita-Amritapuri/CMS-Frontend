@@ -30,3 +30,10 @@ bun run lint
 bun run test
 bun run build
 ```
+
+## cPanel deployment
+
+The production build is served at `/cms/` and calls the backend at the
+same-origin `/cms_backend` URI. Extract the deployment ZIP contents directly
+into the `cms` document-root directory; do not leave them inside a nested
+`dist` directory. Deploy and verify the Passenger backend first.

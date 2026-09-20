@@ -1,14 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SearchIcon, UsersIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 
 import { getMemberByRoll } from "@/lib/api/members";
+import { queryKeys } from "@/lib/query-keys";
 import { ProfileCard } from "@/components/member/profile-card";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { EmptyState } from "@/components/ui/table";
+import { QueryState } from "@/components/ui/async";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page";
 
 export default function MembersPage() {
   useDocumentTitle("Members");
@@ -17,60 +19,55 @@ export default function MembersPage() {
   const [submitted, setSubmitted] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: ["member", submitted],
-    queryFn: () => getMemberByRoll(submitted!),
+    queryKey: queryKeys.member(submitted),
+    queryFn: ({ signal }) => getMemberByRoll(submitted!, signal),
     enabled: Boolean(submitted),
     retry: false,
   });
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Members</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Look up a club member by their roll number.
-        </p>
-      </header>
+    <div className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-6">
+      <PageHeader
+        title="Members"
+        description="Look up a club member by their roll number."
+      />
 
       <form
-        className="flex gap-2"
+        className="bg-card flex flex-col gap-3 rounded-xl border p-4 shadow-sm sm:flex-row sm:items-center sm:p-5"
         onSubmit={(event) => {
           event.preventDefault();
           setSubmitted(rollNumber.trim() || null);
         }}
       >
         <Input
+          className="h-11 sm:flex-1"
           value={rollNumber}
           onChange={(event) => setRollNumber(event.target.value)}
           placeholder="Roll number, e.g. B123"
           aria-label="Roll number"
         />
-        <Button type="submit" disabled={!rollNumber.trim()}>
+        <Button type="submit" disabled={!rollNumber.trim()} className="min-h-11 w-full sm:w-auto">
           <SearchIcon /> Search
         </Button>
       </form>
 
-      {submitted && query.isError ? (
-        <EmptyState
-          icon={UsersIcon}
-          title={`No member found for “${submitted}”`}
-          description="Check the roll number and try again."
-        />
-      ) : null}
-
-      {submitted && query.data ? (
-        <ProfileCard
-          profile={query.data}
-          actions={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/portfolio/${query.data.user_id}`)}
-            >
-              View portfolio
-            </Button>
-          }
-        />
+      {submitted ? (
+        <QueryState query={query} notFound={`No member found for “${submitted}”`}>
+          {(profile) => (
+            <ProfileCard
+              profile={profile}
+              actions={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/portfolio/${profile.user_id}`)}
+                >
+                  View portfolio
+                </Button>
+              }
+            />
+          )}
+        </QueryState>
       ) : null}
     </div>
   );
