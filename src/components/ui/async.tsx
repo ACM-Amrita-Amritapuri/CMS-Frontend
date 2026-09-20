@@ -39,12 +39,13 @@ export function QueryState<T>({
   if (query.isError && accessError) {
     return <QueryErrorState error={query.error} retry={() => query.refetch()} notFound={notFound} />;
   }
+  const isEmptyResult = isEmpty?.(query.data) ?? false;
   return (
     <>
-      {query.isError ? (
+      {query.isError && !isEmptyResult ? (
         <QueryErrorState error={query.error} retry={() => query.refetch()} cached />
       ) : null}
-      {isEmpty?.(query.data) ? (
+      {isEmptyResult ? (
         <EmptyState
           icon={empty?.icon}
           title={empty?.title ?? "Nothing here yet"}

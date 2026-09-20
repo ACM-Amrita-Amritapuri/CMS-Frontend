@@ -105,11 +105,27 @@ it("keeps cached data on refetch failure and retries successfully", async () => 
   expect(screen.queryByText("Couldn't refresh this content")).not.toBeInTheDocument();
 });
 
-it("keeps cached empty results with a refresh warning", async () => {
+it("keeps cached empty results without a refresh warning", async () => {
   const client = mount(() => Promise.reject(new Error("offline")), []);
   await act(async () => { await client.refetchQueries({ queryKey: ["test"] }); });
-  expect(await screen.findByText("Couldn't refresh this content")).toBeInTheDocument();
   expect(screen.getByText("No items")).toBeInTheDocument();
+  expect(screen.queryByText("Couldn't refresh this content")).not.toBeInTheDocument();
+});
+
+it("suppresses refresh errors when the query already has empty data", () => {
+  render(
+    <MemoryRouter>
+      <QueryState
+        query={{ data: [], isPending: false, isError: true, error: new Error("offline"), refetch: vi.fn() }}
+        isEmpty={(items) => items.length === 0}
+        empty={{ title: "No items" }}
+      >
+        {(items) => <p>{items.join(", ")}</p>}
+      </QueryState>
+    </MemoryRouter>,
+  );
+  expect(screen.getByText("No items")).toBeInTheDocument();
+  expect(screen.queryByText("Couldn't refresh this content")).not.toBeInTheDocument();
 });
 
 it.each([
