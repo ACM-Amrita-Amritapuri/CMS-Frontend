@@ -113,12 +113,12 @@ export default function LearningListPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <h2 className="min-w-0 break-words text-base font-semibold leading-6 tracking-tight [overflow-wrap:anywhere]">{path.title}</h2>
+                            <h2 className="min-w-0 wrap-break-word text-base font-semibold leading-6 tracking-tight">{path.title}</h2>
                             {path.publication_state === "DRAFT" ? <Badge variant="warning">Draft</Badge> : null}
                           </div>
                           <ArrowUpRightIcon aria-hidden className="text-muted-foreground size-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
                         </div>
-                        {path.description ? <p className="text-muted-foreground mt-4 line-clamp-3 flex-1 break-words text-sm leading-6 [overflow-wrap:anywhere]">{path.description}</p> : <div className="flex-1" />}
+                        {path.description ? <p className="text-muted-foreground mt-4 line-clamp-3 flex-1 wrap-break-word text-sm leading-6">{path.description}</p> : <div className="flex-1" />}
                         <div className="text-muted-foreground mt-5 flex items-center border-t pt-3 text-xs">
                           <span>{path.modules?.length ?? 0} modules</span>
                         </div>

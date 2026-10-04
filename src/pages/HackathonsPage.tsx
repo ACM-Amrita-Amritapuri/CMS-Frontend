@@ -64,16 +64,16 @@ function EventCard({ event }: { event: ClubEvent }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <Badge variant="outline">{kind}</Badge>
-          <h3 className="mt-3 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{event.title}</h3>
+          <h3 className="mt-3 break-words text-lg font-semibold leading-7 wrap-anywhere">{event.title}</h3>
         </div>
         <CalendarDaysIcon className="text-primary mt-1 size-5 shrink-0" aria-hidden />
       </div>
 
       {event.description ? (
-        <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 [overflow-wrap:anywhere]">{event.description}</p>
+        <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 wrap-anywhere">{event.description}</p>
       ) : null}
 
-      <dl className="text-muted-foreground flex min-w-0 flex-col gap-3 text-sm leading-6 [overflow-wrap:anywhere]">
+      <dl className="text-muted-foreground flex min-w-0 flex-col gap-3 text-sm leading-6 wrap-anywhere">
         <div className="flex items-start gap-2">
           <CalendarDaysIcon className="text-foreground mt-0.5 size-4 shrink-0" aria-hidden />
           <div>

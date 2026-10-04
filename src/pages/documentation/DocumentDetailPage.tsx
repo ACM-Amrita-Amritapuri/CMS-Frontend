@@ -109,7 +109,7 @@ function DocumentReader({
   return editing ? (
     <DocumentEditor document={doc} onDone={() => setEditing(false)} />
   ) : (
-    <article className="flex min-w-0 flex-col gap-6 [overflow-wrap:anywhere]">
+    <article className="flex min-w-0 flex-col gap-6 wrap-anywhere">
       <PageHeader
         title={doc.title}
         description={doc.summary}
@@ -246,7 +246,7 @@ function RevisionHistory({ documentId }: { documentId: number }) {
           {[...revisions].reverse().map((revision) => (
             <li key={revision.id} className="rounded-lg border p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <p className="min-w-0 break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">
+                <p className="min-w-0 wrap-break-word text-sm font-medium leading-6">
                   #{revision.revision_number} {revision.title}
                 </p>
                 <time className="text-muted-foreground shrink-0 text-xs leading-6">
@@ -254,7 +254,7 @@ function RevisionHistory({ documentId }: { documentId: number }) {
                 </time>
               </div>
               {revision.summary ? (
-                <p className="text-muted-foreground mt-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{revision.summary}</p>
+                <p className="text-muted-foreground mt-2 wrap-break-word text-sm leading-6">{revision.summary}</p>
               ) : null}
             </li>
           ))}

@@ -52,11 +52,11 @@ export function ProfileCard({
           <div className="bg-primary text-primary-foreground flex size-16 shrink-0 items-center justify-center rounded-xl border-4 border-card text-xl font-bold">
             {(profile.real_name || profile.username).slice(0, 1).toUpperCase()}
           </div>
-          {actions ? <div className="flex w-full flex-wrap gap-2 [&>*]:w-full sm:w-auto sm:[&>*]:w-auto">{actions}</div> : null}
+          {actions ? <div className="flex w-full flex-wrap gap-2 *:w-full sm:w-auto sm:*:w-auto">{actions}</div> : null}
         </div>
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]">{profile.real_name || profile.username}</h2>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed [overflow-wrap:anywhere]">
+          <h2 className="text-xl font-semibold leading-snug tracking-tight wrap-anywhere">{profile.real_name || profile.username}</h2>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed wrap-anywhere">
             @{profile.username} · {profile.roll_number}
             {profile.year ? ` · Year ${profile.year}` : ""}
             {profile.branch ? ` · ${profile.branch}` : ""}
@@ -64,7 +64,7 @@ export function ProfileCard({
           {roles.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {roles.map((role) => (
-                <Badge key={role} variant="secondary" className="max-w-full whitespace-normal text-left leading-relaxed [overflow-wrap:anywhere]">
+                <Badge key={role} variant="secondary" className="max-w-full whitespace-normal text-left leading-relaxed wrap-anywhere">
                   {role}
                 </Badge>
               ))}
@@ -72,19 +72,19 @@ export function ProfileCard({
           ) : null}
         </div>
         {profile.about ? (
-          <p className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed [overflow-wrap:anywhere]">{profile.about}</p>
+          <p className="text-muted-foreground whitespace-pre-line text-sm leading-relaxed wrap-anywhere">{profile.about}</p>
         ) : null}
         {profile.skills.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {profile.skills.map((skill) => (
-              <Badge key={skill} variant="outline" className="max-w-full whitespace-normal text-left leading-relaxed [overflow-wrap:anywhere]">
+              <Badge key={skill} variant="outline" className="max-w-full whitespace-normal text-left leading-relaxed wrap-anywhere">
                 {skill}
               </Badge>
             ))}
           </div>
         ) : null}
         {profile.interests || profile.hobbies ? (
-          <dl className="grid gap-4 text-sm leading-relaxed [overflow-wrap:anywhere] sm:grid-cols-2">
+          <dl className="grid gap-4 text-sm leading-relaxed wrap-anywhere sm:grid-cols-2">
             {profile.interests ? (
               <div>
                 <dt className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-wide">Interests</dt>

@@ -16,7 +16,7 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "border-input data-[placeholder]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex h-9 w-full items-center justify-between gap-2 rounded-lg border bg-transparent px-3 py-2 text-sm whitespace-nowrap outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4",
+        "border-input glass data-placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex h-13 w-full items-center justify-between gap-2 rounded-2xl border-[1.5px] bg-card/80 px-4 py-2 text-sm whitespace-nowrap outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ function SelectContent({
       <SelectPrimitive.Content
         position={position}
         className={cn(
-          "bg-popover text-popover-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-lg border shadow-md data-[state=open]:animate-fade-in",
+          "bg-popover text-popover-foreground relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-y-auto overflow-x-hidden rounded-lg border shadow-md data-[state=open]:animate-fade-in",
           position === "popper" && "data-[side=bottom]:translate-y-1",
           className,
         )}
@@ -60,7 +60,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-pointer items-center py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        "focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-pointer items-center py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
       )}
       {...props}

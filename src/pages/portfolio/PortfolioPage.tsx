@@ -79,7 +79,7 @@ export default function PortfolioPage() {
                         <Badge variant="success" className="shrink-0">
                           {contentTypeLabels[item.content_type]}
                         </Badge>
-                        <span className="text-muted-foreground min-w-0 basis-full text-sm leading-relaxed [overflow-wrap:anywhere] sm:flex-1 sm:basis-0">
+                        <span className="text-muted-foreground min-w-0 basis-full text-sm leading-relaxed wrap-anywhere sm:flex-1 sm:basis-0">
                           {item.path_title || "Learning path"} · {item.module_title || "Module"}
                         </span>
                         <time className="text-muted-foreground shrink-0 text-xs leading-relaxed sm:ml-auto">
@@ -114,11 +114,11 @@ export default function PortfolioPage() {
                         <div className="min-w-0">
                           <Link
                             to={`/projects/${item.project_id}`}
-                            className="text-sm font-medium leading-relaxed [overflow-wrap:anywhere] hover:underline"
+                            className="text-sm font-medium leading-relaxed wrap-anywhere hover:underline"
                           >
                             {item.title}
                           </Link>
-                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed [overflow-wrap:anywhere]">{item.summary}</p>
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed wrap-anywhere">{item.summary}</p>
                         </div>
                         {item.is_lead ? (
                           <Badge className="ml-auto shrink-0">Lead</Badge>

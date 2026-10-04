@@ -183,7 +183,7 @@ function ModuleCard({
           aria-expanded={open}
         >
           <div className="min-w-0 flex-1">
-            <p className="break-words text-sm font-semibold leading-5 [overflow-wrap:anywhere]">{module.title}</p>
+            <p className="wrap-break-word text-sm font-semibold leading-5">{module.title}</p>
             <p className="text-muted-foreground text-xs">
               {module.lessons.length} lessons · {module.assignments.length} assignments
             </p>
@@ -260,7 +260,7 @@ function TreeItem({
           className="focus-visible:ring-ring flex min-h-9 min-w-0 flex-1 basis-28 items-start gap-2.5 rounded py-1.5 text-left focus-visible:ring-2"
         >
           <Icon className="size-4 shrink-0" />
-          <span className="min-w-0 break-words leading-5 [overflow-wrap:anywhere]">{label}</span>
+          <span className="min-w-0 wrap-break-word leading-5">{label}</span>
         </button>
         {draft ? <Badge variant="warning" className="shrink-0 text-[10px]">Draft</Badge> : null}
         {draft && onPublish ? (
@@ -321,14 +321,14 @@ function LessonPanel({
   return (
     <article className="bg-card flex min-w-0 flex-col gap-6 rounded-xl border p-4 sm:p-6">
       <div className="flex flex-col items-start gap-3 border-b pb-4 xl:flex-row xl:justify-between">
-        <h2 className="min-w-0 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{lesson.title}</h2>
+        <h2 className="min-w-0 wrap-break-word text-lg font-semibold leading-7">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
       </div>
       {lesson.resources.length === 0 ? (
         <p className="text-muted-foreground text-sm">No materials in this lesson yet.</p>
       ) : (
         lesson.resources.map((resource) => (
-          <section key={resource.id} className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
+          <section key={resource.id} className="flex min-w-0 flex-col gap-3 wrap-anywhere">
             <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
               {resource.title}
             </h3>
@@ -345,7 +345,7 @@ function LessonPanel({
                 className="border-input hover:bg-accent focus-visible:ring-ring inline-flex w-fit max-w-full items-start gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2"
               >
                 <ExternalLinkIcon className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 [overflow-wrap:anywhere]">{resource.external_url}</span>
+                <span className="min-w-0 wrap-anywhere">{resource.external_url}</span>
               </a>
             )}
           </section>
@@ -396,7 +396,7 @@ function CompleteButton({
     );
   }
   return (
-      <Button size="sm" className="rounded-full" onClick={onClick} disabled={disabled}>
+      <Button size="sm" className="rounded-2xl" onClick={onClick} disabled={disabled}>
       <CircleIcon className="size-3.5" /> Mark complete
     </Button>
   );

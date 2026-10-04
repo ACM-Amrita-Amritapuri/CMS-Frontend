@@ -38,10 +38,10 @@ export default function ProjectsListPage() {
                     className="bg-card hover:bg-muted/40 focus-visible:ring-ring flex h-full min-w-0 flex-col gap-4 rounded-xl border p-4 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 sm:p-5"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h2 className="min-w-0 break-words text-base font-semibold leading-6 [overflow-wrap:anywhere]">{project.title}</h2>
+                      <h2 className="min-w-0 break-words text-base font-semibold leading-6 wrap-anywhere">{project.title}</h2>
                       {project.state === "CLOSED" ? <Badge variant="secondary">Closed</Badge> : null}
                     </div>
-                    <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 [overflow-wrap:anywhere]">{project.summary}</p>
+                    <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 wrap-anywhere">{project.summary}</p>
                     <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-3 text-xs">
                       <span className="text-muted-foreground w-full">
                         {project.team_memberships.filter((membership) => !membership.left_at).length}/{project.team_capacity} members

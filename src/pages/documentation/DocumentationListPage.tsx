@@ -38,8 +38,9 @@ export default function DocumentationListPage() {
   const q = searchParams.get("q") ?? "";
   const [input, setInput] = useState(q);
   const [creating, setCreating] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "SUBMITTED" | "DRAFTS">("ALL");
 
-  // q in the URL uses the search endpoint (published only); the bare list is
+  // q in the URL uses the search endpoint (Submitted only); the bare list is
   // the manager/recent view that also includes the caller's drafts.
   const searchQuery = useQuery({
     queryKey: queryKeys.documentation.search(q),
@@ -57,13 +58,14 @@ export default function DocumentationListPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        className="knowledge-header"
         title="Knowledge"
-        description="Search published documents and manage drafts in the club knowledge base."
+        description="Search Submitted documents and manage drafts in the club knowledge base."
         actions={<CreateDocumentButton open={creating} onOpenChange={setCreating} />}
       />
 
       <form
-        className="flex flex-wrap items-center gap-2"
+        className="glass flex flex-wrap items-center gap-2 rounded-2xl p-2"
         onSubmit={(event) => {
           event.preventDefault();
           setSearchParams(input.trim() ? { q: input.trim() } : {});
@@ -74,18 +76,36 @@ export default function DocumentationListPage() {
           <Input
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Search published documents…"
-            className="pl-9"
+            placeholder="Search Submitted documents…"
+            className="h-12 border-0 bg-transparent pl-10 shadow-none focus-visible:border-0 focus-visible:ring-0"
             aria-label="Search documents"
           />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit" variant="secondary" className="min-h-12 px-7">Search</Button>
         {q ? (
           <Button type="button" variant="ghost" onClick={() => { setInput(""); setSearchParams({}); }}>
             Clear
           </Button>
         ) : null}
       </form>
+
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter documents by status">
+        {(["ALL", "SUBMITTED", "DRAFTS"] as const).map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            aria-pressed={statusFilter === filter}
+            onClick={() => setStatusFilter(filter)}
+            className={`min-h-10 rounded-2xl border px-5 text-sm font-medium transition-colors ${
+              statusFilter === filter
+                ? "border-accent bg-accent text-accent-foreground"
+                : "border-border bg-transparent text-foreground hover:bg-accent/15"
+            }`}
+          >
+            {filter === "DRAFTS" ? "Drafts" : filter === "ALL" ? "All" : "Submitted"}
+          </button>
+        ))}
+      </div>
 
       <AsyncBoundary
         query={query}
@@ -100,25 +120,36 @@ export default function DocumentationListPage() {
               }
         }
       >
-        {(items) => (
-          <ul className="divide-y border-y">
-            {items.map((doc) => (
+        {(items) => {
+          const filteredItems = items.filter((doc) =>
+            statusFilter === "ALL" ||
+            (statusFilter === "DRAFTS" ? doc.state === "DRAFT" : doc.state === "SUBMITTED"),
+          );
+
+          return (
+          <ul className="glass overflow-hidden rounded-3xl">
+            {filteredItems.length === 0 ? (
+              <li className="px-6 py-12 text-center text-sm text-muted-foreground">No documents match this filter.</li>
+            ) : null}
+            {filteredItems.map((doc) => (
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
-                  className="hover:bg-muted/40 focus-visible:ring-ring flex min-w-0 items-start gap-4 rounded-lg px-3 py-5 transition-colors focus-visible:ring-2 focus-visible:ring-inset sm:px-4"
+                  className="flex min-h-28 min-w-0 items-start gap-4 border-b border-foreground/10 px-6 py-5 transition-colors last:border-b-0 hover:bg-accent/15 focus-visible:ring-2 focus-visible:ring-inset"
                 >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
-                      <h2 className="min-w-0 break-words text-base font-semibold leading-6 [overflow-wrap:anywhere]">{doc.title}</h2>
-                      {doc.state ? <StatusBadge status={doc.state} /> : null}
+                  <div className="min-w-full">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <FileTextIcon className="text-primary size-4 shrink-0" aria-hidden />
+                        <h2 className="min-w-0 wrap-break-word text-base font-semibold leading-6 ">{doc.title}</h2>
+                      </div>
+                      {doc.state ? <StatusBadge status={doc.state} className="min-h-6 shrink-0 px-3 text-[11px]" /> : null}
                     </div>
-                    {doc.summary ? <p className="text-muted-foreground mt-2 line-clamp-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">{doc.summary}</p> : null}
+                    {doc.summary ? <p className="text-muted-foreground mt-2 line-clamp-2 wrap-break-word text-sm leading-6">{doc.summary}</p> : null}
                     <div className="text-muted-foreground mt-2 flex flex-wrap gap-1.5 text-xs">
                     {doc.category ? <Badge variant="outline">{doc.category}</Badge> : null}
                     {doc.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="secondary">
+                      <Badge key={tag} variant="secondary" className="min-h-6 px-2.5 text-[11px]">
                         #{tag}
                       </Badge>
                     ))}
@@ -128,7 +159,8 @@ export default function DocumentationListPage() {
               </li>
             ))}
           </ul>
-        )}
+          );
+        }}
       </AsyncBoundary>
     </div>
   );

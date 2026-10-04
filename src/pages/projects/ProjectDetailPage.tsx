@@ -230,8 +230,8 @@ function RolesSection({
             return (
               <li key={role.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
                 <div className="min-w-0 flex-1 basis-full sm:basis-48">
-                  <p className="break-words text-sm font-medium leading-6 [overflow-wrap:anywhere]">{role.title}</p>
-                  <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{role.description}</p>
+                  <p className="break-words text-sm font-medium leading-6 wrap-anywhere">{role.title}</p>
+                  <p className="text-muted-foreground mt-1 whitespace-pre-wrap break-words text-sm leading-6 wrap-anywhere">{role.description}</p>
                   {role.required_skills.length > 0 ? (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {role.required_skills.map((skill) => (
@@ -414,7 +414,7 @@ function TasksSection({ project, canWork }: { project: Project; canWork: boolean
         <ul className="mt-4 flex flex-col gap-2">
           {allTasks.map((task) => (
             <li key={task.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-              <p className="min-w-0 flex-1 basis-full break-words text-sm font-medium leading-6 [overflow-wrap:anywhere] sm:basis-48">{task.title}</p>
+              <p className="min-w-0 flex-1 basis-full break-words text-sm font-medium leading-6 wrap-anywhere sm:basis-48">{task.title}</p>
               <div className="flex max-w-full flex-wrap gap-1">
                 {canWork ? taskStates
                   .filter((state) => state !== task.state)
@@ -507,7 +507,7 @@ function MilestonesSection({ projectId, canWork }: { projectId: number; canWork:
             <li key={milestone.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3 text-sm">
               <div className="flex min-w-0 flex-1 basis-full items-start gap-2 sm:basis-48">
                 <FlagIcon className="text-primary mt-1 size-4 shrink-0" />
-                <span className="min-w-0 break-words font-medium leading-6 [overflow-wrap:anywhere]">{milestone.title}</span>
+                <span className="min-w-0 break-words font-medium leading-6 wrap-anywhere">{milestone.title}</span>
               </div>
               {canWork ? (["PLANNED", "IN_PROGRESS", "DONE"] as const).filter((state) => state !== milestone.state).map((state) => (
                 <Button key={state} size="sm" variant="ghost" disabled={move.isPending} onClick={() => move.mutate({ id: milestone.id, state })}>
