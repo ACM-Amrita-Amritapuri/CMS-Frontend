@@ -8,7 +8,7 @@ import type { ProfileView } from "@/lib/api/members";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/formatters/date";
 
-import { roleLabels } from "@/lib/auth/permissions";
+import { roleLabel } from "@/lib/auth/permissions";
 
 const socialLinks = [
   { key: "github_url", label: "GitHub", icon: CodeIcon },
@@ -37,7 +37,7 @@ export function ProfileCard({
     retry: false,
   });
   const roles = assignments.map((assignment) => {
-    const label = roleLabels[assignment.role_code] ?? assignment.role_code;
+    const label = roleLabel(assignment.role_code);
     if (assignment.sig_id === null) return label;
     const name = sigNames[String(assignment.sig_id)] ??
       (permitted ? sigs.data?.find((sig) => sig.id === assignment.sig_id)?.name : undefined);

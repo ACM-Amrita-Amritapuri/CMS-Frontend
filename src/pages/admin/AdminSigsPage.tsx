@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronDownIcon, LayersIcon, PencilIcon, PlusIcon } from "lucide-react";
@@ -89,9 +89,13 @@ export default function AdminSigsPage() {
   const [creating, setCreating] = useState(false);
   const query = useQuery({ queryKey: queryKeys.sigs.list(), queryFn: ({ signal }) => listSigs(undefined, signal) });
   const membersQuery = useQuery({
-    queryKey: queryKeys.admin.members,
-    queryFn: ({ signal }) => listAdminMembers({ limit: 100, is_active: true }, signal),
+    queryKey: queryKeys.admin.memberList("true", "all", "", 100, 0),
+    queryFn: ({ signal }) => listAdminMembers({ limit: 100, offset: 0, is_active: true }, signal).then((page) => page.members),
   });
+  const leadershipBySig = useMemo(
+    () => new Map((query.data ?? []).map((sig) => [sig.id, getSigLeadership(sig.id, membersQuery.data ?? [])])),
+    [query.data, membersQuery.data],
+  );
 
   return (
     <AdminShell>
@@ -123,7 +127,7 @@ export default function AdminSigsPage() {
         {(sigs) => (
           <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {sigs.map((sig) => {
-              const leadership = getSigLeadership(sig.id, membersQuery.data ?? []);
+              const leadership = leadershipBySig.get(sig.id)!;
               return (
                 <li
                   key={sig.id}
@@ -197,8 +201,8 @@ function SigDialog({
   const [coLeadId, setCoLeadId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const membersQuery = useQuery({
-    queryKey: queryKeys.admin.members,
-    queryFn: ({ signal }) => listAdminMembers({ limit: 100, is_active: true }, signal),
+    queryKey: queryKeys.admin.memberList("true", "all", "", 100, 0),
+    queryFn: ({ signal }) => listAdminMembers({ limit: 100, offset: 0, is_active: true }, signal).then((page) => page.members),
     enabled: open,
   });
   const currentRoles = useMemo(() => {
@@ -360,6 +364,8 @@ export function MemberPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const controlId = useId();
+  const listId = `${controlId}-options`;
   const selected = members.find((member) => String(member.id) === value);
   const options = members.filter((member) => {
     if (excludeId && String(member.id) === excludeId && String(member.id) !== value) return false;
@@ -369,14 +375,17 @@ export function MemberPicker({
   const emptyLabel = `No ${label.toLowerCase()} assigned`;
 
   return (
-    <Field label={label} htmlFor={`sig-${label.toLowerCase().replace("-", "")}`} error={error}>
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <label htmlFor={controlId} className="text-sm font-medium">{label}</label>
       <div className="relative">
         <button
+          id={controlId}
           type="button"
           className="border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex h-10 w-full items-center justify-between rounded-lg border px-3 text-left text-sm outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-          aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={label}
+          aria-controls={listId}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${controlId}-error` : undefined}
           disabled={disabled}
           onClick={() => {
             setOpen((current) => !current);
@@ -404,11 +413,10 @@ export function MemberPicker({
                 placeholder="Search username or roll number"
               />
             </div>
-            <div role="listbox" aria-label={`${label} members`} className="max-h-52 overflow-y-auto p-1">
+            <div id={listId} role="group" aria-label={`${label} members`} className="max-h-52 overflow-y-auto p-1">
               <button
                 type="button"
-                role="option"
-                aria-selected={!value}
+                aria-pressed={!value}
                 className="hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm"
                 onClick={() => {
                   onChange("");
@@ -421,8 +429,7 @@ export function MemberPicker({
                 <button
                   key={member.id}
                   type="button"
-                  role="option"
-                  aria-selected={String(member.id) === value}
+                  aria-pressed={String(member.id) === value}
                   className="hover:bg-accent w-full rounded-md px-3 py-2 text-left text-sm"
                   onClick={() => {
                     onChange(String(member.id));
@@ -438,6 +445,7 @@ export function MemberPicker({
           </div>
         ) : null}
       </div>
-    </Field>
+      {error ? <p id={`${controlId}-error`} role="alert" className="text-destructive text-xs">{error}</p> : null}
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -73,7 +73,9 @@ function DocumentReader({
   const [showHistory, setShowHistory] = useState(false);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
+    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.detail(documentId) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.lists });
+    queryClient.invalidateQueries({ queryKey: queryKeys.documentation.searches });
   };
 
   const act = useMutation({
@@ -238,12 +240,13 @@ function RevisionHistory({ documentId }: { documentId: number }) {
     queryKey: queryKeys.documentation.revisions(documentId),
     queryFn: ({ signal }) => listRevisions(documentId, signal),
   });
+  const newestFirst = useMemo(() => [...(query.data ?? [])].reverse(), [query.data]);
 
   return (
     <AsyncBoundary query={query} isEmpty={(revisions) => revisions.length === 0} empty={{ title: "No revisions" }}>
-      {(revisions) => (
+      {() => (
         <ol className="flex flex-col gap-3">
-          {[...revisions].reverse().map((revision) => (
+          {newestFirst.map((revision) => (
             <li key={revision.id} className="rounded-lg border p-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <p className="min-w-0 wrap-break-word text-sm font-medium leading-6">
@@ -282,7 +285,10 @@ function DocumentEditor({ document: doc, onDone }: { document: ClubDocument; onD
         tags: tags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.detail(doc.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.lists });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.searches });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.revisions(doc.id) });
       toast.success("Document updated (new revision saved).");
       onDone();
     },

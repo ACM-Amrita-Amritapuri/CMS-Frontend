@@ -1,17 +1,15 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AwardIcon,
-  ExternalLinkIcon,
   FolderKanbanIcon,
   GraduationCapIcon,
-  TrophyIcon,
   UsersIcon,
 } from "lucide-react";
 
 import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { getPortfolio } from "@/lib/api/members";
 import { ProfileCard } from "@/components/member/profile-card";
+import { MemberGitHubProjectCard } from "@/components/projects/member-github-project-card";
 import { formatDate } from "@/lib/formatters/date";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Badge } from "@/components/ui/badge";
@@ -47,11 +45,11 @@ export default function PortfolioPage() {
   }
   return (
     <QueryState query={query} notFound="Portfolio not found">
-      {({ profile, learning_achievements, project_contributions, showcases }) => (
+      {({ profile, learning_achievements, github_projects }) => (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={`${profile.real_name || profile.username}'s portfolio`}
-        description="Learning achievements, project contributions, and showcases."
+        description="Learning achievements and GitHub projects."
         backTo={{ label: "Back to members", to: "/members" }}
       />
 
@@ -93,97 +91,29 @@ export default function PortfolioPage() {
             </Card>
           </section>
 
-          <section aria-label="Project contributions">
+          <section aria-label="GitHub projects">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-start gap-2 text-base leading-snug [&>svg]:mt-0.5 [&>svg]:shrink-0">
-                  <FolderKanbanIcon className="size-4" /> Project contributions
+                  <FolderKanbanIcon className="size-4" /> GitHub projects
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {project_contributions.length === 0 ? (
+                {github_projects.length === 0 ? (
                   <EmptyState
                     icon={FolderKanbanIcon}
-                    title="No projects yet"
+                    title="No GitHub projects available yet"
+                    description="This member's projects will appear once their GitHub data is available."
                     className="py-8"
                   />
                 ) : (
-                  <ul className="flex flex-col divide-y">
-                    {project_contributions.map((item) => (
-                      <li key={item.project_id} className="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
-                        <div className="min-w-0">
-                          <Link
-                            to={`/projects/${item.project_id}`}
-                            className="text-sm font-medium leading-relaxed wrap-anywhere hover:underline"
-                          >
-                            {item.title}
-                          </Link>
-                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed wrap-anywhere">{item.summary}</p>
-                        </div>
-                        {item.is_lead ? (
-                          <Badge className="ml-auto shrink-0">Lead</Badge>
-                        ) : null}
+                  <ul className="grid gap-4 md:grid-cols-2">
+                    {github_projects.map((project) => (
+                      <li key={project.repository_id} className="min-w-0">
+                        <MemberGitHubProjectCard project={project} />
                       </li>
                     ))}
                   </ul>
-                )}
-              </CardContent>
-            </Card>
-          </section>
-
-          <section aria-label="Showcases">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-start gap-2 text-base leading-snug [&>svg]:mt-0.5 [&>svg]:shrink-0">
-                  <TrophyIcon className="size-4" /> Showcases
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                {showcases.length === 0 ? (
-                  <EmptyState
-                    icon={AwardIcon}
-                    title="No showcases yet"
-                    className="py-8"
-                  />
-                ) : (
-                  showcases.map((showcase) => (
-                    <div key={showcase.id} className="rounded-lg border p-4">
-                      <p className="text-sm leading-relaxed">{showcase.summary}</p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        <span className="font-medium">Tech:</span> {showcase.technology}
-                      </p>
-                      {showcase.outcomes ? (
-                        <p className="text-muted-foreground mt-1 text-xs">
-                          <span className="font-medium">Outcomes:</span> {showcase.outcomes}
-                        </p>
-                      ) : null}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {([
-                          { key: "repository_url", label: "Repository" },
-                          { key: "demo_url", label: "Demo" },
-                          { key: "deployment_url", label: "Deployment" },
-                          { key: "media_url", label: "Media" },
-                        ] as const).map(({ key, label }) => {
-                          const url = showcase[key];
-                          if (!url) return null;
-                          return (
-                            <a
-                              key={key}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="border-input hover:bg-accent inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors"
-                            >
-                              {label} <ExternalLinkIcon className="size-3 opacity-60" />
-                            </a>
-                          );
-                        })}
-                      </div>
-                      <p className="text-muted-foreground mt-3 text-xs">
-                        Published {formatDate(showcase.published_at)}
-                      </p>
-                    </div>
-                  ))
                 )}
               </CardContent>
             </Card>

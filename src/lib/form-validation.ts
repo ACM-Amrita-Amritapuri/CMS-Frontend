@@ -14,8 +14,8 @@ export function parseForm<Schema extends z.ZodType>(
   if (result.success) return result.data;
 
   for (const issue of result.error.issues) {
-    const field = issue.path.map(String).join(".");
-    if (field) setError(field, issue.message);
+    const field = issue.path.map(String).join(".") || "root";
+    setError(field, issue.message);
   }
   return null;
 }

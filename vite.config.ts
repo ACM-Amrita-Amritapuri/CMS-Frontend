@@ -14,30 +14,6 @@ const BACKEND_PREFIXES = [
   "health",
 ] as const;
 
-function manualChunks(id: string) {
-  const normalizedId = id.replaceAll("\\", "/");
-  if (!normalizedId.includes("/node_modules/")) return undefined;
-  if (
-    normalizedId.includes("/node_modules/react/") ||
-    normalizedId.includes("/node_modules/react-dom/") ||
-    normalizedId.includes("/node_modules/scheduler/")
-  ) {
-    return "react-vendor";
-  }
-  if (normalizedId.includes("/react-router")) return "router-vendor";
-  if (normalizedId.includes("/tailwind-merge/")) return "tailwind-vendor";
-  if (normalizedId.includes("/sonner/")) return "notifications-vendor";
-  if (normalizedId.includes("/node_modules/@tanstack/")) return "query-vendor";
-  if (
-    normalizedId.includes("/node_modules/@radix-ui/") ||
-    normalizedId.includes("/node_modules/@floating-ui/") ||
-    normalizedId.includes("/cmdk/")
-  ) {
-    return "ui-vendor";
-  }
-  return "vendor";
-}
-
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -65,13 +41,6 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy,
-    },
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks,
-        },
-      },
     },
   };
 });

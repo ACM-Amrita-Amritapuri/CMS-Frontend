@@ -9,6 +9,7 @@ import {
   createResource,
   type LearningLesson,
   type LearningModule,
+  type LearningResource,
 } from "@/lib/api/learning";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
@@ -21,6 +22,7 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -72,6 +74,7 @@ export function AuthorDialog({
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="capitalize">Add {kind}</DialogTitle>
+          <DialogDescription>Enter the details for this learning {kind}.</DialogDescription>
         </DialogHeader>
         {kind === "module" ? <ModuleForm pathId={pathId} position={modules.length + 1} author={author} /> : null}
         {kind === "lesson" ? <LessonForm modules={modules} author={author} /> : null}
@@ -153,7 +156,7 @@ function ResourceForm({ modules, author }: { modules: LearningModule[]; author: 
   const [moduleId, setModuleId] = useState(String(modules[0]?.id ?? ""));
   const [lessonId, setLessonId] = useState("");
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<"MARKDOWN" | "EXTERNAL_LINK">("MARKDOWN");
+  const [type, setType] = useState<LearningResource["resource_type"]>("MARKDOWN");
   const [content, setContent] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
   const parentModule = modules.find((item) => String(item.id) === moduleId);
@@ -187,9 +190,12 @@ function ResourceForm({ modules, author }: { modules: LearningModule[]; author: 
         <NativeSelect
           id="r-type"
           value={type}
-          onChange={(e) => setType(e.target.value as "MARKDOWN" | "EXTERNAL_LINK")}
+          onChange={(e) => setType(e.target.value as LearningResource["resource_type"])}
         >
           <option value="MARKDOWN">Markdown</option>
+          <option value="YOUTUBE">YouTube video</option>
+          <option value="WEBSITE">Website</option>
+          <option value="DOCUMENT">Document link</option>
           <option value="EXTERNAL_LINK">External link</option>
         </NativeSelect>
       </Field>
@@ -198,7 +204,11 @@ function ResourceForm({ modules, author }: { modules: LearningModule[]; author: 
           <Textarea id="r-content" rows={6} value={content} onChange={(e) => setContent(e.target.value)} required />
         </Field>
       ) : (
-        <Field label="External URL" htmlFor="r-url" hint="Must start with http:// or https://">
+        <Field
+          label={type === "YOUTUBE" ? "YouTube URL" : type === "DOCUMENT" ? "Document URL" : "External URL"}
+          htmlFor="r-url"
+          hint="Must start with http:// or https://"
+        >
           <Input id="r-url" type="url" value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} required />
         </Field>
       )}

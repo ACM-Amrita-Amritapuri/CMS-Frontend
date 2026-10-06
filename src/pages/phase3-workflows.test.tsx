@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import EventDetailPage, { resolveAttendanceIdentity } from "@/pages/operations/EventDetailPage";
-import ProjectDetailPage from "@/pages/projects/ProjectDetailPage";
+import ProjectsListPage from "@/pages/projects/ProjectsListPage";
 import { AssignmentPanel } from "@/components/learning/assignment-panel";
 import { apiRequest } from "@/lib/api/client";
 import { queryKeys } from "@/lib/query-keys";
@@ -127,7 +127,7 @@ describe("assignment workflow", () => {
     expect(screen.getByText("Well done")).toBeInTheDocument();
     expect(screen.getByText("0/100")).toBeInTheDocument();
     fireEvent.change(editor, { target: { value: "Unsaved edit" } });
-    await client.refetchQueries({ queryKey: queryKeys.learning.mySubmission(5, 1) });
+    await client.refetchQueries({ queryKey: queryKeys.learning.mySubmission(5) });
     expect(editor).toHaveValue("Unsaved edit");
   });
   it("restores link drafts and updates the submission cache after save", async () => {
@@ -137,7 +137,7 @@ describe("assignment workflow", () => {
     expect(editor).toHaveValue("https://github.com/acm/saved");
     fireEvent.change(editor, { target: { value: "https://github.com/acm/new" } });
     fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
-    await waitFor(() => expect(client.getQueryData<LearningSubmission>(queryKeys.learning.mySubmission(5, 1))?.external_url).toBe("https://github.com/acm/new"));
+    await waitFor(() => expect(client.getQueryData<LearningSubmission>(queryKeys.learning.mySubmission(5))?.external_url).toBe("https://github.com/acm/new"));
     expect(editor).toHaveValue("https://github.com/acm/new");
   });
   it("loads the reviewer queue independently of my submission and saves a review", async () => {
@@ -166,35 +166,32 @@ describe("assignment workflow", () => {
   });
 });
 
-it("loads project work from the server and updates caches after create and state changes", async () => {
-  const project = { id: 3, title: "Club site", summary: "Build it", description: "Overview", lead_user_id: 1, progress: 0, team_capacity: 3, state: "PUBLISHED", roles: [], team_memberships: [], applications: [] };
-  const task = { id: 11, project_id: 3, title: "Existing task", state: "TODO" };
-  const milestone = { id: 21, project_id: 3, title: "First release", state: "PLANNED" };
-  request.mockImplementation(async (path, options) => {
-    if (path === "/projects/3") return { project };
-    if (path === "/projects/3/tasks") return options?.method === "POST" ? { task: { ...task, id: 12, title: "New task" } } : { tasks: [task] };
-    if (path === "/projects/3/milestones") return options?.method === "POST" ? { milestone: { ...milestone, id: 22, title: "Second release" } } : { milestones: [milestone] };
-    if (path === "/projects/tasks/11") return { task: { ...task, state: "DONE" } };
-    if (path === "/projects/milestones/21") return { milestone: { ...milestone, state: "DONE" } };
+it("lists member projects from the paged directory", async () => {
+  request.mockImplementation(async (path) => {
+    if (path === "/projects/directory?limit=20&offset=0") {
+      return {
+        members: [{
+          user_id: 3,
+          display_name: "Alex Member",
+          github_url: "https://github.com/alex",
+          projects: [{
+            repository_id: 11,
+            name: "Portfolio",
+            description: "Member project",
+            language: "TypeScript",
+            repository_url: "https://github.com/alex/portfolio",
+            demo_url: "https://alex.example.com",
+          }],
+        }],
+        total: 1,
+        limit: 20,
+        offset: 0,
+      };
+    }
     throw new Error(`Unexpected request: ${path}`);
   });
-  mount(<ProjectDetailPage />, "/projects/3", "/projects/:projectId");
-  const tab = await screen.findByRole("tab", { name: "Work" });
-  fireEvent.mouseDown(tab, { button: 0, ctrlKey: false });
-  const existing = await screen.findByText("Existing task");
-  const release = await screen.findByText("First release");
-  fireEvent.click(within(existing.closest("li")!).getByRole("button", { name: "done" }));
-  await waitFor(() => expect(client.getQueryData<{ state: string }[]>(queryKeys.projects.tasks(3))?.[0].state).toBe("DONE"));
-  fireEvent.click(within(release.closest("li")!).getByRole("button", { name: "done" }));
-  await waitFor(() => expect(client.getQueryData<{ state: string }[]>(queryKeys.projects.milestones(3))?.[0].state).toBe("DONE"));
-  fireEvent.click(screen.getByRole("button", { name: "New task" }));
-  fireEvent.change(screen.getByPlaceholderText("Task title"), { target: { value: "New task" } });
-  fireEvent.submit(screen.getByPlaceholderText("Task title").closest("form")!);
-  await waitFor(() => expect(client.getQueryData<unknown[]>(queryKeys.projects.tasks(3))).toHaveLength(2));
-  const section = release.closest("section")!;
-  fireEvent.click(within(section).getByRole("button", { name: "Add" }));
-  fireEvent.change(screen.getByPlaceholderText("Milestone title"), { target: { value: "Second release" } });
-  fireEvent.submit(screen.getByPlaceholderText("Milestone title").closest("form")!);
-  await waitFor(() => expect(client.getQueryData<unknown[]>(queryKeys.projects.milestones(3))).toHaveLength(2));
-  expect(screen.getByText("Second release")).toBeInTheDocument();
+  mount(<ProjectsListPage />, "/projects", "/projects");
+  expect(await screen.findByText("Portfolio")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Alex Member" })).toHaveAttribute("href", "/portfolio/3");
+  expect(screen.getByRole("link", { name: "Alex Member's GitHub profile (opens in a new tab)" })).toHaveAttribute("href", "https://github.com/alex");
 });
