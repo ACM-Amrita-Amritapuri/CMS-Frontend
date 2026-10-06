@@ -115,26 +115,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="min-h-svh bg-background">
+    <div className="app-background min-h-svh bg-background">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={toggleSidebar}
-        className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex"
+        className="app-sidebar app-sidebar-desktop"
       />
 
       {mobileOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="app-mobile-nav fixed inset-0 z-50">
           <button type="button" aria-label="Close navigation" className="absolute inset-0 cursor-default bg-black/70 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <Sidebar className="animate-slide-up fixed inset-y-0 left-0 z-50 w-[260px]" onNavigate={() => setMobileOpen(false)} />
+          <Sidebar className="app-sidebar app-sidebar-mobile animate-slide-up fixed inset-y-0 left-0 z-50 w-63" onNavigate={() => setMobileOpen(false)} />
         </div>
       ) : null}
 
-      <div className={`flex min-h-svh min-w-0 flex-col transition-[margin] duration-200 ${sidebarCollapsed ? "lg:ml-[76px]" : "lg:ml-[260px]"}`}>
-        <header className="bg-background/90 sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4 backdrop-blur-xl sm:px-6">
+      <div className={`app-content flex min-h-svh min-w-0 flex-col ${sidebarCollapsed ? "app-content-collapsed" : ""}`}>
+        <a href="#content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-2xl focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground">Skip to content</a>
+        <header className="app-header sticky top-0 z-40 flex h-16 items-center gap-2 px-4 sm:px-6">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="mobile-menu-trigger"
             aria-label="Open navigation"
             onClick={() => setMobileOpen(true)}
           >
@@ -158,8 +159,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="min-h-[calc(100svh-3.5rem)] flex-1">
-          <ContentFrame width="wide">{children}</ContentFrame>
+        <main id="content" className="flex-1">
+          <ContentFrame width="standard">{children}</ContentFrame>
         </main>
       </div>
 
@@ -190,7 +191,7 @@ function Sidebar({
 
   return (
     <aside
-      className={`bg-sidebar flex shrink-0 flex-col border-r transition-[width] duration-200 ${collapsed ? "w-[76px]" : "w-[260px]"} ${className ?? ""}`}
+      className={`glass flex shrink-0 flex-col transition-[width] duration-200 ${collapsed ? "w-19" : "w-63"} ${className ?? ""}`}
     >
       <div className={`flex border-b ${collapsed ? "h-20 flex-col justify-center gap-0.5 px-2" : "h-20 items-center gap-2 px-3"}`}>
         <Link to="/dashboard" className={`flex min-w-0 items-center font-semibold tracking-tight ${collapsed ? "justify-center" : "flex-1"}`}>
@@ -241,10 +242,10 @@ function Sidebar({
                           aria-current={active ? "page" : undefined}
                           aria-label={collapsed ? label : undefined}
                           title={collapsed ? label : undefined}
-                          className={`flex items-center rounded-lg border py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-2" : "gap-3 px-3"} ${
+                          className={`flex min-h-13 items-center rounded-[18px] border py-2 text-sm font-medium transition-colors ${collapsed ? "justify-center px-2" : "gap-3 px-3"} ${
                             active
-                              ? "border-sidebar-border bg-sidebar-accent text-sidebar-foreground"
-                              : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-transparent text-muted-foreground hover:bg-accent/15 hover:text-foreground"
                           }`}
                         >
                           <Icon className="size-4 shrink-0" />
@@ -268,7 +269,7 @@ function Sidebar({
             aria-current={profileActive ? "page" : undefined}
             aria-label="Profile"
             title={collapsed ? "Profile" : undefined}
-            className={`flex items-center rounded-lg p-2 transition-colors ${profileActive ? "bg-sidebar-accent text-sidebar-foreground" : "hover:bg-sidebar-accent/60"} ${collapsed ? "justify-center" : "gap-2.5"}`}
+            className={`hover:bg-accent/15 flex items-center rounded-[18px] p-3 transition-colors ${collapsed ? "justify-center" : "gap-2.5"}`}
           >
             <UserAvatar name={user.username} className="size-8" />
             {!collapsed ? <span className="min-w-0">

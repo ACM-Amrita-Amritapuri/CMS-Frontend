@@ -50,17 +50,17 @@ export default function DashboardPage() {
           <p className="text-primary-foreground/65 text-[10px] font-semibold uppercase tracking-[0.18em] dark:text-white/65">
             ACM member workspace
           </p>
-          <h1 className="mt-3 text-3xl leading-tight font-semibold tracking-tight text-balance [overflow-wrap:anywhere] sm:text-4xl">
+          <h1 className="mt-3 text-3xl leading-tight font-semibold tracking-tight text-balance wrap-anywhere sm:text-4xl">
             Welcome back, {user?.username ?? "member"}
           </h1>
           <p className="text-primary-foreground/70 mt-3 max-w-xl text-sm leading-6 sm:text-base dark:text-white/70">
             Pick up where you left off, find a project to join, or catch up on what the club is running this week.
           </p>
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <Button asChild variant="secondary" className="rounded-full">
+            <Button asChild variant="secondary" className="rounded-2xl">
               <Link to="/learning">Continue learning</Link>
             </Button>
-            <Button asChild variant="ghost" className="rounded-full text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:text-white dark:hover:bg-white/10 dark:hover:text-white">
+            <Button asChild variant="ghost" className="rounded-2xl text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:text-white dark:hover:bg-white/10 dark:hover:text-white">
               <Link to="/projects">Explore projects</Link>
             </Button>
           </div>
@@ -76,7 +76,7 @@ export default function DashboardPage() {
             <Link
               key={to}
               to={to}
-              className="group flex min-h-28 min-w-0 items-start gap-3 border-b px-1 py-5 transition-colors hover:bg-muted/50 last:border-b-0 sm:border-r sm:px-4 sm:[&:nth-child(2n)]:border-r-0 sm:[&:nth-last-child(-n+2)]:border-b-0 lg:border-b-0 lg:[&:nth-child(2)]:border-r lg:last:border-r-0"
+              className="group flex min-h-28 min-w-0 items-start gap-3 border-b px-1 py-5 transition-colors hover:bg-muted/50 last:border-b-0 sm:border-r sm:px-4 sm:nth-[2n]:border-r-0 sm:nth-last-[-n+2]:border-b-0 lg:border-b-0 lg:nth-2:border-r lg:last:border-r-0"
             >
               <div className="bg-muted text-foreground group-hover:bg-primary group-hover:text-primary-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors">
                 <Icon className="size-4" />

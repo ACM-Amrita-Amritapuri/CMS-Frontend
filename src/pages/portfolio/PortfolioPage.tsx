@@ -77,7 +77,7 @@ export default function PortfolioPage() {
                         <Badge variant="success" className="shrink-0">
                           {contentTypeLabels[item.content_type]}
                         </Badge>
-                        <span className="text-muted-foreground min-w-0 basis-full text-sm leading-relaxed [overflow-wrap:anywhere] sm:flex-1 sm:basis-0">
+                        <span className="text-muted-foreground min-w-0 basis-full text-sm leading-relaxed wrap-anywhere sm:flex-1 sm:basis-0">
                           {item.path_title || "Learning path"} · {item.module_title || "Module"}
                         </span>
                         <time className="text-muted-foreground shrink-0 text-xs leading-relaxed sm:ml-auto">

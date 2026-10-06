@@ -34,7 +34,7 @@ function Breadcrumbs({
   items: Array<{ label: string; to?: string }>;
 }) {
   return (
-    <nav aria-label="Breadcrumb" className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-1 text-xs leading-5 [overflow-wrap:anywhere]">
+    <nav aria-label="Breadcrumb" className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-1 text-xs leading-5 wrap-anywhere">
       {items.map((item, index) => (
         <React.Fragment key={`${item.label}-${index}`}>
           {index > 0 ? <ChevronRightIcon className="size-3.5" aria-hidden /> : null}
@@ -80,11 +80,11 @@ function PageHeader({
           </Link>
         </Button>
       ) : null}
-      {eyebrow ? <div className="text-muted-foreground text-[10px] font-semibold uppercase tracking-[0.16em]">{eyebrow}</div> : null}
+      {eyebrow ? <div className="text-muted-foreground text-xs font-medium">{eyebrow}</div> : null}
       <div className="flex min-w-0 flex-col items-start justify-between gap-4 sm:flex-row sm:flex-wrap sm:gap-x-6">
         <div className="min-w-0 sm:flex-1 sm:basis-64">
-          <h1 className="text-3xl leading-tight font-semibold tracking-tight text-balance [overflow-wrap:anywhere] sm:text-[2.15rem]">{title}</h1>
-          {description ? <div className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6 [overflow-wrap:anywhere]">{description}</div> : null}
+          <h1 className="text-[2.75rem] leading-tight font-semibold tracking-tight text-balance wrap-anywhere sm:text-[3.25rem]">{title}</h1>
+          {description ? <div className="text-muted-foreground mt-2 max-w-2xl truncate text-base leading-6 wrap-anywhere">{description}</div> : null}
           {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
         </div>
         {actions ? <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:max-w-full">{actions}</div> : null}

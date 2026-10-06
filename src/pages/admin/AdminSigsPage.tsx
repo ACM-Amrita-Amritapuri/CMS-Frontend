@@ -140,7 +140,7 @@ export default function AdminSigsPage() {
                     <StatusBadge status={sig.is_active ? "ACTIVE" : "INACTIVE"} />
                   </div>
                   <div className="mt-5 min-w-0">
-                    <h2 className="text-lg leading-6 font-semibold [overflow-wrap:anywhere]">{sig.name}</h2>
+                    <h2 className="text-lg leading-6 font-semibold wrap-anywhere">{sig.name}</h2>
                     <p className="text-muted-foreground mt-1 text-sm">Special interest group</p>
                   </div>
                   <dl className="mt-5 grid flex-1 gap-2 border-t pt-4 text-sm">
@@ -264,7 +264,7 @@ function SigDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-md gap-0 overflow-y-auto p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-5 pr-14">
-          <DialogTitle className="leading-snug [overflow-wrap:anywhere]">{sig ? `Edit ${sig.name}` : "Create a SIG"}</DialogTitle>
+          <DialogTitle className="leading-snug wrap-anywhere">{sig ? `Edit ${sig.name}` : "Create a SIG"}</DialogTitle>
           <DialogDescription>
             {sig
               ? "Update the group details or its availability."

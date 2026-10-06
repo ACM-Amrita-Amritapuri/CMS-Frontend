@@ -168,7 +168,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   } catch (error) {
     if (!(error instanceof Error && error.name === "AbortError")) {
       if (import.meta.env.DEV) {
-        console.error(`[cms api] ${method} ${path} failed`, {
+        console.error("[cms api] request failed", {
+          method,
+          path,
           status: error instanceof ApiError ? error.status : undefined,
           code: error instanceof ApiError ? error.code : error instanceof Error ? error.name : "UNKNOWN",
           duration_ms: Math.round(performance.now() - started),

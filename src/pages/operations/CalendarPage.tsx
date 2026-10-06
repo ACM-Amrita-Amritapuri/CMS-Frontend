@@ -98,11 +98,11 @@ export default function CalendarPage() {
                       <span className="text-base leading-none">{parseUtc(event.starts_at)?.getDate() ?? "—"}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</p>
-                      <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                      <p className="text-sm leading-5 font-semibold wrap-anywhere">{event.title}</p>
+                      <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                         {formatDateTime(event.starts_at)}
                         {event.location ? (
-                          <span className="ml-1 inline [overflow-wrap:anywhere]">
+                          <span className="ml-1 inline wrap-anywhere">
                             {" "}
                             · <MapPinIcon className="inline size-3 align-middle" /> {event.location}
                           </span>

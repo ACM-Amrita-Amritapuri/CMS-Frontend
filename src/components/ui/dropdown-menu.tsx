@@ -15,7 +15,7 @@ function DropdownMenuContent({
       <DropdownMenuPrimitive.Content
         sideOffset={sideOffset}
         className={cn(
-          "bg-popover text-popover-foreground z-50 min-w-[8rem] overflow-hidden rounded-lg border p-1 shadow-md data-[state=open]:animate-fade-in",
+          "glass text-popover-foreground z-50 min-w-32 overflow-hidden rounded-2xl border p-1 shadow-md data-[state=open]:animate-fade-in",
           className,
         )}
         {...props}
@@ -38,7 +38,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8",
+        "focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive [&_svg:not([class*='size-'])]:size-4 relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-inset:pl-8",
         className,
       )}
       {...props}

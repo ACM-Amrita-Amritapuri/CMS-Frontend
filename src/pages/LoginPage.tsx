@@ -99,7 +99,7 @@ export default function LoginPage() {
                 {formError}
               </p>
             ) : null}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-full">
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-2xl">
               {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
               <span>Sign in</span>
               {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}

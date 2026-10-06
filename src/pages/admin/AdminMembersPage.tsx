@@ -202,7 +202,7 @@ export default function AdminMembersPage() {
                     <TableHead>Member</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-52 text-right"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="w-52 text-right"><span>Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -263,8 +263,8 @@ function MemberRow({ member, sigs }: { member: AdminMember; sigs: Sig[] }) {
   return (
     <TableRow>
       <TableCell>
-        <p className="max-w-64 text-sm font-medium [overflow-wrap:anywhere]">{member.username}</p>
-        <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
+        <p className="max-w-64 text-sm font-medium wrap-anywhere">{member.username}</p>
+        <p className="text-muted-foreground mt-1 font-mono text-xs wrap-anywhere">{member.roll_number}</p>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
@@ -364,7 +364,7 @@ function MemberCard({ member, sigs }: { member: AdminMember; sigs: Sig[] }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{member.username}</p>
-          <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
+          <p className="text-muted-foreground mt-1 font-mono text-xs wrap-anywhere">{member.roll_number}</p>
         </div>
         <StatusBadge status={member.is_active ? "ACTIVE" : "INACTIVE"} />
       </div>
@@ -438,7 +438,7 @@ export function TemporaryPasswordDialog({
     <Dialog open={password !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="pr-6 leading-snug [overflow-wrap:anywhere]">One-time password for {username}</DialogTitle>
+          <DialogTitle className="pr-6 leading-snug wrap-anywhere">One-time password for {username}</DialogTitle>
           <DialogDescription>
             Copy it now — it is shown only this once and expires in 24 hours.
           </DialogDescription>
@@ -544,7 +544,7 @@ function RoleDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg gap-0 overflow-y-auto p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-5 pr-14">
-          <DialogTitle className="leading-snug [overflow-wrap:anywhere]">Manage roles for {member.username}</DialogTitle>
+          <DialogTitle className="leading-snug wrap-anywhere">Manage roles for {member.username}</DialogTitle>
           <DialogDescription>
             Add or remove access for this account. Changes take effect on the next sign-in.
           </DialogDescription>

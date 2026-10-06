@@ -115,10 +115,10 @@ export default function OperationsPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</h2>
+                          <h2 className="min-w-0 text-sm leading-5 font-semibold wrap-anywhere">{event.title}</h2>
                           <EventStateBadge state={event.state} />
                         </div>
-                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                           {formatDateTime(event.starts_at)}
                           {event.location ? ` · ${event.location}` : ""}
                         </p>
@@ -150,8 +150,8 @@ export default function OperationsPage() {
 <Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{meeting.event.title}</h2>
-                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                        <h2 className="min-w-0 text-sm leading-5 font-semibold wrap-anywhere">{meeting.event.title}</h2>
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                           {formatDateTime(meeting.event.starts_at)}
                           {meeting.event.location ? ` · ${meeting.event.location}` : ""}
                         </p>
@@ -159,7 +159,7 @@ export default function OperationsPage() {
                       <EventStateBadge state={meeting.event.state} />
                     </div>
                     {meeting.agenda ? (
-                      <p className="text-muted-foreground mt-3 text-sm leading-6 [overflow-wrap:anywhere]">{meeting.agenda}</p>
+                      <p className="text-muted-foreground mt-3 text-sm leading-6 wrap-anywhere">{meeting.agenda}</p>
                     ) : null}
                     </Link>
                   </li>
