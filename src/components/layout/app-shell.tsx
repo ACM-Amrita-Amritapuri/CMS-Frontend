@@ -129,7 +129,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       ) : null}
 
-      <div className={`flex min-h-svh min-w-0 flex-col ${sidebarCollapsed ? "lg:ml-[76px]" : "lg:ml-[260px]"}`}>
+      <div className={`flex min-h-svh min-w-0 flex-col transition-[margin] duration-200 ${sidebarCollapsed ? "lg:ml-[76px]" : "lg:ml-[260px]"}`}>
         <header className="bg-background/90 sticky top-0 z-40 flex h-14 items-center gap-2 border-b px-4 backdrop-blur-xl sm:px-6">
           <Button
             variant="ghost"
@@ -158,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1">
+        <main className="min-h-[calc(100svh-3.5rem)] flex-1">
           <ContentFrame width="wide">{children}</ContentFrame>
         </main>
       </div>
@@ -185,6 +185,7 @@ function Sidebar({
 }) {
   const { pathname } = useLocation();
   const { user, hasCapability } = useSession();
+  const profileActive = pathname === "/profile";
   const { resolvedTheme } = useTheme();
 
   return (
@@ -263,9 +264,10 @@ function Sidebar({
           <Link
             to="/profile"
             onClick={onNavigate}
+            aria-current={profileActive ? "page" : undefined}
             aria-label="Profile"
             title={collapsed ? "Profile" : undefined}
-            className={`hover:bg-sidebar-accent/60 flex items-center rounded-lg p-2 transition-colors ${collapsed ? "justify-center" : "gap-2.5"}`}
+            className={`flex items-center rounded-lg p-2 transition-colors ${profileActive ? "bg-sidebar-accent text-sidebar-foreground" : "hover:bg-sidebar-accent/60"} ${collapsed ? "justify-center" : "gap-2.5"}`}
           >
             <UserAvatar name={user.username} className="size-8" />
             {!collapsed ? <span className="min-w-0">

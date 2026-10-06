@@ -142,15 +142,19 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     }
 
     const result = await parseResponse<T>(response);
-    console.info(`[cms api] ${method} ${path} -> ${response.status} (${Math.round(performance.now() - started)}ms)`);
+    if (import.meta.env.DEV) {
+      console.info(`[cms api] ${method} ${path} -> ${response.status} (${Math.round(performance.now() - started)}ms)`);
+    }
     return result;
   } catch (error) {
     if (!(error instanceof Error && error.name === "AbortError")) {
-      console.error(`[cms api] ${method} ${path} failed`, {
-        status: error instanceof ApiError ? error.status : undefined,
-        code: error instanceof ApiError ? error.code : error instanceof Error ? error.name : "UNKNOWN",
-        duration_ms: Math.round(performance.now() - started),
-      });
+      if (import.meta.env.DEV) {
+        console.error(`[cms api] ${method} ${path} failed`, {
+          status: error instanceof ApiError ? error.status : undefined,
+          code: error instanceof ApiError ? error.code : error instanceof Error ? error.name : "UNKNOWN",
+          duration_ms: Math.round(performance.now() - started),
+        });
+      }
     }
     throw error;
   }

@@ -1,10 +1,19 @@
 import { Component, type ReactNode } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 
-export class ApplicationErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+export class ApplicationErrorBoundary extends Component<
+  { children: ReactNode; locationKey?: string },
+  { failed: boolean }
+> {
   state = { failed: false };
+
+  componentDidUpdate(previousProps: { children: ReactNode; locationKey?: string }) {
+    if (this.state.failed && previousProps.locationKey !== this.props.locationKey) {
+      this.setState({ failed: false });
+    }
+  }
 
   static getDerivedStateFromError() {
     return { failed: true };
@@ -29,5 +38,10 @@ export class ApplicationErrorBoundary extends Component<{ children: ReactNode },
 
 export function RootLayout() {
   const location = useLocation();
-  return <ApplicationErrorBoundary key={location.key}><Outlet /></ApplicationErrorBoundary>;
+  return (
+    <ApplicationErrorBoundary locationKey={location.key}>
+      <ScrollRestoration />
+      <Outlet />
+    </ApplicationErrorBoundary>
+  );
 }
