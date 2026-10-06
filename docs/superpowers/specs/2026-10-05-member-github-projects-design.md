@@ -1,5 +1,9 @@
 # Member GitHub Projects Design
 
+> **Current status:** The CMS no longer includes the snapshot ingestion endpoint
+> or its service token. The scraper remains a separate future project; the
+> member-project read APIs and stored project fields remain.
+
 ## Goal
 
 Make the Projects tab a directory of members and their GitHub projects. Project

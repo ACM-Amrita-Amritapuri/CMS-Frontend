@@ -1,5 +1,8 @@
 # Member GitHub Projects Implementation Plan
 
+> **Current status:** The CMS snapshot ingestion endpoint and service token
+> were removed. The external scraper remains a separate future project.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace the Projects experience with a member directory of externally scraped GitHub repositories while preserving the existing team-tracking API.
