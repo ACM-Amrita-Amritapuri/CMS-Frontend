@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -11,12 +12,13 @@ import { getMyProfile } from "@/lib/api/members";
 import { queryKeys } from "@/lib/query-keys";
 import { useSession } from "@/app/providers";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionHeader } from "@/components/ui/page";
+
+const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
 
 const quickLinks = [
   { to: "/learning", label: "Learning", description: "Paths, lessons, and assignments", icon: GraduationCapIcon },
@@ -34,7 +36,11 @@ export default function DashboardPage() {
   const isAdmin = hasCapability("administer");
 
   if (isAdmin) {
-    return <AdminDashboardPage />;
+    return (
+      <Suspense fallback={<div role="status" className="text-muted-foreground">Loading dashboard…</div>}>
+        <AdminDashboardPage />
+      </Suspense>
+    );
   }
 
   return (

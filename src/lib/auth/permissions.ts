@@ -8,7 +8,7 @@ const capabilityRoles: Record<Capability, RoleCode[]> = {
   manage_operations: ["SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"],
 };
 
-export const roleLabels: Record<string, string> = {
+export const roleLabels: Record<RoleCode, string> = {
   MEMBER: "Member",
   SIG_CORE: "SIG Core",
   SIG_LEAD: "SIG Lead",
@@ -16,6 +16,10 @@ export const roleLabels: Record<string, string> = {
   ADMIN: "Admin",
   SUPER_ADMIN: "Super Admin",
 };
+
+export function roleLabel(code: string) {
+  return roleLabels[code as RoleCode] ?? code;
+}
 
 const sigScopedRoles = new Set<RoleCode>(["SIG_CORE", "SIG_LEAD"]);
 

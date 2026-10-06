@@ -24,6 +24,13 @@ export interface AdminMember {
   role_assignments: { role_code: string; sig_id: number | null }[];
 }
 
+export interface AdminMemberPage {
+  members: AdminMember[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export async function getDashboardSummary(signal?: AbortSignal) {
   const { summary } = await apiRequest<{ summary: DashboardSummary }>(
     "/admin/dashboard",
@@ -34,7 +41,7 @@ export async function getDashboardSummary(signal?: AbortSignal) {
 
 export async function listSigs(limit = 100, signal?: AbortSignal) {
   const { sigs } = await apiRequest<{ sigs: Sig[] }>(
-    `/admin/sigs?limit=${limit}`,
+    `/admin/sigs?${new URLSearchParams({ limit: String(limit), offset: "0" })}`,
     { signal },
   );
   return sigs;
@@ -61,17 +68,22 @@ export async function updateSig(
 
 export async function listAdminMembers(params: {
   limit?: number;
+  offset?: number;
   is_active?: boolean;
+  search?: string;
+  sig_id?: number;
 }, signal?: AbortSignal) {
   const search = new URLSearchParams();
-  if (params.limit) search.set("limit", String(params.limit));
+  search.set("limit", String(params.limit ?? 100));
+  search.set("offset", String(params.offset ?? 0));
   if (params.is_active !== undefined)
     search.set("is_active", String(params.is_active));
-  const { members } = await apiRequest<{ members: AdminMember[] }>(
+  if (params.search) search.set("search", params.search);
+  if (params.sig_id !== undefined) search.set("sig_id", String(params.sig_id));
+  return apiRequest<AdminMemberPage & { items?: AdminMember[] }>(
     `/admin/members?${search}`,
     { signal },
   );
-  return members;
 }
 
 export async function setMemberStatus(userId: number, isActive: boolean) {

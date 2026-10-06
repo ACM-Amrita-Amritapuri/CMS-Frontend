@@ -36,12 +36,23 @@ export interface DocumentRevision {
 
 type WorkflowAction = "submit" | "publish" | "archive" | "restore";
 
-export async function listDocuments(limit = 100, signal?: AbortSignal) {
-  const { documents } = await apiRequest<{ documents: ClubDocument[] }>(
-    `/documentation/documents?limit=${limit}`,
+export interface Page {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function listDocuments(
+  params: number | { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+) {
+  const limit = typeof params === "number" ? params : params.limit ?? 100;
+  const offset = typeof params === "number" ? 0 : params.offset ?? 0;
+  const search = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return apiRequest<{ documents: ClubDocument[] } & Page>(
+    `/documentation/documents?${search}`,
     { signal },
   );
-  return documents;
 }
 
 export async function searchDocuments(params: {
@@ -49,17 +60,18 @@ export async function searchDocuments(params: {
   tag?: string;
   category?: string;
   limit?: number;
+  offset?: number;
 }, signal?: AbortSignal) {
   const search = new URLSearchParams();
   if (params.q) search.set("q", params.q);
   if (params.tag) search.set("tag", params.tag);
   if (params.category) search.set("category", params.category);
-  if (params.limit) search.set("limit", String(params.limit));
-  const { documents } = await apiRequest<{ documents: ClubDocument[] }>(
+  search.set("limit", String(params.limit ?? 50));
+  search.set("offset", String(params.offset ?? 0));
+  return apiRequest<{ documents: ClubDocument[] } & Page>(
     `/documentation/search?${search}`,
     { signal },
   );
-  return documents;
 }
 
 export async function getDocument(documentId: number, signal?: AbortSignal) {

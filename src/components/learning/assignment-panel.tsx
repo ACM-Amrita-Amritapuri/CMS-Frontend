@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLinkIcon, SendIcon } from "lucide-react";
@@ -23,7 +23,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { DetailRow } from "@/components/ui/table";
 import { QueryErrorState } from "@/components/ui/async";
 
-function SubmissionReview({ submission, onReviewed }: {
+const SubmissionReview = memo(function SubmissionReview({ submission, onReviewed }: {
   submission: LearningSubmission;
   onReviewed: (submission: LearningSubmission) => void;
 }) {
@@ -65,7 +65,7 @@ function SubmissionReview({ submission, onReviewed }: {
       ) : <p className="whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{submission.feedback}{submission.score !== null ? ` · ${submission.score}/100` : ""}</p>}
     </article>
   );
-}
+});
 
 const stateLabels: Record<string, { label: string; variant: "success" | "info" | "warning" }> = {
   SUBMITTED: { label: "Awaiting review", variant: "info" },
@@ -79,15 +79,25 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
 }
 
 function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
-  const { user, hasCapability } = useSession();
+  const { hasCapability } = useSession();
   const queryClient = useQueryClient();
-  const submissionKey = queryKeys.learning.mySubmission(assignment.id, user?.id);
+  const submissionKey = useMemo(
+    () => queryKeys.learning.mySubmission(assignment.id),
+    [assignment.id],
+  );
   const mine = useQuery({
     queryKey: submissionKey,
     queryFn: ({ signal }) => getMySubmission(assignment.id, signal),
     retry: false,
   });
   const submission = mine.data;
+  const handleReviewed = useCallback((updated: LearningSubmission) => {
+    queryClient.setQueryData<LearningSubmission[]>(queryKeys.learning.submissions(assignment.id),
+      (current = []) => current.map((entry) => entry.id === updated.id ? updated : entry));
+    if (submission?.id === updated.id) queryClient.setQueryData(submissionKey, updated);
+    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all, refetchType: "none" });
+    queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
+  }, [assignment.id, queryClient, submission?.id, submissionKey]);
   const [editedValue, setValue] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
   const queue = useQuery({
@@ -245,13 +255,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
             <ul className="flex flex-col gap-3">
               {queue.data.map((item) => (
                 <li key={item.id}>
-                  <SubmissionReview submission={item} onReviewed={(updated) => {
-                    queryClient.setQueryData<LearningSubmission[]>(queryKeys.learning.submissions(assignment.id),
-                      (current = []) => current.map((entry) => entry.id === updated.id ? updated : entry));
-                    if (submission?.id === updated.id) queryClient.setQueryData(submissionKey, updated);
-                    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all, refetchType: "none" });
-                    queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
-                  }} />
+                  <SubmissionReview submission={item} onReviewed={handleReviewed} />
                 </li>
               ))}
             </ul>

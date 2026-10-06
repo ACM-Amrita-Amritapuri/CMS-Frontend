@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLinkIcon, FolderKanbanIcon } from "lucide-react";
 
@@ -9,12 +9,18 @@ import { AsyncBoundary } from "@/components/ui/async";
 import { MemberGitHubProjectCard } from "@/components/projects/member-github-project-card";
 import { EmptyState } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const PAGE_SIZE = 20;
 
 export default function ProjectsListPage() {
   useDocumentTitle("Projects");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawOffset = Number(searchParams.get("offset") ?? 0);
+  const offset = Number.isSafeInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
   const projectsQuery = useQuery({
-    queryKey: queryKeys.projects.list(),
-    queryFn: ({ signal }) => listProjectDirectory(signal),
+    queryKey: queryKeys.projects.directory(PAGE_SIZE, offset),
+    queryFn: ({ signal }) => listProjectDirectory({ limit: PAGE_SIZE, offset }, signal),
   });
 
   return (
@@ -24,16 +30,16 @@ export default function ProjectsListPage() {
       <section aria-label="Member projects">
         <AsyncBoundary
           query={projectsQuery}
-          isEmpty={(members) => members.length === 0}
+          isEmpty={(page) => page.total === 0}
           empty={{
             icon: FolderKanbanIcon,
             title: "No member projects yet",
             description: "Member projects will appear here once their GitHub data is available.",
           }}
         >
-          {(members) => (
+          {(page) => (
             <div className="flex flex-col gap-8">
-              {members.map((member) => (
+              {page.members.map((member) => (
                 <section key={member.user_id} aria-labelledby={`member-projects-${member.user_id}`} className="min-w-0">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 id={`member-projects-${member.user_id}`} className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
@@ -73,6 +79,18 @@ export default function ProjectsListPage() {
                   )}
                 </section>
               ))}
+              <PaginationControls
+                label="Members"
+                offset={page.offset}
+                limit={page.limit}
+                total={page.total}
+                onPageChange={(nextOffset) => {
+                  const next = new URLSearchParams(searchParams);
+                  if (nextOffset === 0) next.delete("offset");
+                  else next.set("offset", String(nextOffset));
+                  setSearchParams(next);
+                }}
+              />
             </div>
           )}
         </AsyncBoundary>

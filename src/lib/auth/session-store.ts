@@ -20,10 +20,13 @@ export class SessionStore {
   private state: SessionState = emptySession;
   private readonly listeners = new Set<SessionListener>();
   private generation = 0;
+  private clearReason: "expired" | "signout" | null = null;
 
   getSnapshot = () => this.state;
 
   getGeneration = () => this.generation;
+
+  getClearReason = () => this.clearReason;
 
   isCurrentGeneration = (generation: number) => this.generation === generation;
 
@@ -31,6 +34,7 @@ export class SessionStore {
 
   setSession(user: AuthUser, accessToken: string) {
     this.generation += 1;
+    this.clearReason = null;
     this.state = { user, accessToken };
     this.notify();
   }
@@ -40,12 +44,13 @@ export class SessionStore {
    * where /auth/me is still gated by password/profile states).
    */
   setAccessToken(accessToken: string) {
+    if (this.state.accessToken === accessToken) return;
     this.state = { ...this.state, accessToken };
-    this.notify();
   }
 
-  clearSession() {
+  clearSession(reason: "expired" | "signout" = "expired") {
     this.generation += 1;
+    this.clearReason = reason;
     this.state = { ...emptySession };
     this.notify();
   }
@@ -57,11 +62,8 @@ export class SessionStore {
     };
   };
 
-  hasCapability(capability: Capability, sigId?: number) {
-    return Boolean(
-      this.state.user && matchesCapability(this.state.user.role_assignments, capability, sigId),
-    );
-  }
+  hasCapability = (capability: Capability, sigId?: number) =>
+    Boolean(this.state.user && matchesCapability(this.state.user.role_assignments, capability, sigId));
 
   private notify() {
     this.listeners.forEach((listener) => listener());

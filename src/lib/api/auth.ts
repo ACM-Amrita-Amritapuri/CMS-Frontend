@@ -1,6 +1,6 @@
-import { apiRequest } from "@/lib/api/client";
+import { apiRequest, refreshSessionOnce } from "@/lib/api/client";
 import { sessionStore } from "@/lib/auth/session-store";
-import { authLoginSchema, authMeSchema, authRefreshSchema, validateAuthResponse } from "@/lib/api/auth-schemas";
+import { authLoginSchema, authMeSchema, validateAuthResponse } from "@/lib/api/auth-schemas";
 
 export async function login(input: { login: string; password: string }) {
   return validateAuthResponse(authLoginSchema, await apiRequest<unknown>("/auth/login", {
@@ -26,11 +26,8 @@ export async function changePassword(input: {
   }));
 }
 
-export async function refreshSession() {
-  return validateAuthResponse(authRefreshSchema, await apiRequest<unknown>("/auth/refresh", {
-    method: "POST",
-    retryOn401: false,
-  }));
+export async function refreshSession(signal?: AbortSignal) {
+  return refreshSessionOnce(signal);
 }
 
 async function signOut(path: string) {
@@ -41,7 +38,7 @@ async function signOut(path: string) {
       retryOn401: false,
     });
   } finally {
-    if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession();
+    if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession("signout");
   }
 }
 

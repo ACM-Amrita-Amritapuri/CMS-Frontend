@@ -27,6 +27,12 @@ export interface Meeting {
   minutes_document_id: number | null;
 }
 
+export interface PageMetadata {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 type EventInput = {
   title: string;
   description?: string;
@@ -39,20 +45,21 @@ type EventInput = {
   kind?: PublicEventKind;
 };
 
-function buildQuery(params: { limit?: number; includeDrafts?: boolean }) {
-  const search = new URLSearchParams();
-  if (params.limit) search.set("limit", String(params.limit));
+function buildQuery(params: { limit?: number; offset?: number; includeDrafts?: boolean }) {
+  const search = new URLSearchParams({
+    limit: String(params.limit ?? 50),
+    offset: String(params.offset ?? 0),
+  });
   if (params.includeDrafts) search.set("include_drafts", "true");
   const query = search.toString();
   return query ? `?${query}` : "";
 }
 
-export async function listEvents(params: { limit?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
-  const { events } = await apiRequest<{ events: ClubEvent[] }>(
+export async function listEvents(params: { limit?: number; offset?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
+  return apiRequest<{ events: ClubEvent[] } & PageMetadata>(
     `/operations/events${buildQuery(params)}`,
     { signal },
   );
-  return events;
 }
 
 export async function getEvent(eventId: number, signal?: AbortSignal) {
@@ -84,21 +91,26 @@ export async function cancelEvent(eventId: number) {
   return event;
 }
 
-export async function getCalendarRange(start: string, end: string, signal?: AbortSignal) {
-  const search = new URLSearchParams({ start, end, limit: "100" });
-  const { calendar } = await apiRequest<{ calendar: ClubEvent[] }>(
+export async function getCalendarRange(
+  start: string,
+  end: string,
+  params: { limit?: number; offset?: number } | AbortSignal = {},
+  signal?: AbortSignal,
+) {
+  const page = "aborted" in params ? {} : params;
+  const requestSignal = "aborted" in params ? params : signal;
+  const search = new URLSearchParams({ start, end, limit: String(page.limit ?? 100), offset: String(page.offset ?? 0) });
+  return apiRequest<{ calendar: ClubEvent[] } & PageMetadata>(
     `/operations/calendar?${search}`,
-    { signal },
+    { signal: requestSignal },
   );
-  return calendar;
 }
 
-export async function listMeetings(params: { limit?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
-  const { meetings } = await apiRequest<{ meetings: Meeting[] }>(
+export async function listMeetings(params: { limit?: number; offset?: number; includeDrafts?: boolean } = {}, signal?: AbortSignal) {
+  return apiRequest<{ meetings: Meeting[] } & PageMetadata>(
     `/operations/meetings${buildQuery(params)}`,
     { signal },
   );
-  return meetings;
 }
 
 export async function getMeeting(meetingId: number, signal?: AbortSignal) {
@@ -159,9 +171,15 @@ export interface AttendanceSummary {
   attendance: AttendanceRecord[];
 }
 
-export async function listAttendance(eventId: number, limit = 100, signal?: AbortSignal) {
-  return apiRequest<AttendanceSummary>(
-    `/operations/events/${eventId}/attendance?limit=${limit}`,
+export async function listAttendance(
+  eventId: number,
+  params: number | { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+) {
+  const page = typeof params === "number" ? { limit: params, offset: 0 } : params;
+  const search = new URLSearchParams({ limit: String(page.limit ?? 100), offset: String(page.offset ?? 0) });
+  return apiRequest<AttendanceSummary & PageMetadata>(
+    `/operations/events/${eventId}/attendance?${search}`,
     { signal },
   );
 }

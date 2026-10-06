@@ -21,17 +21,19 @@ type BootstrapOutcome = {
 let bootstrapFlight: {
   generation: number;
   promise: Promise<BootstrapOutcome>;
+  controller: AbortController;
+  subscribers: number;
 } | null = null;
 
-async function bootstrap(generation: number): Promise<BootstrapOutcome> {
+async function bootstrap(generation: number, signal: AbortSignal): Promise<BootstrapOutcome> {
   const current = () => sessionStore.isCurrentGeneration(generation);
   try {
     if (!sessionStore.getSnapshot().accessToken) {
-      const refreshed = await refreshSession();
+      const refreshed = await refreshSession(signal);
       if (!current()) return { generation, kind: "signed-out" };
       sessionStore.setAccessToken(refreshed.access_token);
     }
-    const user = await getMe();
+    const user = await getMe(signal);
     if (!current()) return { generation, kind: "signed-out" };
     const token = sessionStore.getSnapshot().accessToken;
     if (!token) return { generation, kind: "signed-out" };
@@ -48,7 +50,7 @@ async function bootstrap(generation: number): Promise<BootstrapOutcome> {
     if (!current()) return { generation, kind: "signed-out" };
     if (error instanceof ApiError) {
       if (error.status === 401) {
-        sessionStore.clearSession();
+        sessionStore.clearSession("expired");
         return { generation: sessionStore.getGeneration(), kind: "signed-out" };
       }
       if (error.status === 403) {
@@ -73,14 +75,27 @@ export function useSessionBootstrap() {
   useEffect(() => {
     if (user || !canBootstrap) return;
     if (!bootstrapFlight || bootstrapFlight.generation !== generation) {
-      bootstrapFlight = { generation, promise: bootstrap(generation) };
+      const controller = new AbortController();
+      bootstrapFlight = {
+        generation,
+        promise: bootstrap(generation, controller.signal),
+        controller,
+        subscribers: 0,
+      };
     }
+    const flight = bootstrapFlight;
+    flight.subscribers += 1;
     let active = true;
-    void bootstrapFlight.promise.then((result) => {
+    void flight.promise.then((result) => {
       if (active && sessionStore.isCurrentGeneration(result.generation)) setOutcome(result);
     });
     return () => {
       active = false;
+      flight.subscribers -= 1;
+      if (flight.subscribers === 0 && bootstrapFlight === flight) {
+        bootstrapFlight = null;
+        flight.controller.abort();
+      }
     };
   }, [user, generation, canBootstrap, attempt]);
 

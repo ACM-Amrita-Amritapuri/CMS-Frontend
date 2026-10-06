@@ -37,6 +37,9 @@ import { Field, Input } from "@/components/ui/input";
 import { PageHeader, SectionHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { DetailRow, EmptyState } from "@/components/ui/table";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const ATTENDANCE_PAGE_SIZE = 20;
 
 export default function EventDetailPage() {
   useDocumentTitle("Event");
@@ -106,13 +109,19 @@ function EventDetail({ event, meeting }: { event: ClubEvent; meeting?: Meeting }
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.operations.meeting(updated.id), updated);
-      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.operations.meetingLists });
       setMinutesId(null);
       toast.success("Minutes attached.");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not attach minutes."),
   });
-  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
+  const refresh = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.operations.event(event.id) }),
+    ...(meeting ? [queryClient.invalidateQueries({ queryKey: queryKeys.operations.meeting(meeting.id) })] : []),
+    queryClient.invalidateQueries({ queryKey: queryKeys.operations.eventLists }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.operations.meetingLists }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.operations.calendars }),
+  ]);
 
   const publish = useMutation({
     mutationFn: async () => meeting ? (await publishMeeting(meeting.id)).event : publishEvent(event.id),
@@ -227,14 +236,15 @@ export function resolveAttendanceIdentity(type: IdentityType, value: string) {
 
 function ManagerAttendance({ event }: { event: ClubEvent }) {
   const queryClient = useQueryClient();
+  const [offset, setOffset] = useState(0);
   const [identifier, setIdentifier] = useState("");
   const [identityType, setIdentityType] = useState<IdentityType>("roll");
   const [removing, setRemoving] = useState<{ userId: number; label: string } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const query = useQuery({
-    queryKey: queryKeys.operations.attendanceList(event.id),
-    queryFn: ({ signal }) => listAttendance(event.id, undefined, signal),
+    queryKey: queryKeys.operations.attendanceList(event.id, ATTENDANCE_PAGE_SIZE, offset),
+    queryFn: ({ signal }) => listAttendance(event.id, { limit: ATTENDANCE_PAGE_SIZE, offset }, signal),
     enabled: event.state === "PUBLISHED",
     retry: false,
   });
@@ -333,10 +343,11 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
       <QueryState
         query={query}
         notFound="Attendance not found"
-        isEmpty={(data) => data.attendance.length === 0}
+        isEmpty={(data) => data.total === 0}
         empty={{ title: "No attendance yet", description: "Marked members will appear here with their roll number." }}
       >
         {(data) => (
+        <div className="flex flex-col gap-4">
         <ul className="divide-border overflow-hidden rounded-md border">
           {data.attendance.map((record) => (
             <li key={record.id} className="flex items-center gap-3 p-3">
@@ -365,6 +376,8 @@ function ManagerAttendance({ event }: { event: ClubEvent }) {
             </li>
           ))}
         </ul>
+        <PaginationControls label="Attendance records" offset={data.offset} limit={data.limit} total={data.total} onPageChange={setOffset} />
+        </div>
         )}
       </QueryState>
 

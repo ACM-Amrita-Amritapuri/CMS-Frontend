@@ -22,6 +22,7 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -73,6 +74,7 @@ export function AuthorDialog({
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="capitalize">Add {kind}</DialogTitle>
+          <DialogDescription>Enter the details for this learning {kind}.</DialogDescription>
         </DialogHeader>
         {kind === "module" ? <ModuleForm pathId={pathId} position={modules.length + 1} author={author} /> : null}
         {kind === "lesson" ? <LessonForm modules={modules} author={author} /> : null}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "@/lib/api/errors";
+import { ROLE_CODES } from "@/lib/api/types";
 
 export const authUserSchema = z.looseObject({
   id: z.number().int().positive(),
@@ -8,7 +9,7 @@ export const authUserSchema = z.looseObject({
   must_change_password: z.boolean(),
   profile_complete: z.boolean().optional(),
   role_assignments: z.array(z.looseObject({
-    role_code: z.enum(["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"]),
+    role_code: z.enum(ROLE_CODES),
     sig_id: z.number().int().positive().nullable(),
   })),
 });

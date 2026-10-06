@@ -25,9 +25,9 @@ import {
 } from "lucide-react";
 
 import { logout, logoutAll } from "@/lib/api/auth";
-import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.png";
-import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.png";
-import logoUrl from "@/assets/acm-student-chapter-mark.png";
+import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.webp";
+import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.webp";
+import logoUrl from "@/assets/acm-student-chapter-mark.webp";
 import { useSession } from "@/app/providers";
 import type { Capability } from "@/lib/auth/session-store";
 import { UserAvatar } from "@/components/ui/select";
@@ -69,7 +69,7 @@ const navigation = [
 
 const SIDEBAR_STORAGE_KEY = "cms-sidebar-collapsed";
 
-import { roleLabels } from "@/lib/auth/permissions";
+import { roleLabel } from "@/lib/auth/permissions";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -197,6 +197,7 @@ function Sidebar({
           <img
             src={collapsed ? logoUrl : resolvedTheme === "dark" ? darkLogoUrl : fullLogoUrl}
             alt="ACM Student Chapter"
+            decoding="async"
             className={collapsed ? "size-9 object-contain" : "h-14 w-full object-contain object-left"}
           />
         </Link>
@@ -286,7 +287,7 @@ function Sidebar({
 function topRole(roles: string[]) {
   const order = ["SUPER_ADMIN", "ADMIN", "WEBMASTER", "SIG_LEAD", "SIG_CORE", "MEMBER"];
   const top = order.find((role) => roles.includes(role));
-  return top ? roleLabels[top] : "Member";
+  return top ? roleLabel(top) : "Member";
 }
 
 function ThemeToggle() {

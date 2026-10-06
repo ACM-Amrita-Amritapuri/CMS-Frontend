@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
 } from "react";
 
@@ -38,6 +39,9 @@ const ThemeContext = createContext<{
 }>({ theme: "system", resolvedTheme: "dark", setTheme: () => undefined });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [systemDark, setSystemDark] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
   const theme = useSyncExternalStore(
     (listener) => {
       listeners.add(listener);
@@ -49,6 +53,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     applyTheme(theme);
+  }, [theme, systemDark]);
+
+  useEffect(() => {
+    if (theme !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setSystemDark(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
   }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
@@ -60,10 +73,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       theme,
-      resolvedTheme: (isDark(theme) ? "dark" : "light") as "dark" | "light",
+      resolvedTheme: (theme === "system" ? (systemDark ? "dark" : "light") : theme),
       setTheme,
     }),
-    [theme, setTheme],
+    [theme, systemDark, setTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

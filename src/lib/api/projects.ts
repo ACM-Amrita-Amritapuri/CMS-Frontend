@@ -16,10 +16,21 @@ export interface ProjectDirectoryMember {
   projects: MemberGitHubProject[];
 }
 
-export async function listProjectDirectory(signal?: AbortSignal) {
-  const { members } = await apiRequest<{ members: ProjectDirectoryMember[] }>(
-    "/projects/directory",
+export async function listProjectDirectory(
+  params: { limit: number; offset: number },
+  signal?: AbortSignal,
+) {
+  const search = new URLSearchParams({
+    limit: String(params.limit),
+    offset: String(params.offset),
+  });
+  return apiRequest<{
+    members: ProjectDirectoryMember[];
+    total: number;
+    limit: number;
+    offset: number;
+  }>(
+    `/projects/directory?${search}`,
     { signal },
   );
-  return members;
 }

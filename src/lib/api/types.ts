@@ -1,10 +1,5 @@
-export type RoleCode =
-  | "MEMBER"
-  | "SIG_CORE"
-  | "SIG_LEAD"
-  | "WEBMASTER"
-  | "ADMIN"
-  | "SUPER_ADMIN";
+export const ROLE_CODES = ["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"] as const;
+export type RoleCode = (typeof ROLE_CODES)[number];
 
 export interface RoleAssignment {
   role_code: RoleCode;

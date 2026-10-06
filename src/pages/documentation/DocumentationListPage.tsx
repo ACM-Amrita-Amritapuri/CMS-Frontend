@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Field, Input, Textarea } from "@/components/ui/input";
 import {
   Dialog,
@@ -32,23 +33,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const PAGE_SIZE = 20;
+
 export default function DocumentationListPage() {
   useDocumentTitle("Documentation");
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
+  const rawOffset = Number(searchParams.get("offset") ?? 0);
+  const offset = Number.isSafeInteger(rawOffset) && rawOffset > 0 ? rawOffset : 0;
   const [input, setInput] = useState(q);
   const [creating, setCreating] = useState(false);
 
   // q in the URL uses the search endpoint (published only); the bare list is
   // the manager/recent view that also includes the caller's drafts.
   const searchQuery = useQuery({
-    queryKey: queryKeys.documentation.search(q),
-    queryFn: ({ signal }) => searchDocuments({ q }, signal),
+    queryKey: queryKeys.documentation.search(q, PAGE_SIZE, offset),
+    queryFn: ({ signal }) => searchDocuments({ q, limit: PAGE_SIZE, offset }, signal),
     enabled: q !== "",
   });
   const listQuery = useQuery({
-    queryKey: queryKeys.documentation.list(),
-    queryFn: ({ signal }) => listDocuments(undefined, signal),
+    queryKey: queryKeys.documentation.list(PAGE_SIZE, offset),
+    queryFn: ({ signal }) => listDocuments({ limit: PAGE_SIZE, offset }, signal),
     enabled: q === "",
   });
 
@@ -89,7 +94,7 @@ export default function DocumentationListPage() {
 
       <AsyncBoundary
         query={query}
-        isEmpty={(items) => items.length === 0}
+        isEmpty={(page) => page.total === 0}
         empty={
           q
             ? { icon: SearchIcon, title: `No results for “${q}”`, description: "Search matches titles, summaries, and bodies." }
@@ -101,8 +106,9 @@ export default function DocumentationListPage() {
         }
       >
         {(items) => (
+          <div className="flex flex-col gap-4">
           <ul className="divide-y border-y">
-            {items.map((doc) => (
+            {items.documents.map((doc) => (
               <li key={doc.id}>
                 <Link
                   to={`/documentation/${doc.id}`}
@@ -128,6 +134,19 @@ export default function DocumentationListPage() {
               </li>
             ))}
           </ul>
+          <PaginationControls
+            label="Documents"
+            offset={items.offset}
+            limit={items.limit}
+            total={items.total}
+            onPageChange={(nextOffset) => {
+              const next = new URLSearchParams(searchParams);
+              if (nextOffset === 0) next.delete("offset");
+              else next.set("offset", String(nextOffset));
+              setSearchParams(next);
+            }}
+          />
+          </div>
         )}
       </AsyncBoundary>
     </div>
@@ -176,7 +195,7 @@ function CreateDocumentButton({
     },
     onSuccess: (doc) => {
       if (!doc) return;
-      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.documentation.lists });
       toast.success("Document created as a draft.");
       onOpenChange(false);
       navigate(`/documentation/${doc.id}`);
