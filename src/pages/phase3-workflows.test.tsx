@@ -193,5 +193,5 @@ it("lists member projects from the paged directory", async () => {
   mount(<ProjectsListPage />, "/projects", "/projects");
   expect(await screen.findByText("Portfolio")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Alex Member" })).toHaveAttribute("href", "/portfolio/3");
-  expect(screen.getByRole("link", { name: "GitHub profile (opens in a new tab)" })).toHaveAttribute("href", "https://github.com/alex");
+  expect(screen.getByRole("link", { name: "Alex Member's GitHub profile (opens in a new tab)" })).toHaveAttribute("href", "https://github.com/alex");
 });

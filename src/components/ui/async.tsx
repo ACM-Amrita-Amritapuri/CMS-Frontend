@@ -42,7 +42,7 @@ export function QueryState<T>({
   const isEmptyResult = isEmpty?.(query.data) ?? false;
   return (
     <>
-      {query.isError && !isEmptyResult ? (
+      {query.isError ? (
         <QueryErrorState error={query.error} retry={() => query.refetch()} cached />
       ) : null}
       {isEmptyResult ? (

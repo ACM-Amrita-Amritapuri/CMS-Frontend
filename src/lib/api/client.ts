@@ -27,6 +27,11 @@ function isAuthPath(path: string) {
   return ["/auth/login", "/auth/refresh", "/auth/logout", "/auth/logout-all"].includes(pathname);
 }
 
+function isPublicAuthPath(path: string) {
+  const pathname = path.split("?", 1)[0].replace(/\/+$/, "") || "/";
+  return ["/auth/login", "/auth/refresh"].includes(pathname);
+}
+
 function resolveUrl(path: string) {
   const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? "";
   if (!baseUrl || baseUrl === "/") {
@@ -97,7 +102,7 @@ async function send(path: string, options: ApiRequestOptions) {
   }
 
   const accessToken = sessionStore.getSnapshot().accessToken;
-  if (accessToken && !isAuthPath(path)) {
+  if (accessToken && !isPublicAuthPath(path)) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
   // Marks this as an API request for the same-origin proxy (see
