@@ -4,6 +4,7 @@ coverage/
 *.tsbuildinfo
 .worktrees/
 .bun-tmp/
+.vercel
 .env*
 !.env.example
 start-backend.bat

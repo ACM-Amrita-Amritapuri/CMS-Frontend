@@ -39,6 +39,9 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
 import { formatDateTime } from "@/lib/formatters/date";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const PAGE_SIZE = 50;
 
 const eventSchema = z.object({
   title: z.string().min(1, "Enter a title."),
@@ -53,14 +56,16 @@ export default function OperationsPage() {
   const manage = hasCapability("manage_operations");
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [creatingMeeting, setCreatingMeeting] = useState(false);
+  const [eventsOffset, setEventsOffset] = useState(0);
+  const [meetingsOffset, setMeetingsOffset] = useState(0);
 
   const eventsQuery = useQuery({
-    queryKey: queryKeys.operations.events(manage),
-    queryFn: ({ signal }) => listEvents({ includeDrafts: manage }, signal),
+    queryKey: queryKeys.operations.events(manage, PAGE_SIZE, eventsOffset),
+    queryFn: ({ signal }) => listEvents({ includeDrafts: manage, limit: PAGE_SIZE, offset: eventsOffset }, signal),
   });
   const meetingsQuery = useQuery({
-    queryKey: queryKeys.operations.meetings(manage),
-    queryFn: ({ signal }) => listMeetings({ includeDrafts: manage }, signal),
+    queryKey: queryKeys.operations.meetings(manage, PAGE_SIZE, meetingsOffset),
+    queryFn: ({ signal }) => listMeetings({ includeDrafts: manage, limit: PAGE_SIZE, offset: meetingsOffset }, signal),
   });
 
   return (
@@ -96,12 +101,13 @@ export default function OperationsPage() {
         <TabsContent value="events">
           <AsyncBoundary
             query={eventsQuery}
-            isEmpty={(events) => events.length === 0}
+            isEmpty={(page) => page.total === 0}
             empty={{ icon: CalendarDaysIcon, title: "No events yet" }}
           >
-            {(events) => (
+            {(page) => (
+              <div className="flex flex-col gap-4">
               <ul className="divide-border divide-y overflow-hidden rounded-lg border">
-                {events.map((event) => (
+                {page.events.map((event) => (
                   <li key={event.id}>
                     <Link
                       to={`/operations/events/${event.id}`}
@@ -109,10 +115,10 @@ export default function OperationsPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</h2>
+                          <h2 className="min-w-0 text-sm leading-5 font-semibold wrap-anywhere">{event.title}</h2>
                           <EventStateBadge state={event.state} />
                         </div>
-                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                           {formatDateTime(event.starts_at)}
                           {event.location ? ` · ${event.location}` : ""}
                         </p>
@@ -124,6 +130,8 @@ export default function OperationsPage() {
                   </li>
                 ))}
               </ul>
+              <PaginationControls label="Events" offset={page.offset} limit={page.limit} total={page.total} onPageChange={setEventsOffset} />
+              </div>
             )}
           </AsyncBoundary>
         </TabsContent>
@@ -131,18 +139,19 @@ export default function OperationsPage() {
         <TabsContent value="meetings">
           <AsyncBoundary
             query={meetingsQuery}
-            isEmpty={(meetings) => meetings.length === 0}
+            isEmpty={(page) => page.total === 0}
             empty={{ icon: UsersIcon, title: "No meetings scheduled" }}
           >
-            {(meetings) => (
+            {(page) => (
+              <div className="flex flex-col gap-4">
               <ul className="divide-border divide-y overflow-hidden rounded-lg border">
-                {meetings.map((meeting) => (
+                {page.meetings.map((meeting) => (
                   <li key={meeting.id}>
 <Link to={`/operations/events/${meeting.event.id}?meetingId=${meeting.id}`} className="hover:bg-muted/30 block p-4 transition-colors sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <h2 className="min-w-0 text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{meeting.event.title}</h2>
-                        <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                        <h2 className="min-w-0 text-sm leading-5 font-semibold wrap-anywhere">{meeting.event.title}</h2>
+                        <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                           {formatDateTime(meeting.event.starts_at)}
                           {meeting.event.location ? ` · ${meeting.event.location}` : ""}
                         </p>
@@ -150,12 +159,14 @@ export default function OperationsPage() {
                       <EventStateBadge state={meeting.event.state} />
                     </div>
                     {meeting.agenda ? (
-                      <p className="text-muted-foreground mt-3 text-sm leading-6 [overflow-wrap:anywhere]">{meeting.agenda}</p>
+                      <p className="text-muted-foreground mt-3 text-sm leading-6 wrap-anywhere">{meeting.agenda}</p>
                     ) : null}
                     </Link>
                   </li>
                 ))}
               </ul>
+              <PaginationControls label="Meetings" offset={page.offset} limit={page.limit} total={page.total} onPageChange={setMeetingsOffset} />
+              </div>
             )}
           </AsyncBoundary>
         </TabsContent>
@@ -219,9 +230,12 @@ function EventDialog({
         sig_id: sigId === "none" ? null : Number(sigId),
       });
     },
-    onSuccess: (event) => {
+    onSuccess: async (event) => {
       if (!event) return;
-      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.operations.eventLists }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.operations.calendars }),
+      ]);
       toast.success("Event created as a draft — publish it from its page.");
       onOpenChange(false);
     },
@@ -362,9 +376,12 @@ function MeetingDialog({
         sig_id: sigId === "none" ? null : Number(sigId),
       });
     },
-    onSuccess: (meeting) => {
+    onSuccess: async (meeting) => {
       if (!meeting) return;
-      queryClient.invalidateQueries({ queryKey: queryKeys.operations.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.operations.meetingLists }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.operations.calendars }),
+      ]);
       toast.success("Meeting created as a draft.");
       onOpenChange(false);
       setTitle("");

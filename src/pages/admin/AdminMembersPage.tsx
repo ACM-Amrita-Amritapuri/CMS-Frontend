@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,8 @@ import {
   type AdminMember,
 } from "@/lib/api/admin";
 import { listSigs, type Sig } from "@/lib/api/admin";
+import { ROLE_CODES } from "@/lib/api/types";
+import { roleLabel, roleLabels } from "@/lib/auth/permissions";
 import { queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -44,30 +46,54 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { cn } from "@/lib/utils";
 
-const roleCodes = ["MEMBER", "SIG_CORE", "SIG_LEAD", "WEBMASTER", "ADMIN", "SUPER_ADMIN"];
-const roleLabels: Record<string, string> = {
-  MEMBER: "Member",
-  SIG_CORE: "SIG core",
-  SIG_LEAD: "SIG lead",
-  WEBMASTER: "Webmaster",
-  ADMIN: "Admin",
-  SUPER_ADMIN: "Super admin",
-};
+const PAGE_SIZE = 50;
+const MOBILE_QUERY = "(max-width: 1023px)";
+
+function useMobileLayout() {
+  return useSyncExternalStore(
+    subscribeToMobileLayout,
+    getMobileLayout,
+    () => false,
+  );
+}
+
+function subscribeToMobileLayout(notify: () => void) {
+  const media = window.matchMedia(MOBILE_QUERY);
+  media.addEventListener("change", notify);
+  return () => media.removeEventListener("change", notify);
+}
+
+function getMobileLayout() {
+  return window.matchMedia(MOBILE_QUERY).matches;
+}
 
 export default function AdminMembersPage() {
   useDocumentTitle("Members");
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [sigFilter, setSigFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [offset, setOffset] = useState(0);
+  const mobileLayout = useMobileLayout();
+  const normalizedSearch = searchFilter.trim();
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearchFilter(search.trim()), 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
   const query = useQuery({
-    queryKey: queryKeys.admin.memberList(activeFilter),
+    queryKey: queryKeys.admin.memberList(activeFilter, sigFilter, normalizedSearch, PAGE_SIZE, offset),
     queryFn: ({ signal }) =>
       listAdminMembers({
+        limit: PAGE_SIZE,
+        offset,
         is_active: activeFilter === "all" ? undefined : activeFilter === "true",
+        search: normalizedSearch || undefined,
+        sig_id: sigFilter === "all" ? undefined : Number(sigFilter),
       }, signal),
   });
   const sigsQuery = useQuery({
@@ -86,7 +112,7 @@ export default function AdminMembersPage() {
             <NativeSelect
               aria-label="Filter by status"
               value={activeFilter}
-              onChange={(event) => setActiveFilter(event.target.value)}
+              onChange={(event) => { setActiveFilter(event.target.value); setOffset(0); }}
               className="w-full sm:w-44"
             >
               <option value="all">All members</option>
@@ -96,7 +122,7 @@ export default function AdminMembersPage() {
             <NativeSelect
               aria-label="Filter by SIG"
               value={sigFilter}
-              onChange={(event) => setSigFilter(event.target.value)}
+              onChange={(event) => { setSigFilter(event.target.value); setOffset(0); }}
               className="w-full sm:w-44"
             >
               <option value="all">All SIGs</option>
@@ -112,25 +138,14 @@ export default function AdminMembersPage() {
 
       <AsyncBoundary
         query={query}
-        isEmpty={(members) => members.length === 0}
+        isEmpty={() => false}
         empty={{
           title: "No members match these filters",
           description: "Try changing the status or SIG filter above.",
         }}
       >
-        {(members) => {
-          const normalized = search.trim().toLowerCase();
-          const filtered = members.filter((member) =>
-            (sigFilter === "all" ||
-              member.role_assignments.some(
-                ({ sig_id }) => String(sig_id) === sigFilter,
-              )) &&
-            (!normalized ||
-              `${member.username} ${member.roll_number} ${member.role_assignments.map(({ role_code }) => role_code).join(" ")}`
-                .toLowerCase()
-                .includes(normalized)),
-          );
-
+        {(page) => {
+          const members = page.members;
           return (
             <>
               <div className="flex flex-col gap-3 border-y py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -141,7 +156,7 @@ export default function AdminMembersPage() {
                     aria-label="Search members"
                     placeholder="Search by username, roll number, or role"
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onChange={(event) => { setSearch(event.target.value); setOffset(0); }}
                     className="h-9 pl-9 pr-9"
                   />
                   {search ? (
@@ -158,12 +173,10 @@ export default function AdminMembersPage() {
                   ) : null}
                 </div>
                 <p className="text-muted-foreground text-sm" aria-live="polite">
-                  {filtered.length === members.length
-                    ? `${members.length} ${members.length === 1 ? "member" : "members"}`
-                    : `${filtered.length} of ${members.length} members`}
+                  {page.total} {page.total === 1 ? "member" : "members"}
                 </p>
               </div>
-              {filtered.length === 0 ? (
+              {members.length === 0 ? (
                 <div role="status" className="border-y border-dashed py-12 text-center">
                   <p className="text-sm font-medium">No members match these filters</p>
                   <Button
@@ -175,34 +188,42 @@ export default function AdminMembersPage() {
                       setSearch("");
                       setActiveFilter("all");
                       setSigFilter("all");
+                      setOffset(0);
                     }}
                   >
                     Clear filters
                   </Button>
                 </div>
               ) : null}
-              <div className={filtered.length === 0 ? "hidden" : "hidden min-w-0 border-y lg:block"}>
+              {members.length > 0 && !mobileLayout ? (
                <Table className="min-w-[48rem]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Member</TableHead>
                     <TableHead>Roles</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-52 text-right"><span className="sr-only">Actions</span></TableHead>
+                    <TableHead className="w-52 text-right"><span>Actions</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((member) => (
-                    <MemberRow key={member.id} member={member} />
+                  {members.map((member) => (
+                    <MemberRow key={member.id} member={member} sigs={sigsQuery.data ?? []} />
                   ))}
                 </TableBody>
               </Table>
-              </div>
-              <ul className={filtered.length === 0 ? "hidden" : "grid min-w-0 gap-3 lg:hidden"}>
-              {filtered.map((member) => (
-                <MemberCard key={member.id} member={member} />
+              ) : null}
+              {members.length > 0 && mobileLayout ? <ul className="grid min-w-0 gap-3">
+              {members.map((member) => (
+                <MemberCard key={member.id} member={member} sigs={sigsQuery.data ?? []} />
               ))}
-              </ul>
+              </ul> : null}
+              <PaginationControls
+                label="Members"
+                offset={page.offset}
+                limit={page.limit}
+                total={page.total}
+                onPageChange={setOffset}
+              />
             </>
           );
         }}
@@ -212,7 +233,7 @@ export default function AdminMembersPage() {
   );
 }
 
-function MemberRow({ member }: { member: AdminMember }) {
+function MemberRow({ member, sigs }: { member: AdminMember; sigs: Sig[] }) {
   const queryClient = useQueryClient();
   const [confirmStatus, setConfirmStatus] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
@@ -242,8 +263,8 @@ function MemberRow({ member }: { member: AdminMember }) {
   return (
     <TableRow>
       <TableCell>
-        <p className="max-w-64 text-sm font-medium [overflow-wrap:anywhere]">{member.username}</p>
-        <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
+        <p className="max-w-64 text-sm font-medium wrap-anywhere">{member.username}</p>
+        <p className="text-muted-foreground mt-1 font-mono text-xs wrap-anywhere">{member.roll_number}</p>
       </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
@@ -304,13 +325,14 @@ function MemberRow({ member }: { member: AdminMember }) {
       <RoleDialog
         open={rolesOpen}
         member={member}
+        sigs={sigs}
         onOpenChange={setRolesOpen}
       />
     </TableRow>
   );
 }
 
-function MemberCard({ member }: { member: AdminMember }) {
+function MemberCard({ member, sigs }: { member: AdminMember; sigs: Sig[] }) {
   const queryClient = useQueryClient();
   const [confirmStatus, setConfirmStatus] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
@@ -342,7 +364,7 @@ function MemberCard({ member }: { member: AdminMember }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{member.username}</p>
-          <p className="text-muted-foreground mt-1 font-mono text-xs [overflow-wrap:anywhere]">{member.roll_number}</p>
+          <p className="text-muted-foreground mt-1 font-mono text-xs wrap-anywhere">{member.roll_number}</p>
         </div>
         <StatusBadge status={member.is_active ? "ACTIVE" : "INACTIVE"} />
       </div>
@@ -398,7 +420,7 @@ function MemberCard({ member }: { member: AdminMember }) {
         password={resetSecret}
         onClose={() => setResetSecret(null)}
       />
-      <RoleDialog open={rolesOpen} member={member} onOpenChange={setRolesOpen} />
+      <RoleDialog open={rolesOpen} member={member} sigs={sigs} onOpenChange={setRolesOpen} />
     </li>
   );
 }
@@ -416,7 +438,7 @@ export function TemporaryPasswordDialog({
     <Dialog open={password !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="pr-6 leading-snug [overflow-wrap:anywhere]">One-time password for {username}</DialogTitle>
+          <DialogTitle className="pr-6 leading-snug wrap-anywhere">One-time password for {username}</DialogTitle>
           <DialogDescription>
             Copy it now — it is shown only this once and expires in 24 hours.
           </DialogDescription>
@@ -454,10 +476,12 @@ export function TemporaryPasswordDialog({
 function RoleDialog({
   open,
   member,
+  sigs,
   onOpenChange,
 }: {
   open: boolean;
   member: AdminMember;
+  sigs: Sig[];
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
@@ -476,11 +500,6 @@ function RoleDialog({
     onOpenChange(nextOpen);
   };
 
-  const sigsQuery = useQuery({
-    queryKey: queryKeys.sigs.list(),
-    queryFn: ({ signal }) => listSigs(undefined, signal),
-    enabled: open,
-  });
   const needsSig = ["SIG_CORE", "SIG_LEAD"].includes(roleCode);
   const selectedAssignment = member.role_assignments.find(
     (assignment) => `${assignment.role_code}:${assignment.sig_id ?? "none"}` === revokeKey,
@@ -525,7 +544,7 @@ function RoleDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-lg gap-0 overflow-y-auto p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-5 pr-14">
-          <DialogTitle className="leading-snug [overflow-wrap:anywhere]">Manage roles for {member.username}</DialogTitle>
+          <DialogTitle className="leading-snug wrap-anywhere">Manage roles for {member.username}</DialogTitle>
           <DialogDescription>
             Add or remove access for this account. Changes take effect on the next sign-in.
           </DialogDescription>
@@ -567,7 +586,7 @@ function RoleDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {roleCodes.map((code) => (
+                    {ROLE_CODES.map((code) => (
                       <SelectItem key={code} value={code}>
                         {roleLabels[code]}
                       </SelectItem>
@@ -583,7 +602,7 @@ function RoleDialog({
                       <SelectValue placeholder="Choose a SIG" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(sigsQuery.data ?? []).map((sig: Sig) => (
+                      {sigs.map((sig) => (
                         <SelectItem key={sig.id} value={String(sig.id)}>
                           {sig.name}
                         </SelectItem>
@@ -601,17 +620,16 @@ function RoleDialog({
               </p>
             </div>
           ) : member.role_assignments.length > 0 ? (
-            <div role="radiogroup" aria-label="Current role assignments" className="flex flex-col gap-2">
+            <div role="group" aria-label="Current role assignments" className="flex flex-col gap-2">
               {member.role_assignments.map((assignment) => {
                 const key = `${assignment.role_code}:${assignment.sig_id ?? "none"}`;
                 const isSelected = key === revokeKey;
-                const sigName = sigsQuery.data?.find((sig) => sig.id === assignment.sig_id)?.name;
+                const sigName = sigs.find((sig) => sig.id === assignment.sig_id)?.name;
                 return (
                   <button
                     key={key}
                     type="button"
-                    role="radio"
-                    aria-checked={isSelected}
+                    aria-pressed={isSelected}
                     onClick={() => setRevokeKey(key)}
                     className={cn(
                       "flex w-full items-center justify-between gap-4 rounded-lg border p-3 text-left transition-colors",
@@ -622,7 +640,7 @@ function RoleDialog({
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-medium">
-                        {roleLabels[assignment.role_code] ?? assignment.role_code}
+                        {roleLabel(assignment.role_code)}
                       </span>
                       <span className="text-muted-foreground mt-1 block text-xs">
                         {assignment.sig_id !== null

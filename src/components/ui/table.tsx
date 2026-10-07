@@ -33,6 +33,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
+      scope="col"
       className={cn(
         "text-muted-foreground h-10 px-3 text-left align-middle text-xs font-medium tracking-wide whitespace-nowrap uppercase",
         className,
@@ -85,7 +86,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
   return (
     <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
       <dt className="text-muted-foreground text-sm sm:w-40 sm:shrink-0">{label}</dt>
-      <dd className="min-w-0 text-sm leading-6 [overflow-wrap:anywhere]">{children}</dd>
+      <dd className="min-w-0 text-sm leading-6 wrap-anywhere">{children}</dd>
     </div>
   );
 }

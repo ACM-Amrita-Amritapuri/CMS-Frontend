@@ -1,0 +1,108 @@
+{
+  "framework": "vite",
+  "installCommand": "bun install --frozen-lockfile",
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/cms/",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/auth/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/auth/:path*"
+    },
+    {
+      "source": "/members/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/members/:path*"
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/admin/:path*"
+    },
+    {
+      "source": "/learning/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/learning/:path*"
+    },
+    {
+      "source": "/documentation/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/documentation/:path*"
+    },
+    {
+      "source": "/projects/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/projects/:path*"
+    },
+    {
+      "source": "/operations/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/operations/:path*"
+    },
+    {
+      "source": "/health/:path*",
+      "has": [{ "type": "header", "key": "x-cms-api", "value": "1" }],
+      "destination": "https://aseam.acm.org/cms_backend/health/:path*"
+    },
+    {
+      "source": "/cms/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/cms/fonts/:path*",
+      "destination": "/fonts/:path*"
+    },
+    {
+      "source": "/((?!assets/|cms/assets/|.*\\.[^/]+$).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/cms/assets/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/fonts/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/cms/fonts/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,11 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   vi.stubGlobal("ResizeObserver", class {
     observe() {}
     unobserve() {}

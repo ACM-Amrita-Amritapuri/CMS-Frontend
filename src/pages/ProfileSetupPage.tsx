@@ -183,6 +183,7 @@ export default function ProfileSetupPage() {
   }, [isComplete, canLoadProfile, saveMutation.isPending, saveMutation.isError, navigate]);
 
   const onSubmit = form.handleSubmit((values) => {
+    form.clearErrors("root");
     const data = parseForm(profileSchema, values, (field, message) =>
       form.setError(field as keyof ProfileForm, { message }),
     );
@@ -232,6 +233,9 @@ export default function ProfileSetupPage() {
         />
 
         <form onSubmit={onSubmit} className="mt-6 flex min-w-0 flex-col gap-5" noValidate>
+          {errors.root?.message ? (
+            <p role="alert" className="text-destructive text-sm font-medium">{errors.root.message}</p>
+          ) : null}
           <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />

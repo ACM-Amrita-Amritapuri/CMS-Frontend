@@ -18,7 +18,10 @@ vi.mock("@/lib/api/auth", () => ({
 vi.mock("@/lib/api/members", () => ({
   getMyProfile: vi.fn(), initializeMyProfile: vi.fn(), updateMyProfile: vi.fn(),
 }));
-vi.mock("@/components/theme", () => ({ ThemeProvider: ({ children }: { children: ReactNode }) => children }));
+vi.mock("@/components/theme", () => ({
+  ThemeProvider: ({ children }: { children: ReactNode }) => children,
+  useTheme: () => ({ theme: "light", resolvedTheme: "light", setTheme: vi.fn() }),
+}));
 vi.mock("sonner", () => ({ Toaster: () => null, toast: { success: vi.fn(), error: vi.fn() } }));
 
 const user = {
@@ -47,7 +50,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Unexpected network request"); }));
   freshStore = new SessionStore();
   for (const method of [
-    "getSnapshot", "getGeneration", "isCurrentGeneration", "canBootstrap", "subscribe",
+    "getSnapshot", "getGeneration", "getClearReason", "isCurrentGeneration", "canBootstrap", "subscribe",
     "setSession", "setAccessToken", "clearSession", "hasCapability",
   ] as const) {
     vi.spyOn(sessionStore, method).mockImplementation(freshStore[method].bind(freshStore));
@@ -352,6 +355,6 @@ it("clears provider caches on signout and account replacement, not token rotatio
   act(() => sessionStore.setSession({ ...user, id: 2 }, "second"));
   expect(providedClient.getQueryData(["private"])).toBeUndefined();
   providedClient.setQueryData(["private"], "second");
-  act(() => sessionStore.clearSession());
+  act(() => sessionStore.clearSession("signout"));
   expect(providedClient.getQueryData(["private"])).toBeUndefined();
 });

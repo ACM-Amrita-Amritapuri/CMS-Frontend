@@ -12,8 +12,8 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { useTheme } from "@/components/theme";
-import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.png";
-import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.png";
+import fullLogoUrl from "@/assets/acm-student-chapter-full-logo.webp";
+import darkLogoUrl from "@/assets/acm-student-chapter-full-logo-dark.webp";
 
 const loginSchema = z.object({
   login: z.string().min(1, "Enter your username or roll number."),
@@ -31,6 +31,7 @@ export default function LoginPage() {
 
   const onSubmit = form.handleSubmit((values) => {
     setFormError(null);
+    form.clearErrors("root");
     const data = parseForm(loginSchema, values, (field, message) =>
       form.setError(field as keyof LoginForm, { message }),
     );
@@ -62,6 +63,7 @@ export default function LoginPage() {
           <img
             src={resolvedTheme === "dark" ? darkLogoUrl : fullLogoUrl}
             alt="ACM Student Chapter"
+            decoding="async"
             className="h-auto w-full max-w-[20rem] object-contain"
           />
         </Link>
@@ -70,6 +72,9 @@ export default function LoginPage() {
           <h1 className="text-center text-xl font-semibold tracking-tight">Sign in</h1>
 
           <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-4" noValidate>
+            {form.formState.errors.root?.message ? (
+              <p role="alert" className="text-destructive text-sm font-medium">{form.formState.errors.root.message}</p>
+            ) : null}
             <Field
               label="Username or roll number"
               htmlFor="login"
@@ -94,7 +99,7 @@ export default function LoginPage() {
                 {formError}
               </p>
             ) : null}
-            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-full">
+            <Button type="submit" disabled={form.formState.isSubmitting} className="mt-1 min-h-10 w-full rounded-2xl">
               {form.formState.isSubmitting ? <Loader2Icon className="animate-spin" /> : null}
               <span>Sign in</span>
               {!form.formState.isSubmitting ? <ArrowRightIcon /> : null}

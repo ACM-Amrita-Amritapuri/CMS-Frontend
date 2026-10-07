@@ -37,3 +37,9 @@ The production build is served at `/cms/` and calls the backend at the
 same-origin `/cms_backend` URI. Extract the deployment ZIP contents directly
 into the `cms` document-root directory; do not leave them inside a nested
 `dist` directory. Deploy and verify the Passenger backend first.
+
+## Vercel deployment
+
+Vercel builds the app to `dist`, serves it under `/cms/`, and proxies API calls
+to the production backend. See [the Vercel deployment note](docs/vercel-deployment.md)
+for the project settings and routing behavior.

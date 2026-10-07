@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,9 +34,18 @@ export function ConfirmDialog({
   pending = false,
   onConfirm,
 }: ConfirmDialogProps) {
+  const confirmRef = useRef<HTMLButtonElement>(null);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        onOpenAutoFocus={(event) => {
+          if (variant === "destructive") {
+            event.preventDefault();
+            confirmRef.current?.focus();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
@@ -45,7 +54,7 @@ export function ConfirmDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
             {cancelLabel}
           </Button>
-          <Button variant={variant} onClick={onConfirm} disabled={pending}>
+          <Button ref={confirmRef} variant={variant} onClick={onConfirm} disabled={pending}>
             {confirmLabel}
           </Button>
         </DialogFooter>

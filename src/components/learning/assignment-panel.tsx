@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ExternalLinkIcon, SendIcon } from "lucide-react";
@@ -23,7 +23,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { DetailRow } from "@/components/ui/table";
 import { QueryErrorState } from "@/components/ui/async";
 
-function SubmissionReview({ submission, onReviewed }: {
+const SubmissionReview = memo(function SubmissionReview({ submission, onReviewed }: {
   submission: LearningSubmission;
   onReviewed: (submission: LearningSubmission) => void;
 }) {
@@ -32,12 +32,12 @@ function SubmissionReview({ submission, onReviewed }: {
   const [pending, setPending] = useState(false);
   return (
     <article className="flex min-w-0 flex-col gap-4 rounded-lg border p-3 sm:p-4">
-      <h3 className="break-words text-sm font-semibold leading-6 [overflow-wrap:anywhere]">
+      <h3 className="break-words text-sm font-semibold leading-6 wrap-anywhere">
         Submission #{submission.id}
         {submission.member_username ? ` · ${submission.member_username}` : submission.member_user_id ? ` · Member #${submission.member_user_id}` : ""}
       </h3>
       <Badge className="w-fit" variant="secondary">{submission.submission_state}</Badge>
-      <p className="whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{submission.content || submission.external_url}</p>
+      <p className="whitespace-pre-wrap break-words text-sm leading-6 wrap-anywhere">{submission.content || submission.external_url}</p>
       {submission.submission_state === "SUBMITTED" ? (
         <form className="flex flex-col gap-3" onSubmit={async (event) => {
           event.preventDefault();
@@ -62,10 +62,10 @@ function SubmissionReview({ submission, onReviewed }: {
           </Field>
           <Button type="submit" className="w-fit" disabled={pending}>Save review</Button>
         </form>
-      ) : <p className="whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]">{submission.feedback}{submission.score !== null ? ` · ${submission.score}/100` : ""}</p>}
+      ) : <p className="whitespace-pre-wrap break-words text-sm leading-6 wrap-anywhere">{submission.feedback}{submission.score !== null ? ` · ${submission.score}/100` : ""}</p>}
     </article>
   );
-}
+});
 
 const stateLabels: Record<string, { label: string; variant: "success" | "info" | "warning" }> = {
   SUBMITTED: { label: "Awaiting review", variant: "info" },
@@ -79,15 +79,25 @@ export function AssignmentPanel({ assignment }: { assignment: LearningAssignment
 }
 
 function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
-  const { user, hasCapability } = useSession();
+  const { hasCapability } = useSession();
   const queryClient = useQueryClient();
-  const submissionKey = queryKeys.learning.mySubmission(assignment.id, user?.id);
+  const submissionKey = useMemo(
+    () => queryKeys.learning.mySubmission(assignment.id),
+    [assignment.id],
+  );
   const mine = useQuery({
     queryKey: submissionKey,
     queryFn: ({ signal }) => getMySubmission(assignment.id, signal),
     retry: false,
   });
   const submission = mine.data;
+  const handleReviewed = useCallback((updated: LearningSubmission) => {
+    queryClient.setQueryData<LearningSubmission[]>(queryKeys.learning.submissions(assignment.id),
+      (current = []) => current.map((entry) => entry.id === updated.id ? updated : entry));
+    if (submission?.id === updated.id) queryClient.setQueryData(submissionKey, updated);
+    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all, refetchType: "none" });
+    queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
+  }, [assignment.id, queryClient, submission?.id, submissionKey]);
   const [editedValue, setValue] = useState<string | null>(null);
   const [queueOpen, setQueueOpen] = useState(false);
   const queue = useQuery({
@@ -124,7 +134,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
     <article className="bg-card flex min-w-0 flex-col gap-6 rounded-xl border p-4 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
         <div className="min-w-0 flex-1 basis-48">
-          <h2 className="break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{assignment.title}</h2>
+          <h2 className="break-words text-lg font-semibold leading-7 wrap-anywhere">{assignment.title}</h2>
           <p className="text-muted-foreground text-xs">
             Submit {isLink ? "a link" : "text"}
             {assignment.deadline_at ? ` · due ${formatDateTime(assignment.deadline_at)}` : " · no deadline"}
@@ -149,7 +159,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
         ) : null}
       </header>
 
-      <div className="min-w-0 [overflow-wrap:anywhere]">
+      <div className="min-w-0 wrap-anywhere">
         <Markdown source={assignment.instructions} />
       </div>
 
@@ -161,7 +171,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
               {stateLabels[submission.submission_state ?? "DRAFT"].label}
             </Badge>
           </div>
-          <dl className="mt-3 flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
+          <dl className="mt-3 flex min-w-0 flex-col gap-3 wrap-anywhere">
             <DetailRow label="Submitted">
               {submission.submission_state === "DRAFT"
                 ? "Not yet"
@@ -176,7 +186,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
                     rel="noopener noreferrer"
                     className="text-primary inline-flex max-w-full items-start gap-1 rounded hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <span className="min-w-0 [overflow-wrap:anywhere]">{submission.external_url}</span>
+                    <span className="min-w-0 wrap-anywhere">{submission.external_url}</span>
                     <ExternalLinkIcon className="mt-1 size-3 shrink-0" />
                   </a>
                 ) : (
@@ -245,13 +255,7 @@ function AssignmentContent({ assignment }: { assignment: LearningAssignment }) {
             <ul className="flex flex-col gap-3">
               {queue.data.map((item) => (
                 <li key={item.id}>
-                  <SubmissionReview submission={item} onReviewed={(updated) => {
-                    queryClient.setQueryData<LearningSubmission[]>(queryKeys.learning.submissions(assignment.id),
-                      (current = []) => current.map((entry) => entry.id === updated.id ? updated : entry));
-                    if (submission?.id === updated.id) queryClient.setQueryData(submissionKey, updated);
-                    queryClient.invalidateQueries({ queryKey: queryKeys.learning.all, refetchType: "none" });
-                    queryClient.invalidateQueries({ queryKey: queryKeys.portfolio.all });
-                  }} />
+                  <SubmissionReview submission={item} onReviewed={handleReviewed} />
                 </li>
               ))}
             </ul>

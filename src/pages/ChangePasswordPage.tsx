@@ -43,6 +43,7 @@ export default function ChangePasswordPage() {
   }, [status, navigate]);
 
   const onSubmit = form.handleSubmit((values) => {
+    form.clearErrors("root");
     const data = parseForm(passwordSchema, values, (field, message) =>
       form.setError(field as keyof PasswordForm, { message }),
     );
@@ -111,6 +112,9 @@ export default function ChangePasswordPage() {
         />
 
         <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-5" noValidate>
+          {form.formState.errors.root?.message ? (
+            <p role="alert" className="text-destructive text-sm font-medium">{form.formState.errors.root.message}</p>
+          ) : null}
           {!mustChange ? (
             <Field
               label="Current password"

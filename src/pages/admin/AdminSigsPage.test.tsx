@@ -91,6 +91,6 @@ it("searches members inside the lead dropdown", () => {
     target: { value: "B002" },
   });
 
-  expect(screen.getByRole("option", { name: /bob.*B002/i })).toBeInTheDocument();
-  expect(screen.queryByRole("option", { name: /alice.*A001/i })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /bob.*B002/i })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /alice.*A001/i })).not.toBeInTheDocument();
 });

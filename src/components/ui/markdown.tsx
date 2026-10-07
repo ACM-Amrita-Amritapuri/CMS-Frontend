@@ -129,8 +129,8 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   });
 }
 
-export function Markdown({ source }: { source: string }) {
-  const blocks = parseBlocks(source);
+function MarkdownContent({ source }: { source: string }) {
+  const blocks = React.useMemo(() => parseBlocks(source), [source]);
 
   return (
     <div className="flex flex-col gap-4 text-sm leading-relaxed">
@@ -199,3 +199,5 @@ export function Markdown({ source }: { source: string }) {
     </div>
   );
 }
+
+export const Markdown = React.memo(MarkdownContent);

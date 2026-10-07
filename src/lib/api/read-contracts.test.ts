@@ -6,7 +6,7 @@ import { getCalendarRange, getEvent, getMyAttendance, listAttendance, listEvents
 import { getDocument, listDocuments, listRevisions, searchDocuments } from "@/lib/api/documentation";
 import { getPath, getPathProgress, listPaths } from "@/lib/api/learning";
 import { getMemberByRoll, getMyProfile, getPortfolio } from "@/lib/api/members";
-import { getProject, listProjects } from "@/lib/api/projects";
+import { listProjectDirectory } from "@/lib/api/projects";
 import { queryKeys } from "@/lib/query-keys";
 
 const user = { id: 1, username: "member", roll_number: "M001", must_change_password: false, role_assignments: [] };
@@ -31,8 +31,7 @@ const reads: [string, (signal?: AbortSignal) => Promise<unknown>][] = [
   ["member", (signal) => getMemberByRoll("M001", signal)],
   ["profile", (signal) => getMyProfile(signal)],
   ["portfolio", (signal) => getPortfolio(1, signal)],
-  ["project", (signal) => getProject(1, signal)],
-  ["projects", (signal) => listProjects(undefined, signal)],
+  ["project directory", (signal) => listProjectDirectory({ limit: 50, offset: 0 }, signal)],
 ];
 
 afterEach(() => vi.unstubAllGlobals());

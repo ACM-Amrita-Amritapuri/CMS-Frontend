@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
+import type { MemberGitHubProject } from "@/lib/api/projects";
 
 export interface ProfileView {
   user_id: number;
@@ -96,27 +97,5 @@ export interface PortfolioView {
     content_id: number;
     completed_at: string | null;
   }[];
-  project_contributions: {
-    project_id: number;
-    title: string;
-    summary: string;
-    role_id: number | null;
-    is_lead: boolean;
-    joined_at: string | null;
-    left_at: string | null;
-  }[];
-  showcases: {
-    id: number;
-    project_id: number;
-    summary: string;
-    technology: string;
-    outcomes: string;
-    repository_url: string | null;
-    demo_url: string | null;
-    deployment_url: string | null;
-    media_url: string | null;
-    state: "DRAFT" | "PUBLISHED";
-    published_at: string | null;
-    team_user_ids: number[];
-  }[];
+  github_projects: MemberGitHubProject[];
 }

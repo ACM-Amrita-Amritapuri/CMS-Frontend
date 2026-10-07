@@ -1,17 +1,35 @@
 import { ApiError } from "@/lib/api/errors";
 import { authRefreshSchema, validateAuthResponse } from "@/lib/api/auth-schemas";
 import { sessionStore } from "@/lib/auth/session-store";
+import type { AuthRefreshResponse } from "@/lib/api/types";
 
 export type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   retryOn401?: boolean;
 };
 
-let refreshPromise: Promise<void> | null = null;
+let refreshPromise: Promise<AuthRefreshResponse> | null = null;
+
+function waitForSignal<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  signal.throwIfAborted();
+
+  let onAbort = () => {};
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason ?? new DOMException("The operation was aborted.", "AbortError"));
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
+  return Promise.race([promise, aborted]).finally(() => signal.removeEventListener("abort", onAbort));
+}
 
 function isAuthPath(path: string) {
   const pathname = path.split("?", 1)[0].replace(/\/+$/, "") || "/";
-  return ["/auth/login", "/auth/refresh", "/auth/logout"].includes(pathname);
+  return ["/auth/login", "/auth/refresh", "/auth/logout", "/auth/logout-all"].includes(pathname);
+}
+
+function isPublicAuthPath(path: string) {
+  const pathname = path.split("?", 1)[0].replace(/\/+$/, "") || "/";
+  return ["/auth/login", "/auth/refresh"].includes(pathname);
 }
 
 function resolveUrl(path: string) {
@@ -37,6 +55,9 @@ async function parseResponse<T>(response: Response): Promise<T> {
   const raw = await response.text();
   if (response.ok) {
     if (!raw.trim()) {
+      if (response.status !== 204) {
+        throw new ApiError(response.status, "INTERNAL_ERROR", "The server returned an empty response.");
+      }
       return undefined as T;
     }
 
@@ -81,7 +102,7 @@ async function send(path: string, options: ApiRequestOptions) {
   }
 
   const accessToken = sessionStore.getSnapshot().accessToken;
-  if (accessToken && !isAuthPath(path)) {
+  if (accessToken && !isPublicAuthPath(path)) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
   // Marks this as an API request for the same-origin proxy (see
@@ -93,52 +114,69 @@ async function send(path: string, options: ApiRequestOptions) {
   return fetch(resolveUrl(path), init);
 }
 
-async function performRefresh(generation: number) {
+async function performRefresh(generation: number): Promise<AuthRefreshResponse> {
   const response = await send("/auth/refresh", { method: "POST", retryOn401: false });
   const payload = validateAuthResponse(authRefreshSchema, await parseResponse<unknown>(response));
   if (!sessionStore.isCurrentGeneration(generation)) {
     throw new ApiError(401, "SESSION_CHANGED", "The session changed during the request.");
   }
   sessionStore.setAccessToken(payload.access_token);
+  return payload;
 }
 
-async function refreshOnce() {
-  if (!refreshPromise) {
+export async function refreshSessionOnce(signal?: AbortSignal) {
+  let pending = refreshPromise;
+  if (!pending) {
     const generation = sessionStore.getGeneration();
-    const pending = performRefresh(generation).catch((error: unknown) => {
-      if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession();
+    pending = performRefresh(generation).catch((error: unknown) => {
+      if (sessionStore.isCurrentGeneration(generation)) sessionStore.clearSession("expired");
       throw error;
     });
     refreshPromise = pending;
+    void pending.then(
+      () => { if (refreshPromise === pending) refreshPromise = null; },
+      () => { if (refreshPromise === pending) refreshPromise = null; },
+    );
   }
-
-  const pending = refreshPromise;
-  try {
-    await pending;
-  } finally {
-    if (refreshPromise === pending) {
-      refreshPromise = null;
-    }
-  }
+  return waitForSignal(pending, signal);
 }
 
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}) {
-  options.signal?.throwIfAborted();
-  const response = await send(path, options);
-  options.signal?.throwIfAborted();
-  const shouldRefresh =
-    response.status === 401 &&
-    options.retryOn401 !== false &&
-    !isAuthPath(path) &&
-    Boolean(sessionStore.getSnapshot().accessToken);
+  const method = options.method ?? "GET";
+  const started = performance.now();
+  try {
+    options.signal?.throwIfAborted();
+    let response = await send(path, options);
+    options.signal?.throwIfAborted();
+    const shouldRefresh =
+      response.status === 401 &&
+      options.retryOn401 !== false &&
+      !isAuthPath(path) &&
+      Boolean(sessionStore.getSnapshot().accessToken);
 
-  if (!shouldRefresh) {
-    return parseResponse<T>(response);
+    if (shouldRefresh) {
+      await refreshSessionOnce(options.signal ?? undefined);
+      options.signal?.throwIfAborted();
+      response = await send(path, { ...options, retryOn401: false });
+    }
+
+    const result = await parseResponse<T>(response);
+    if (import.meta.env.DEV) {
+      console.info(`[cms api] ${method} ${path} -> ${response.status} (${Math.round(performance.now() - started)}ms)`);
+    }
+    return result;
+  } catch (error) {
+    if (!(error instanceof Error && error.name === "AbortError")) {
+      if (import.meta.env.DEV) {
+        console.error("[cms api] request failed", {
+          method,
+          path,
+          status: error instanceof ApiError ? error.status : undefined,
+          code: error instanceof ApiError ? error.code : error instanceof Error ? error.name : "UNKNOWN",
+          duration_ms: Math.round(performance.now() - started),
+        });
+      }
+    }
+    throw error;
   }
-
-  await refreshOnce();
-  options.signal?.throwIfAborted();
-  return parseResponse<T>(
-    await send(path, { ...options, retryOn401: false }),
-  );
 }

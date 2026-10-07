@@ -110,6 +110,7 @@ function ProfileEditForm({
   });
 
   const onSubmit = form.handleSubmit((values) => {
+    form.clearErrors("root");
     const data = parseForm(editableSchema, values, (field, message) =>
       form.setError(field as keyof EditableForm, { message }),
     );
@@ -140,6 +141,9 @@ function ProfileEditForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="flex min-w-0 flex-col gap-5" noValidate>
+          {errors.root?.message ? (
+            <p role="alert" className="text-destructive text-sm font-medium">{errors.root.message}</p>
+          ) : null}
           <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_100px]">
             <Field label="Full name" htmlFor="real_name" error={errors.real_name?.message}>
               <Input id="real_name" {...form.register("real_name")} />

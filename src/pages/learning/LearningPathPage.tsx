@@ -7,8 +7,10 @@ import {
   CircleIcon,
   ExternalLinkIcon,
   FileTextIcon,
+  Globe2Icon,
   ListChecksIcon,
   LockIcon,
+  PlayCircleIcon,
   PlusIcon,
 } from "lucide-react";
 
@@ -22,6 +24,7 @@ import {
   setResourceState,
   type LearningLesson,
   type LearningModule,
+  type LearningResource,
 } from "@/lib/api/learning";
 import { normalizeId, queryKeys } from "@/lib/query-keys";
 import { ApiError } from "@/lib/api/errors";
@@ -31,11 +34,12 @@ import { QueryErrorState } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
-import { Progress } from "@/components/ui/primitives";
+import { Progress, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
 import { PageHeader } from "@/components/ui/page";
 import { EmptyState } from "@/components/ui/table";
 import { AssignmentPanel } from "@/components/learning/assignment-panel";
 import { AuthorDialog, useAuthorActions, type DialogKind } from "@/components/learning/author-dialogs";
+import { getYouTubeEmbedUrl } from "@/lib/learning-resources";
 
 export default function LearningPathPage() {
   useDocumentTitle("Learning path");
@@ -183,7 +187,7 @@ function ModuleCard({
           aria-expanded={open}
         >
           <div className="min-w-0 flex-1">
-            <p className="break-words text-sm font-semibold leading-5 [overflow-wrap:anywhere]">{module.title}</p>
+            <p className="wrap-break-word text-sm font-semibold leading-5">{module.title}</p>
             <p className="text-muted-foreground text-xs">
               {module.lessons.length} lessons · {module.assignments.length} assignments
             </p>
@@ -260,7 +264,7 @@ function TreeItem({
           className="focus-visible:ring-ring flex min-h-9 min-w-0 flex-1 basis-28 items-start gap-2.5 rounded py-1.5 text-left focus-visible:ring-2"
         >
           <Icon className="size-4 shrink-0" />
-          <span className="min-w-0 break-words leading-5 [overflow-wrap:anywhere]">{label}</span>
+          <span className="min-w-0 wrap-break-word leading-5">{label}</span>
         </button>
         {draft ? <Badge variant="warning" className="shrink-0 text-[10px]">Draft</Badge> : null}
         {draft && onPublish ? (
@@ -307,6 +311,8 @@ function LessonPanel({
   lesson: LearningLesson;
 }) {
   const queryClient = useQueryClient();
+  const documents = lesson.resources.filter((resource) => resource.resource_type === "DOCUMENT");
+  const materials = lesson.resources.filter((resource) => resource.resource_type !== "DOCUMENT");
   const complete = useMutation({
     mutationFn: () => completeLesson(lesson.id),
     onSuccess: () => {
@@ -321,37 +327,119 @@ function LessonPanel({
   return (
     <article className="bg-card flex min-w-0 flex-col gap-6 rounded-xl border p-4 sm:p-6">
       <div className="flex flex-col items-start gap-3 border-b pb-4 xl:flex-row xl:justify-between">
-        <h2 className="min-w-0 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{lesson.title}</h2>
+        <h2 className="min-w-0 wrap-break-word text-lg font-semibold leading-7">{lesson.title}</h2>
         <CompleteButton completed={complete.isSuccess} onClick={() => complete.mutate()} disabled={complete.isPending} />
       </div>
-      {lesson.resources.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No materials in this lesson yet.</p>
-      ) : (
-        lesson.resources.map((resource) => (
-          <section key={resource.id} className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
-            <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-              {resource.title}
-            </h3>
-            {resource.publication_state === "DRAFT" ? (
-              <ResourcePublishButton resource={resource} />
-            ) : null}
-            {resource.resource_type === "MARKDOWN" ? (
-              <Markdown source={resource.content ?? ""} />
-            ) : (
-              <a
-                href={resource.external_url ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-input hover:bg-accent focus-visible:ring-ring inline-flex w-fit max-w-full items-start gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2"
-              >
-                <ExternalLinkIcon className="mt-0.5 size-4 shrink-0" />
-                <span className="min-w-0 [overflow-wrap:anywhere]">{resource.external_url}</span>
-              </a>
-            )}
-          </section>
-        ))
-      )}
+      <Tabs defaultValue="materials" className="min-w-0">
+        <TabsList className="h-auto w-full flex-wrap justify-start">
+          <TabsTrigger value="materials">
+            Materials{materials.length ? ` (${materials.length})` : ""}
+          </TabsTrigger>
+          <TabsTrigger value="documents">
+            Documents{documents.length ? ` (${documents.length})` : ""}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="materials" className="flex min-w-0 flex-col gap-6">
+          {materials.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No materials in this lesson yet.</p>
+          ) : (
+            materials.map((resource) => <ResourceSection key={resource.id} resource={resource} />)
+          )}
+        </TabsContent>
+        <TabsContent value="documents">
+          {documents.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No documents in this lesson yet.</p>
+          ) : (
+            <ol className="flex list-decimal flex-col gap-3 pl-5">
+              {documents.map((resource) => (
+                <li key={resource.id} className="pl-1">
+                  <ResourceSection resource={resource} />
+                </li>
+              ))}
+            </ol>
+          )}
+        </TabsContent>
+      </Tabs>
     </article>
+  );
+}
+
+function ResourceSection({ resource }: { resource: LearningResource }) {
+  return (
+    <section className="flex min-w-0 flex-col gap-3 [overflow-wrap:anywhere]">
+      <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+        {resource.title}
+      </h3>
+      {resource.publication_state === "DRAFT" ? <ResourcePublishButton resource={resource} /> : null}
+      <ResourceBody resource={resource} />
+    </section>
+  );
+}
+
+function ResourceBody({ resource }: { resource: LearningResource }) {
+  if (resource.resource_type === "MARKDOWN") {
+    return <Markdown source={resource.content ?? ""} />;
+  }
+
+  if (resource.resource_type === "YOUTUBE") {
+    const embedUrl = getYouTubeEmbedUrl(resource.external_url ?? "");
+    if (embedUrl) {
+      return (
+        <div className="flex min-w-0 flex-col gap-2">
+          <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+            <iframe
+              src={embedUrl}
+              title={resource.title}
+              className="size-full"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+          <ResourceLink href={resource.external_url} label="Open on YouTube" icon={PlayCircleIcon} />
+        </div>
+      );
+    }
+  }
+
+  if (resource.resource_type === "WEBSITE" && resource.external_url) {
+    return (
+      <div className="flex min-w-0 flex-col gap-2">
+        <iframe
+          src={resource.external_url}
+          title={resource.title}
+          className="h-[min(70vh,48rem)] min-h-96 w-full rounded-lg border bg-muted"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          sandbox=""
+        />
+        <ResourceLink href={resource.external_url} label="Open website in a new tab" icon={Globe2Icon} />
+      </div>
+    );
+  }
+
+  return <ResourceLink href={resource.external_url} label={resource.external_url ?? "Open resource"} icon={ExternalLinkIcon} />;
+}
+
+function ResourceLink({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string | null;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <a
+      href={href ?? "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="border-input hover:bg-accent focus-visible:ring-ring inline-flex w-fit max-w-full items-start gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2"
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" />
+      <span className="min-w-0 [overflow-wrap:anywhere]">{label}</span>
+    </a>
   );
 }
 
@@ -396,7 +484,7 @@ function CompleteButton({
     );
   }
   return (
-      <Button size="sm" className="rounded-full" onClick={onClick} disabled={disabled}>
+      <Button size="sm" className="rounded-2xl" onClick={onClick} disabled={disabled}>
       <CircleIcon className="size-3.5" /> Mark complete
     </Button>
   );

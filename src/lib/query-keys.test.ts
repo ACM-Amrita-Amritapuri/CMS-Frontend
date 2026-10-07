@@ -15,7 +15,6 @@ describe("query keys", () => {
     await client.invalidateQueries({ queryKey: queryKeys.learning.progress(7) });
     expect(client.getQueryState(queryKeys.learning.path("7"))?.isInvalidated).toBe(true);
     expect(client.getQueryState(queryKeys.learning.progress(7))?.isInvalidated).toBe(true);
-    expect(queryKeys.projects.detail("7")).toEqual(queryKeys.projects.detail(7));
     expect(queryKeys.portfolio.detail("7")).toEqual(queryKeys.portfolio.detail(7));
     expect(queryKeys.documentation.detail("7")).toEqual(queryKeys.documentation.detail(7));
     client.clear();

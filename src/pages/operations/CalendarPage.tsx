@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDaysIcon, ChevronLeftIcon, ChevronRightIcon, MapPinIcon } from "lucide-react";
@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const PAGE_SIZE = 50;
 
 export function monthBounds(year: number, month: number) {
   const start = new Date(year, month, 1);
@@ -29,11 +32,16 @@ export default function CalendarPage() {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
+  const [offset, setOffset] = useState(0);
   const bounds = monthBounds(cursor.year, cursor.month);
   const query = useQuery({
-    queryKey: queryKeys.operations.calendar(bounds.start, bounds.end),
-    queryFn: ({ signal }) => getCalendarRange(bounds.start, bounds.end, signal),
+    queryKey: queryKeys.operations.calendar(bounds.start, bounds.end, PAGE_SIZE, offset),
+    queryFn: ({ signal }) => getCalendarRange(bounds.start, bounds.end, { limit: PAGE_SIZE, offset }, signal),
   });
+  const events = useMemo(
+    () => [...(query.data?.calendar ?? [])].sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+    [query.data?.calendar],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,9 +55,9 @@ export default function CalendarPage() {
             size="sm"
             aria-label="Previous month"
             onClick={() =>
-              setCursor(({ year, month }) =>
+              { setOffset(0); setCursor(({ year, month }) =>
                 month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 },
-              )
+              ); }
             }
           ><ChevronLeftIcon /></Button>
           <span className="min-w-0 flex-1 text-center text-sm font-semibold tabular-nums sm:min-w-36">{bounds.label}</span>
@@ -58,9 +66,9 @@ export default function CalendarPage() {
             size="sm"
             aria-label="Next month"
             onClick={() =>
-              setCursor(({ year, month }) =>
+              { setOffset(0); setCursor(({ year, month }) =>
                 month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 },
-              )
+              ); }
             }
           ><ChevronRightIcon /></Button>
         </div>
@@ -69,18 +77,17 @@ export default function CalendarPage() {
 
       <AsyncBoundary
         query={query}
-        isEmpty={(events) => events.length === 0}
+        isEmpty={(page) => page.total === 0}
         empty={{
           icon: CalendarDaysIcon,
           title: `Nothing scheduled in ${bounds.label}`,
           description: "Events and meetings in this month will appear here.",
         }}
       >
-        {(events) => (
+        {(page) => (
+          <div className="flex flex-col gap-4">
           <ul className="flex flex-col gap-2">
-            {[...events]
-              .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
-              .map((event) => (
+            {events.map((event) => (
                 <li key={event.id}>
                   <Link
                     to={`/operations/events/${event.id}`}
@@ -91,11 +98,11 @@ export default function CalendarPage() {
                       <span className="text-base leading-none">{parseUtc(event.starts_at)?.getDate() ?? "—"}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm leading-5 font-semibold [overflow-wrap:anywhere]">{event.title}</p>
-                      <p className="text-muted-foreground mt-1 text-xs leading-5 [overflow-wrap:anywhere]">
+                      <p className="text-sm leading-5 font-semibold wrap-anywhere">{event.title}</p>
+                      <p className="text-muted-foreground mt-1 text-xs leading-5 wrap-anywhere">
                         {formatDateTime(event.starts_at)}
                         {event.location ? (
-                          <span className="ml-1 inline [overflow-wrap:anywhere]">
+                          <span className="ml-1 inline wrap-anywhere">
                             {" "}
                             · <MapPinIcon className="inline size-3 align-middle" /> {event.location}
                           </span>
@@ -112,6 +119,8 @@ export default function CalendarPage() {
                 </li>
               ))}
           </ul>
+          <PaginationControls label="Events" offset={page.offset} limit={page.limit} total={page.total} onPageChange={setOffset} />
+          </div>
         )}
       </AsyncBoundary>
 

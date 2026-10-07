@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDaysIcon, ExternalLinkIcon, MapPinIcon, TrophyIcon } from "lucide-react";
 
@@ -8,6 +9,9 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { AsyncBoundary } from "@/components/ui/async";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, SectionHeader } from "@/components/ui/page";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+
+const PAGE_SIZE = 100;
 
 export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
   return [...events]
@@ -20,11 +24,15 @@ export function selectUpcomingEvents(events: ClubEvent[], now = new Date()) {
 
 export default function HackathonsPage() {
   useDocumentTitle("Events");
+  const [offset, setOffset] = useState(0);
   const eventsQuery = useQuery({
-    queryKey: queryKeys.operations.events(),
-    queryFn: ({ signal }) => listEvents({ limit: 100 }, signal),
-    select: selectUpcomingEvents,
+    queryKey: queryKeys.operations.events(false, PAGE_SIZE, offset),
+    queryFn: ({ signal }) => listEvents({ limit: PAGE_SIZE, offset }, signal),
   });
+  const upcoming = useMemo(
+    () => selectUpcomingEvents(eventsQuery.data?.events ?? []),
+    [eventsQuery.data?.events],
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,15 +47,20 @@ export default function HackathonsPage() {
 
         <AsyncBoundary
           query={eventsQuery}
-          isEmpty={(events) => events.length === 0}
+          isEmpty={(page) => page.total === 0}
           empty={{ icon: CalendarDaysIcon, title: "No upcoming events" }}
         >
-          {(events) => (
+          {(page) => (
+            <div className="flex flex-col gap-4">
+            {upcoming.length === 0 ? <p className="text-muted-foreground text-sm">No upcoming events on this page.</p> : (
             <ul className="grid gap-4 md:grid-cols-2">
-              {events.map((event) => (
+              {upcoming.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </ul>
+            )}
+            <PaginationControls label="Events" offset={page.offset} limit={page.limit} total={page.total} onPageChange={setOffset} />
+            </div>
           )}
         </AsyncBoundary>
       </section>
@@ -64,16 +77,16 @@ function EventCard({ event }: { event: ClubEvent }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <Badge variant="outline">{kind}</Badge>
-          <h3 className="mt-3 break-words text-lg font-semibold leading-7 [overflow-wrap:anywhere]">{event.title}</h3>
+          <h3 className="mt-3 break-words text-lg font-semibold leading-7 wrap-anywhere">{event.title}</h3>
         </div>
         <CalendarDaysIcon className="text-primary mt-1 size-5 shrink-0" aria-hidden />
       </div>
 
       {event.description ? (
-        <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 [overflow-wrap:anywhere]">{event.description}</p>
+        <p className="text-muted-foreground line-clamp-3 break-words text-sm leading-6 wrap-anywhere">{event.description}</p>
       ) : null}
 
-      <dl className="text-muted-foreground flex min-w-0 flex-col gap-3 text-sm leading-6 [overflow-wrap:anywhere]">
+      <dl className="text-muted-foreground flex min-w-0 flex-col gap-3 text-sm leading-6 wrap-anywhere">
         <div className="flex items-start gap-2">
           <CalendarDaysIcon className="text-foreground mt-0.5 size-4 shrink-0" aria-hidden />
           <div>
